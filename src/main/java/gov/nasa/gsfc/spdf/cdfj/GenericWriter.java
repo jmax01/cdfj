@@ -6,12 +6,14 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
@@ -295,7 +297,7 @@ public class GenericWriter {
      *
      * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
      */
-    public void addNRVString(String name, String value) throws CDFException.WriterError {
+    public void addNRVString(String name, CharSequence value) throws CDFException.WriterError {
         addNRVVariable(name, CDFDataType.CHAR, new int[0], value.length(), value);
     }
 
@@ -540,7 +542,7 @@ public class GenericWriter {
             throw new CDFException.WriterError("Variable " + vname + " has not been defined.");
         }
 
-        Vector<VariableAttributeEntry> currentEntries;
+        List<VariableAttributeEntry> currentEntries;
         currentEntries = findVariableAttributeEntries(vname, aname);
 
         if (currentEntries.size() == 0) {
@@ -1060,7 +1062,7 @@ public class GenericWriter {
      */
     public void setVariableAttributeEntry(String vname, String aname, CDFDataType dataType, Object value)
             throws CDFException.WriterError {
-        Vector<VariableAttributeEntry> entries;
+        List<VariableAttributeEntry> entries;
         entries = findVariableAttributeEntries(vname, aname);
 
         if (entries.size() > 0) {
@@ -1108,7 +1110,7 @@ public class GenericWriter {
      * @throws java.io.IOException
      */
     public void write(String fname) throws IOException {
-        Vector<AEDR> vec = this.attributeEntries.get("cdfj_source");
+        List<AEDR> vec = this.attributeEntries.get("cdfj_source");
 
         if (vec != null) {
 
@@ -1233,7 +1235,7 @@ public class GenericWriter {
             String name = adr.name;
             obuf.position((int) adr.position);
             obuf.put(adr.get());
-            Vector<AEDR> vec = this.attributeEntries.get(name);
+            Iterable<AEDR> vec = this.attributeEntries.get(name);
 
             for (AEDR ae : vec) {
                 obuf.position((int) ae.position);
@@ -1360,7 +1362,7 @@ public class GenericWriter {
         }
 
         Vector<VariableAttributeEntry> result = new Vector<>();
-        Vector<AEDR> entries = this.attributeEntries.get(aname);
+        Iterable<AEDR> entries = this.attributeEntries.get(aname);
 
         if (entries == null) {
             return result;
@@ -1458,7 +1460,7 @@ public class GenericWriter {
         return ByteBuffer.wrap(md.digest());
     }
 
-    void getDigest(FileChannel channel) throws IOException {
+    void getDigest(SeekableByteChannel channel) throws IOException {
         MessageDigest md = null;
 
         try {
@@ -1514,7 +1516,7 @@ public class GenericWriter {
         Iterator<String> aeit = ateset.iterator();
 
         while (aeit.hasNext()) {
-            Vector<AEDR> vec = this.attributeEntries.get(aeit.next());
+            Iterable<AEDR> vec = this.attributeEntries.get(aeit.next());
 
             for (AEDR aedr : vec) {
                 size += aedr.getSize();
@@ -1630,7 +1632,7 @@ public class GenericWriter {
             channel.position(adr.position);
             channel.write(adr.get());
 
-            Vector<AEDR> vec = this.attributeEntries.get(name);
+            Iterable<AEDR> vec = this.attributeEntries.get(name);
 
             for (AEDR ae : vec) {
                 channel.position(ae.position);

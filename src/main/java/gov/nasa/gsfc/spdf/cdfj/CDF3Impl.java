@@ -13,7 +13,7 @@ final class CDF3Impl extends CDFImpl implements CDF3, java.io.Serializable {
 
     public long GDROffset;
 
-    FileChannel fc;
+    final FileChannel fc;
 
     protected CDF3Impl(ByteBuffer buf) throws Throwable {
         this(buf, null);

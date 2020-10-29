@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -435,7 +436,7 @@ import java.util.zip.GZIPInputStream;
         }
 
         Vector attrs = c.attributes;
-        Vector values = new Vector();
+        List values = new Vector();
 
         for (int i = 0; i < attrs.size(); i++) {
             AttributeEntry ae = (AttributeEntry) attrs.elementAt(i);
@@ -712,7 +713,7 @@ import java.util.zip.GZIPInputStream;
             return sa.array();
         }
 
-        DoubleVarContainer dbuf = new DoubleVarContainer(this, var, new int[] { point }, false,
+        VDataContainer.CDouble dbuf = new DoubleVarContainer(this, var, new int[] { point }, false,
                 ByteOrder.nativeOrder());
         dbuf.run();
         return dbuf.asArray().array();
@@ -956,7 +957,7 @@ import java.util.zip.GZIPInputStream;
      * returns dimensions of the named variable.
      */
     public int[] variableDimensions(String name) {
-        Variable var = (Variable) this.variableTable.get(name);
+        VariableMetaData var = (Variable) this.variableTable.get(name);
 
         if (var == null) {
             return null;
@@ -1142,7 +1143,7 @@ import java.util.zip.GZIPInputStream;
         throw new IllegalArgumentException("unsupported case, file must contain only zvariables or rvariables");
     }
 
-    Object getFillValue(Variable var) {
+    Object getFillValue(VariableMetaData var) {
         Vector fill = (Vector) getAttribute(var.getName(), "FILLVAL");
         int type = var.getType();
 
@@ -1174,7 +1175,7 @@ import java.util.zip.GZIPInputStream;
         return new double[] { Double.NEGATIVE_INFINITY, 0 };
     }
 
-    Object getPadValue(Variable var) {
+    Object getPadValue(VariableMetaData var) {
         return var.getPadValue(true);
     }
 
@@ -1200,7 +1201,7 @@ import java.util.zip.GZIPInputStream;
      * returns ByteBuffer containing count values for variable var starting at
      * CDF offset value offset.
      */
-    ByteBuffer positionBuffer(Variable var, long offset, int count) {
+    ByteBuffer positionBuffer(VariableMetaData var, long offset, int count) {
         ByteBuffer bv;
 
         if (!var.isCompressed()) {
@@ -1389,7 +1390,7 @@ import java.util.zip.GZIPInputStream;
 
         String vtype;
 
-        int flags;
+        final int flags;
 
         int sRecords;
 
@@ -1397,7 +1398,7 @@ import java.util.zip.GZIPInputStream;
 
         int numberOfElements;
 
-        protected int numberOfValues;
+        protected final int numberOfValues;
 
         public int[] dimensions;
 
@@ -1914,7 +1915,7 @@ import java.util.zip.GZIPInputStream;
             }
 
             long[][] locations = this.locator.getLocations();
-            Vector dbufs = new Vector();
+            List dbufs = new Vector();
             int size = getDataItemSize();
 
             for (long[] location : locations) {

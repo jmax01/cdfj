@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Vector;
 import java.util.zip.GZIPOutputStream;
 
@@ -29,7 +31,7 @@ public class DataContainer {
 
     Vector<ByteBuffer> bufs = new Vector<>();
 
-    Vector<Integer> points = new Vector<>();
+    List<Integer> points = new Vector<>();
 
     /**
      *
@@ -1057,14 +1059,14 @@ public class DataContainer {
         return (next[0] > buf.getDouble(buf.limit() - 8));
     }
 
-    void writeInt(FileChannel ch, ByteBuffer buf, int value) throws IOException {
+    void writeInt(WritableByteChannel ch, ByteBuffer buf, int value) throws IOException {
         buf.position(0);
         buf.putInt(value);
         buf.position(0);
         ch.write(buf);
     }
 
-    void writeLong(FileChannel ch, ByteBuffer buf, long value) throws IOException {
+    void writeLong(WritableByteChannel ch, ByteBuffer buf, long value) throws IOException {
         buf.position(0);
         buf.putLong(value);
         buf.position(0);

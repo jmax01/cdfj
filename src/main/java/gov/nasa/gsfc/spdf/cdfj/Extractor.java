@@ -1196,7 +1196,8 @@ public class Extractor {
      * @throws IllegalAccessException
      * @throws InvocationTargetException
      */
-    public static Method getMethod(Variable var, String func) throws IllegalAccessException, InvocationTargetException {
+    public static Method getMethod(VariableMetaData var, String func)
+            throws IllegalAccessException, InvocationTargetException {
         int rank = var.getEffectiveRank();
         Method[] ma;
 
@@ -4734,7 +4735,7 @@ public class Extractor {
         return index;
     }
 
-    static Vector elementCount(Variable var) {
+    static Vector elementCount(VariableMetaData var) {
         int[] dimensions = var.getDimensions();
         Vector ecount = new Vector();
 
@@ -4848,7 +4849,7 @@ public class Extractor {
      * returns ByteBuffer containing count values for variable var starting at
      * CDF offset value offset.
      */
-    static ByteBuffer positionBuffer(CDFImpl impl, Variable var, long offset, int count) {
+    static ByteBuffer positionBuffer(CDFImpl impl, VariableMetaData var, long offset, int count) {
         ByteBuffer bv;
 
         if (!var.isCompressed()) {

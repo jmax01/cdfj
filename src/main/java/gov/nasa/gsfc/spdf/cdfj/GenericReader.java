@@ -32,7 +32,7 @@ public class GenericReader extends MetaData {
 
     private ThreadGroup tgroup;
 
-    private Hashtable threadMap = new Hashtable();
+    private final Hashtable threadMap = new Hashtable();
 
     /**
      * Constructs a reader for the given CDF file.
@@ -88,11 +88,11 @@ public class GenericReader extends MetaData {
         // setup();
     }
 
-    private static boolean coreNeeded(Variable var) {
+    private static boolean coreNeeded(VariableMetaData var) {
         return var.isMissingRecords();
     }
 
-    private static boolean coreNeeded(Variable var, int[] range) {
+    private static boolean coreNeeded(VariableMetaData var, int[] range) {
         int[] available = var.getRecordRange();
 
         if (range.length == 1) {

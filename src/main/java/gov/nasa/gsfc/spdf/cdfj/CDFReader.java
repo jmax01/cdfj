@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.Vector;
 
@@ -181,7 +182,7 @@ public class CDFReader extends GenericReader {
             return new String[0];
         }
 
-        Vector dependent = new Vector();
+        List dependent = new Vector();
 
         for (String aname : anames) {
 
@@ -189,7 +190,7 @@ public class CDFReader extends GenericReader {
                 continue;
             }
 
-            dependent.add(((Vector) this.thisCDF.getAttribute(varName, aname)).get(0));
+            dependent.add(((List) this.thisCDF.getAttribute(varName, aname)).get(0));
         }
 
         String[] sa = new String[dependent.size()];

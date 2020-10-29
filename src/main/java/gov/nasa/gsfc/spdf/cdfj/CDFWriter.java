@@ -5,6 +5,7 @@ import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -22,7 +23,7 @@ public class CDFWriter extends GenericWriter {
 
     static Logger logger = Logger.getLogger("cdfj.cdfwriter");
 
-    static List<String> doNotCheckListGlobal = new ArrayList<>();
+    static Collection<String> doNotCheckListGlobal = new ArrayList<>();
     static {
         doNotCheckListGlobal.add("Logical_file_id");
         doNotCheckListGlobal.add("Generation_date");
@@ -497,7 +498,7 @@ public class CDFWriter extends GenericWriter {
                 continue;
             }
 
-            dependent.add(((Vector) cdf.getAttribute(vname, aname)).get(0));
+            dependent.add(((List) cdf.getAttribute(vname, aname)).get(0));
         }
 
         return dependent;
@@ -625,8 +626,8 @@ public class CDFWriter extends GenericWriter {
         String[] gan = cdf.globalAttributeNames();
 
         for (String gan1 : gan) {
-            Vector _entries = (Vector) this.gamap.get(gan1);
-            Vector entries = null;
+            Iterable _entries = (Vector) this.gamap.get(gan1);
+            Iterable entries = null;
 
             try {
                 entries = cdf.getAttributeEntries(gan1);
@@ -916,7 +917,7 @@ public class CDFWriter extends GenericWriter {
                 this.vcol.add(name, col.isCompressed(name), col.getSparseRecordOption(name));
             }
 
-            Vector depends = getDependent(cdf, name);
+            Iterable depends = getDependent(cdf, name);
 
             for (Object depend : depends) {
                 String dvar = (String) depend;
@@ -956,7 +957,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     List getTimeVariableList(GenericReader cdf) {
-        ArrayList<String> list = new ArrayList<>();
+        List<String> list = new ArrayList<>();
         String[] vnames = this.vcol.getNames();
 
         for (String vname : vnames) {
@@ -1031,8 +1032,8 @@ public class CDFWriter extends GenericWriter {
         Hashtable amap = (Hashtable) vmap.get("amap");
 
         for (String aname : anames) {
-            Vector entries = cdf.getAttributeEntries(vn, aname);
-            Vector _entries = (Vector) amap.get(aname);
+            Iterable entries = cdf.getAttributeEntries(vn, aname);
+            Iterable _entries = (Vector) amap.get(aname);
 
             for (Object value : entries) {
                 AttributeEntry entry = (AttributeEntry) value;

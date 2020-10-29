@@ -97,10 +97,6 @@ public class TimeVariableFactory {
         int recordCount = var.getNumberOfValues();
         CDFTimeVariable tv;
 
-        if (var == null) {
-            throw new Throwable("Bad variable name " + vname);
-        }
-
         tname = rdr.getTimeVariableName(vname);
         /*
          * Vector v = (Vector)cdf.getAttribute(var.getName(), "DEPEND_0");

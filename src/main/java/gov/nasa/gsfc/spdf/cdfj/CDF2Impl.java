@@ -21,7 +21,7 @@ final class CDF2Impl extends CDFImpl implements CDF2, java.io.Serializable {
 
     public int OFFSET_NUM;
 
-    FileChannel fc;
+    final FileChannel fc;
 
     public CDF2Impl(ByteBuffer buf, int release, FileChannel ch) throws Throwable {
         super(buf);

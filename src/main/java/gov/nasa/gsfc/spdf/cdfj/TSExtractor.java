@@ -746,7 +746,7 @@ public class TSExtractor extends Extractor {
         return getRecordRange(rdr, var, timeRange, null);
     }
 
-    static int[] getRecordRange(MetaData rdr, Variable var, double[] timeRange, TimeInstantModel ts) {
+    static int[] getRecordRange(MetaData rdr, VariableMetaData var, double[] timeRange, TimeInstantModel ts) {
 
         try {
             TimeVariableX tvx = TimeVariableFactory.getTimeVariable(rdr, var.getName());
@@ -904,7 +904,7 @@ public class TSExtractor extends Extractor {
          *
          * @throws Throwable
          */
-        public GeneralTimeSeriesX(MetaData rdr, Variable var, Boolean ignoreFill, final double[] timeRange,
+        public GeneralTimeSeriesX(MetaData rdr, VariableMetaData var, Boolean ignoreFill, final double[] timeRange,
                 TimeInstantModel ts, boolean oned, boolean columnMajor) throws Throwable {
 
             if (ts != null) {

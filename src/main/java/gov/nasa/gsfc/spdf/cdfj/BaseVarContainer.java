@@ -265,7 +265,7 @@ public abstract class BaseVarContainer implements Runnable {
         return false;
     }
 
-    static boolean validElement(Variable var, int[] idx) {
+    static boolean validElement(VariableMetaData var, int[] idx) {
         int elements = (((Integer) var.getElementCount().elementAt(0)));
 
         for (int j : idx) {
