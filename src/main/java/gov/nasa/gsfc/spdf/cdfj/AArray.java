@@ -54,8 +54,8 @@ public abstract class AArray {
     ByteBuffer allocate(int elementSize) {
         int size = elementSize;
         int[] _dim = aa.getDimensions();
-        for (int i = 0; i < _dim.length; i++) {
-            size *= _dim[i];
+        for (int j : _dim) {
+            size *= j;
         }
         ByteBuffer buf = ByteBuffer.allocateDirect(size);
         buf.order(ByteOrder.LITTLE_ENDIAN);

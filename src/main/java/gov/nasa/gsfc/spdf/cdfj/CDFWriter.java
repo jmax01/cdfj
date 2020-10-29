@@ -465,9 +465,9 @@ public class CDFWriter extends GenericWriter {
                 throw new CDFException.ReaderError(th.getMessage());
             }
             gamap.put(gan1, entries);
-            for (int e = 0; e < entries.size(); e++) {
+            for (Object o : entries) {
                 AttributeEntry entry =
-                        (AttributeEntry)entries.get(e);
+                        (AttributeEntry) o;
                 addGlobalAttributeEntry(gan1, SupportedTypes.cdfType(entry.getType()), entry.getValue());
             }
         }
@@ -644,11 +644,11 @@ public class CDFWriter extends GenericWriter {
             }catch (CDFException.ReaderError th) {
                 throw new CDFException.ReaderError(th.getMessage());
             }
-            for (int e = 0; e < entries.size(); e++) {
-                AttributeEntry entry = (AttributeEntry)entries.get(e);
+            for (Object value : entries) {
+                AttributeEntry entry = (AttributeEntry) value;
                 boolean found = false;
-                for (int b = 0; b < _entries.size(); b++) {
-                    AttributeEntry _entry = (AttributeEntry)_entries.get(b);
+                for (Object o : _entries) {
+                    AttributeEntry _entry = (AttributeEntry) o;
                     found = _entry.isSameAs(entry);
                     if (found) break;
                 }
@@ -670,11 +670,11 @@ public class CDFWriter extends GenericWriter {
         for (String aname : anames) {
             Vector entries = cdf.getAttributeEntries(vn, aname);
             Vector _entries = (Vector) amap.get(aname);
-            for (int e = 0; e < entries.size(); e++) {
-                AttributeEntry entry = (AttributeEntry)entries.get(e);
+            for (Object value : entries) {
+                AttributeEntry entry = (AttributeEntry) value;
                 boolean found = false;
-                for (int b = 0; b < _entries.size(); b++) {
-                    AttributeEntry _entry = (AttributeEntry)_entries.get(b);
+                for (Object o : _entries) {
+                    AttributeEntry _entry = (AttributeEntry) o;
                     found |= _entry.isSameAs(entry);
                     if (found) break;
                 }
@@ -732,8 +732,8 @@ public class CDFWriter extends GenericWriter {
                          col.getSparseRecordOption(name));
             }
             Vector depends = getDependent(cdf, name);
-            for (int i = 0; i < depends.size(); i++) {
-                String dvar = (String)depends.get(i);
+            for (Object depend : depends) {
+                String dvar = (String) depend;
                 if (selected.contains(dvar)) continue;
                 selected.add(dvar);
                 boolean compressed = cdf.isCompressed(dvar);
@@ -743,7 +743,7 @@ public class CDFWriter extends GenericWriter {
                     sro = col.getSparseRecordOption(name);
                 }
                 vcol.add(dvar, compressed, sro);
-                logger.log(Level.FINE, "added: {0}", depends.get(i));
+                logger.log(Level.FINE, "added: {0}", depend);
             }
             n++;
         }

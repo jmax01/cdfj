@@ -112,13 +112,11 @@ public class ByteBufferURLReader {
             return _buf.asReadOnlyBuffer();
         }
         int size = 0;
-        for (int i = 0; i < buffers.size(); i++) {
-            ByteBuffer _buf = buffers.get(i);
+        for (ByteBuffer _buf : buffers) {
             size += _buf.remaining();
         }
         ByteBuffer ball = ByteBuffer.allocateDirect(size);
-        for (int i = 0; i < buffers.size(); i++) {
-            ByteBuffer _buf = buffers.get(i);
+        for (ByteBuffer _buf : buffers) {
             ball.put(_buf);
         }
         ball.position(0);

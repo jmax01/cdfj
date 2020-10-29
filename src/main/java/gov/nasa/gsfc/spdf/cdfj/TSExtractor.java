@@ -199,8 +199,8 @@ public class TSExtractor extends Extractor {
         double fill, int first) {
         double [][] series;
         int count = 0;
-        for (int i = 0; i < vdata.length; i++) {
-            if (vdata[i] != fill) count++;
+        for (double vdatum : vdata) {
+            if (vdatum != fill) count++;
         }
         series = new double[2][count];
         int n = 0;
@@ -227,8 +227,8 @@ public class TSExtractor extends Extractor {
         if (o.getClass().getComponentType() == Long.TYPE) {
             long fill = fillValue.longValue();
             long[] ldata = (long[])o;
-            for (int i = 0; i < ldata.length; i++) {
-                if (ldata[i] != fill) count++;
+            for (long ldatum : ldata) {
+                if (ldatum != fill) count++;
             }
             series = new double[2][count];
             int n = 0;
@@ -242,8 +242,8 @@ public class TSExtractor extends Extractor {
             if (o.getClass().getComponentType() != Double.TYPE) return null;
             double fill = fillValue.doubleValue();
             double[] data = (double[])o;
-            for (int i = 0; i < data.length; i++) {
-                if (data[i] != fill) count++;
+            for (double datum : data) {
+                if (datum != fill) count++;
             }
             series = new double[2][count];
             int n = 0;

@@ -110,10 +110,10 @@ public class GenericWriter {
             new Vector<>();
         Vector<AEDR> entries = attributeEntries.get(aname);
         if (entries == null) return result;
-        for (int i = 0; i < entries.size(); i++) {
+        for (AEDR entry : entries) {
             VariableAttributeEntry vae;
             try {
-                vae = (VariableAttributeEntry) entries.get(i);
+                vae = (VariableAttributeEntry) entry;
             } catch (Exception ex) {
                 continue;
             }
@@ -157,8 +157,8 @@ public class GenericWriter {
                     "Value should be numeric array or a String.");
                 }
             }
-            for (int i = 0; i < entries.size(); i++) {
-                attributeEntries.get(aname).remove(entries.get(i));
+            for (VariableAttributeEntry entry : entries) {
+                attributeEntries.get(aname).remove(entry);
             }
             ADR adr = getAttribute(aname, false);
             adr.nzEntries--;
@@ -941,8 +941,8 @@ public class GenericWriter {
         Iterator<String> aeit = ateset.iterator();
         while (aeit.hasNext()) {
             Vector<AEDR> vec = attributeEntries.get(aeit.next());
-            for (int i = 0; i < vec.size(); i++) {
-                size += vec.get(i).getSize();
+            for (AEDR aedr : vec) {
+                size += aedr.getSize();
             }
         }
         Set<String> dcset = dataContainers.keySet();
@@ -1065,9 +1065,8 @@ public class GenericWriter {
             obuf.position((int)adr.position);
             obuf.put(adr.get());
             Vector<AEDR> vec = attributeEntries.get(name);
-            for (int i = 0; i < vec.size(); i++) {
-                AEDR ae = vec.get(i);
-                obuf.position((int)ae.position);
+            for (AEDR ae : vec) {
+                obuf.position((int) ae.position);
                 obuf.put(ae.get());
             }
         }
@@ -1220,8 +1219,7 @@ public class GenericWriter {
             channel.write(adr.get());
 
             Vector<AEDR> vec = attributeEntries.get(name);
-            for (int i = 0; i < vec.size(); i++) {
-                AEDR ae = vec.get(i);
+            for (AEDR ae : vec) {
                 channel.position(ae.position);
                 channel.write(ae.get());
             }

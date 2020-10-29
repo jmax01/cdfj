@@ -210,13 +210,13 @@ public class DataContainer {
                 //if (!(new AArray(data)).validateDimensions(dcheck)) {
                 if (!Arrays.equals(aa.getDimensions(), dcheck)) {
                     StringBuffer sbe = new StringBuffer();
-                    for (int i = 0; i < dcheck.length; i++) {
-                        sbe.append("," + dcheck[i]);
+                    for (int k : dcheck) {
+                        sbe.append("," + k);
                     }
                     StringBuffer sbf = new StringBuffer("");
                     int[] fdim = aa.getDimensions();
-                    for (int i = 0; i < fdim.length; i++) {
-                        sbf.append("," + fdim[i]);
+                    for (int j : fdim) {
+                        sbf.append("," + j);
                     }
                     throw new Throwable("Dimension mismatch, expected: " +
                         sbe + " found " + sbf + ".");
@@ -253,7 +253,7 @@ public class DataContainer {
             if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
                 buf.asShortBuffer().put(values);
             } else {
-                for (int i = 0; i < values.length; i++) buf.putShort(values[i]);
+                for (short value : values) buf.putShort(value);
                 buf.position(0);
             }
             done = true;
@@ -272,7 +272,7 @@ public class DataContainer {
             if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
                 buf.asIntBuffer().put(values);
             } else {
-                for (int i = 0; i < values.length; i++) buf.putInt(values[i]);
+                for (int value : values) buf.putInt(value);
                 buf.position(0);
             }
             done = true;
@@ -290,7 +290,7 @@ public class DataContainer {
             if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
                 buf.asFloatBuffer().put(values);
             } else {
-                for (int i = 0; i < values.length; i++) buf.putFloat(values[i]);
+                for (float value : values) buf.putFloat(value);
                 buf.position(0);
             }
             done = true;
@@ -309,8 +309,8 @@ public class DataContainer {
             if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
                 buf.asDoubleBuffer().put(values);
             } else {
-                for (int i = 0; i < values.length; i++) {
-                    buf.putDouble(values[i]);
+                for (double value : values) {
+                    buf.putDouble(value);
                 }
                 buf.position(0);
             }
@@ -329,7 +329,7 @@ public class DataContainer {
             if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
                 buf.asLongBuffer().put(values);
             } else {
-                for (int i = 0; i < values.length; i++) buf.putLong(values[i]);
+                for (long value : values) buf.putLong(value);
                 buf.position(0);
             }
             done = true;
@@ -564,8 +564,7 @@ public class DataContainer {
     }
     int getBlockingFactor() {
         int n = -1;
-        for (int i = 0; i < points.size(); i++) {
-            int p = points.get(i);
+        for (int p : points) {
             if (p > n) n = p;
         }
         return n;

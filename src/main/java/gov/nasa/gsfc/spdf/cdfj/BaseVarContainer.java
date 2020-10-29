@@ -448,8 +448,8 @@ public abstract class BaseVarContainer implements Runnable {
     static boolean validElement(Variable var, int[] idx) {
         int elements =
                 (((Integer)var.getElementCount().elementAt(0)));
-        for (int i = 0; i < idx.length; i++) {
-            if ((idx[i] >= 0) && (idx[i] < elements)) continue;
+        for (int j : idx) {
+            if ((j >= 0) && (j < elements)) continue;
             return false;
         }
         return true;

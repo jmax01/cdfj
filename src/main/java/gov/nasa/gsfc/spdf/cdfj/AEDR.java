@@ -258,8 +258,8 @@ public class AEDR {
             if ((dataType == 21) || (dataType == 44)) {
                 ByteBuffer buf = ByteBuffer.allocate(4*da.length);
                 buf.order(ByteOrder.LITTLE_ENDIAN);
-                for (int i = 0; i < da.length; i++) {
-                    buf.putFloat((float)da[i]);
+                for (double v : da) {
+                    buf.putFloat((float) v);
                 }
                 values = new byte[4*da.length];
                 buf.position(0);
@@ -276,8 +276,8 @@ public class AEDR {
             if ((dataType == 2) || (dataType == 12)) {
                 ByteBuffer buf = ByteBuffer.allocate(2*da.length);
                 buf.order(ByteOrder.LITTLE_ENDIAN);
-                for (int i = 0; i < da.length; i++) {
-                    buf.putShort((short)da[i]);
+                for (double v : da) {
+                    buf.putShort((short) v);
                 }
                 values = new byte[2*da.length];
                 buf.position(0);
@@ -287,8 +287,8 @@ public class AEDR {
             if (dataType == 4) {
                 ByteBuffer buf = ByteBuffer.allocate(4*da.length);
                 buf.order(ByteOrder.LITTLE_ENDIAN);
-                for (int i = 0; i < da.length; i++) {
-                    buf.putInt((int)da[i]);
+                for (double v : da) {
+                    buf.putInt((int) v);
                 }
                 values = new byte[4*da.length];
                 buf.position(0);
@@ -298,9 +298,9 @@ public class AEDR {
             if (dataType == 14) {
                 ByteBuffer buf = ByteBuffer.allocate(4*da.length);
                 buf.order(ByteOrder.LITTLE_ENDIAN);
-                for (int i = 0; i < da.length; i++) {
-                    long lval = (long)da[i];
-                    buf.putInt((int)lval);
+                for (double v : da) {
+                    long lval = (long) v;
+                    buf.putInt((int) lval);
                 }
                 values = new byte[4*da.length];
                 buf.position(0);

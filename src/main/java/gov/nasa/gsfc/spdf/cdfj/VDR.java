@@ -86,8 +86,8 @@ public class VDR {
                     }
                     buf = ByteBuffer.allocate(4*lvalues.length);
                     buf.order(ByteOrder.LITTLE_ENDIAN);
-                    for (int i = 0; i < lvalues.length; i++) {
-                        buf.putInt((int)(lvalues[i] & longMask));
+                    for (long lvalue : lvalues) {
+                        buf.putInt((int) (lvalue & longMask));
                     }
                     buf.position(0);
                 } else {
@@ -99,13 +99,13 @@ public class VDR {
                         DataTypes.size[dataType]*values.length);
                     buf.order(ByteOrder.LITTLE_ENDIAN);
                     if (DataTypes.size[dataType] == 1) {
-                        for (int i = 0; i < values.length; i++) {
-                            buf.put((byte)(values[i] & 0xff));
+                        for (int value : values) {
+                            buf.put((byte) (value & 0xff));
                         }
                     } else {
                         if (DataTypes.size[dataType] == 2) {
-                            for (int i = 0; i < values.length; i++) {
-                                buf.putShort((short)(values[i] & 0xffff));
+                            for (int value : values) {
+                                buf.putShort((short) (value & 0xffff));
                             }
                         } else {
                             buf.asIntBuffer().put(values);

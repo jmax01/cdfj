@@ -35,7 +35,7 @@ public class ByteVarContainer extends BaseVarContainer implements
             count = 0;
             for (String sa1 : sa) {
                 ba = sa1.getBytes();
-                for (int b = 0; b < ba.length; b++) bpad[count++] = ba[b];
+                for (byte value : ba) bpad[count++] = value;
             }
         } else {
             double[] dpad = (double[])pad;
