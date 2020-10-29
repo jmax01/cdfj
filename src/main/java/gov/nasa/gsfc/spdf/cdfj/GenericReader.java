@@ -675,14 +675,14 @@ public class GenericReader extends MetaData {
 
     String threadName(String varName, String type, int[] recordRange,
         boolean preserve, java.nio.ByteOrder bo) {
-        StringBuffer sb = new StringBuffer(varName + "_" + type + "_");
+        StringBuilder sb = new StringBuilder(varName + "_" + type + "_");
         if (recordRange == null) {
             sb.append("null_");
         } else {
             sb.append(recordRange[0]).append("_").append(recordRange[1]);
             sb.append("_");
         }
-        sb.append(preserve).append("_" + Math.random() + "_" + bo);
+        sb.append(preserve).append("_").append(Math.random()).append("_").append(bo);
         return sb.toString();
     }
 

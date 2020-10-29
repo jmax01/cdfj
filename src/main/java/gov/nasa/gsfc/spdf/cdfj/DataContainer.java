@@ -209,14 +209,14 @@ public class DataContainer {
                 }
                 //if (!(new AArray(data)).validateDimensions(dcheck)) {
                 if (!Arrays.equals(aa.getDimensions(), dcheck)) {
-                    StringBuffer sbe = new StringBuffer();
+                    StringBuilder sbe = new StringBuilder();
                     for (int k : dcheck) {
-                        sbe.append("," + k);
+                        sbe.append(",").append(k);
                     }
-                    StringBuffer sbf = new StringBuffer("");
+                    StringBuilder sbf = new StringBuilder();
                     int[] fdim = aa.getDimensions();
                     for (int j : fdim) {
-                        sbf.append("," + j);
+                        sbf.append(",").append(j);
                     }
                     throw new Throwable("Dimension mismatch, expected: " +
                         sbe + " found " + sbf + ".");

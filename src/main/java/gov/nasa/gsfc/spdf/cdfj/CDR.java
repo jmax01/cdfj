@@ -16,7 +16,7 @@ public class CDR {
     int flags = 0x2; // single file always
     ByteBuffer record = ByteBuffer.allocate(8 + 4 + 8 + 4 +4 +
         4 + 4 + 4 + 4 + 4 + 4 + 4 + 256);
-    static String copyRight = new String("\012Common Data Format (CDF)\012https://cdf.gsfc.nasa.gov\012Space Physics Data Facility\012NASA/Goddard Space Flight Center\012Greenbelt, Maryland 20771 USA\012(User support: gsfc-cdf-support@lists.nasa.gov)\012");
+    static String copyRight = "\012Common Data Format (CDF)\012https://cdf.gsfc.nasa.gov\012Space Physics Data Facility\012NASA/Goddard Space Flight Center\012Greenbelt, Maryland 20771 USA\012(User support: gsfc-cdf-support@lists.nasa.gov)\012";
 
     /**
      *

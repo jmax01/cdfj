@@ -16,7 +16,7 @@ import java.util.zip.*;
     public static final int VXR_RECORD_TYPE = 6;
     public static final int VVR_RECORD_TYPE = 7;
     public static final int CVVR_RECORD_TYPE = 13;
-    public static final String STRINGDELIMITER = new String("\\N ");
+    public static final String STRINGDELIMITER = "\\N ";
     /**
      * CDF offsets
      */

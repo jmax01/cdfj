@@ -13,7 +13,7 @@ public class AEDR {
     static int SHORT_TYPE = 2;
     static int BYTE_TYPE = 1;
     static int STRING_TYPE = 51;
-    static String STRINGDELIMITER = new String("\\N ");
+    static String STRINGDELIMITER = "\\N ";
     ByteBuffer record = ByteBuffer.allocate(8 + 4 + 8 + 4 + 4 +
         4 + 4 + 3*4 + 2*4);
     /**
@@ -36,7 +36,7 @@ public class AEDR {
         if (c.isArray() && (c.getComponentType()==String.class)) {
             String[] strings = (String[]) value;
             int x;
-            StringBuffer str = new StringBuffer();
+            StringBuilder str = new StringBuilder();
             for (x = 0; x < strings.length; ++x) {
                str.append(strings[x]);
                if (x != (strings.length - 1)) str.append(STRINGDELIMITER);
@@ -184,7 +184,7 @@ public class AEDR {
     public void setValues(String[] s) throws Throwable {
         int x = s.length;
         int i;
-        StringBuffer str = new StringBuffer();
+        StringBuilder str = new StringBuilder();
         for (i = 0; i < x; ++i) {
            str.append(s[i]);
            if (i != (x - 1)) str.append(STRINGDELIMITER);
