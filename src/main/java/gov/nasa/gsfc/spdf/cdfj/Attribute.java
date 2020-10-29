@@ -1,6 +1,7 @@
 package gov.nasa.gsfc.spdf.cdfj;
+
 /**
- *  CDF Attribute specification
+ * CDF Attribute specification
  */
 public interface Attribute {
 
@@ -8,11 +9,11 @@ public interface Attribute {
      *
      * @return
      */
-    public String getName();
+    String getName();
 
     /**
      *
      * @return
      */
-    public boolean isGlobal();
+    boolean isGlobal();
 }

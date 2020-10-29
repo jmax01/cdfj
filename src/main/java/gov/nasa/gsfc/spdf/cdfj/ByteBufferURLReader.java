@@ -1,15 +1,21 @@
 package gov.nasa.gsfc.spdf.cdfj;
-import java.net.*;
-import java.io.*;
-import java.util.*;
-import java.util.zip.*;
-import java.nio.channels.FileChannel;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.Vector;
+import java.util.zip.GZIPInputStream;
+
 /**
  * @author nand
-*/
+ */
 public class ByteBufferURLReader {
+
     InputStream is;
+
     boolean eof = false;
 
     /**
@@ -21,30 +27,44 @@ public class ByteBufferURLReader {
      *
      */
     public int len = -1;
+
     Chunk chunk = new Chunk();
-    byte[] block = chunk.getBlock();
+
+    byte[] block = this.chunk.getBlock();
+
     FileChannel cacheFileChannel;
+
     ByteBuffer buffer;
 
     /**
      *
      * @param url
+     *
      * @throws IOException
      */
     public ByteBufferURLReader(URL url) throws IOException {
         URLConnection con = url.openConnection();
         con.connect();
-        len = con.getContentLength();
-        if (len >= 0) chunk.setLength(len);
-        is = con.getInputStream();
+        this.len = con.getContentLength();
+
+        if (this.len >= 0) {
+            this.chunk.setLength(this.len);
+        }
+
+        this.is = con.getInputStream();
         boolean gzipped = url.getPath().trim().endsWith(".gz");
-        if (gzipped) is = new GZIPInputStream(is);
+
+        if (gzipped) {
+            this.is = new GZIPInputStream(this.is);
+        }
+
     }
 
     /**
      *
      * @param url
      * @param chunk
+     *
      * @throws IOException
      */
     public ByteBufferURLReader(URL url, Chunk chunk) throws IOException {
@@ -56,27 +76,93 @@ public class ByteBufferURLReader {
      *
      * @param url
      * @param fc
-     * @param chunk
+     *
      * @throws IOException
      */
-    public ByteBufferURLReader(URL url, FileChannel fileChannel, Chunk chunk)
-        throws IOException {
-        this(url, chunk);
-        cacheFileChannel = fileChannel;
-        buffer = chunk.allocateBuffer();
+    public ByteBufferURLReader(URL url, FileChannel fileChannel) throws IOException {
+        this(url);
+        this.cacheFileChannel = fileChannel;
+        this.buffer = this.chunk.allocateBuffer();
     }
 
     /**
      *
      * @param url
      * @param fc
+     * @param chunk
+     *
      * @throws IOException
      */
-    public ByteBufferURLReader(URL url, FileChannel fileChannel) throws
-        IOException {
-        this(url);
-        cacheFileChannel = fileChannel;
-        buffer = chunk.allocateBuffer();
+    public ByteBufferURLReader(URL url, FileChannel fileChannel, Chunk chunk) throws IOException {
+        this(url, chunk);
+        this.cacheFileChannel = fileChannel;
+        this.buffer = chunk.allocateBuffer();
+    }
+
+    /**
+     *
+     * @return
+     */
+    public boolean endOfFile() {
+        return this.eof;
+    }
+
+    /**
+     *
+     * @return
+     *
+     * @throws IOException
+     */
+    public ByteBuffer getBuffer() throws IOException {
+        Vector<ByteBuffer> buffers = new Vector<>();
+
+        while (!this.eof) {
+
+            if (this.cacheFileChannel == null) {
+                buffers.add(read());
+            } else {
+                transfer();
+            }
+
+        }
+
+        if (this.cacheFileChannel != null) {
+            long pos = this.cacheFileChannel.position();
+            FileChannel.MapMode mode = FileChannel.MapMode.READ_ONLY;
+            return this.cacheFileChannel.map(mode, 0L, pos);
+        }
+
+        if (buffers.size() == 1) {
+            ByteBuffer _buf = buffers.get(0);
+            return _buf.asReadOnlyBuffer();
+        }
+
+        int size = 0;
+
+        for (ByteBuffer _buf : buffers) {
+            size += _buf.remaining();
+        }
+
+        ByteBuffer ball = ByteBuffer.allocateDirect(size);
+
+        for (ByteBuffer _buf : buffers) {
+            ball.put(_buf);
+        }
+
+        ball.position(0);
+        return ball.asReadOnlyBuffer();
+    }
+
+    /**
+     *
+     * @return
+     *
+     * @throws IOException
+     */
+    public ByteBuffer read() throws IOException {
+        ByteBuffer buf = this.chunk.allocateBuffer();
+        _read(buf);
+        return buf;
     }
 
     /**
@@ -85,53 +171,7 @@ public class ByteBufferURLReader {
      */
     public void setChunk(Chunk chunk) {
         this.chunk = chunk;
-        block = chunk.getBlock();
-    }
-
-    /**
-     *
-     * @return
-     * @throws IOException
-     */
-    public ByteBuffer getBuffer() throws IOException {
-        Vector<ByteBuffer> buffers = new Vector<>();
-        while (!eof) {
-            if (cacheFileChannel == null) {
-                buffers.add(read());
-            } else {
-                transfer();
-            }
-        }
-        if (cacheFileChannel != null) {
-            long pos = cacheFileChannel.position();
-            FileChannel.MapMode mode = FileChannel.MapMode.READ_ONLY;
-            return cacheFileChannel.map(mode, 0l, pos);
-        }
-        if (buffers.size() == 1) {
-            ByteBuffer _buf = buffers.get(0);
-            return _buf.asReadOnlyBuffer();
-        }
-        int size = 0;
-        for (ByteBuffer _buf : buffers) {
-            size += _buf.remaining();
-        }
-        ByteBuffer ball = ByteBuffer.allocateDirect(size);
-        for (ByteBuffer _buf : buffers) {
-            ball.put(_buf);
-        }
-        ball.position(0);
-        return ball.asReadOnlyBuffer();
-    }
-
-    /**
-     *
-     * @return
-     * @throws IOException
-     */
-    public ByteBuffer read() throws IOException {
-        ByteBuffer buf = chunk.allocateBuffer();
-        _read(buf);
-        return buf;
+        this.block = chunk.getBlock();
     }
 
     /**
@@ -139,8 +179,8 @@ public class ByteBufferURLReader {
      * @throws IOException
      */
     public void transfer() throws IOException {
-        _read(buffer);
-        cacheFileChannel.write(buffer);
+        _read(this.buffer);
+        this.cacheFileChannel.write(this.buffer);
     }
 
     private void _read(ByteBuffer buffer) throws IOException {
@@ -148,79 +188,115 @@ public class ByteBufferURLReader {
         int n;
         buffer.position(0);
         buffer.limit(buffer.capacity());
-        if (buffer.capacity() < 2*block.length) {
+
+        if (buffer.capacity() < (2 * this.block.length)) {
+
             for (int i = 0; i < buffer.capacity(); i++) {
-                n = is.read();
-                if (n == -1) throw new IOException("Premature end of data");
-                buffer.put((byte)n);
+                n = this.is.read();
+
+                if (n == -1) {
+                    throw new IOException("Premature end of data");
+                }
+
+                buffer.put((byte) n);
             }
-            if ((n = is.read(block)) != -1) {
+
+            if ((n = this.is.read(this.block)) != -1) {
                 throw new IOException("Unread data remains");
             }
+
             count = buffer.capacity();
-            total = count;
-            eof = true;
+            this.total = count;
+            this.eof = true;
         } else {
-            while ((n = is.read(block)) != -1) {
-                buffer.put(block, 0, n);
-                total += n;
+
+            while ((n = this.is.read(this.block)) != -1) {
+                buffer.put(this.block, 0, n);
+                this.total += n;
                 count += n;
-                if (len == buffer.capacity()) continue;
-                if (count >= chunk.chunkSize) break;
+
+                if (this.len == buffer.capacity()) {
+                    continue;
+                }
+
+                if (count >= this.chunk.chunkSize) {
+                    break;
+                }
+
             }
-            if (n == -1) eof = true;
-            if (eof && (len >= 0)) {
-                if (total != len) throw new IOException("Mismatched length " +
-                    total + " expected: " + len);
+
+            if (n == -1) {
+                this.eof = true;
             }
+
+            if (this.eof && (this.len >= 0)) {
+
+                if (this.total != this.len) {
+                    throw new IOException("Mismatched length " + this.total + " expected: " + this.len);
+                }
+
+            }
+
             buffer.limit(buffer.position());
         }
+
         buffer.position(0);
     }
 
     /**
      *
-     * @return
-     */
-    public boolean endOfFile() {return eof;}
-
-    /**
-     *
      */
     public static class Chunk {
-        int chunkSize = 1024*1024;
-        int blockSize = 64*1024;
+
+        int chunkSize = 1_024 * 1_024;
+
+        int blockSize = 64 * 1_024;
+
         int len = -1;
 
         /**
          *
          */
-        public Chunk() {}
+        public Chunk() {
+        }
 
         /**
          *
          * @param i
          * @param i1
+         *
          * @throws Throwable
          */
         public Chunk(int blockSize, int chunkSize) throws Throwable {
+
             if (chunkSize < blockSize) {
                 throw new Throwable("Chunk size must be >= block size");
             }
+
             this.blockSize = blockSize;
             this.chunkSize = chunkSize;
         }
 
-        void setLength(int length) {len = length;}
         ByteBuffer allocateBuffer() {
-            int bufsize = chunkSize + blockSize;
-            if (len < 0) return ByteBuffer.allocateDirect(bufsize);
-            if (len > bufsize) return ByteBuffer.allocateDirect(bufsize);
-            return ByteBuffer.allocateDirect(len);
+            int bufsize = this.chunkSize + this.blockSize;
+
+            if (this.len < 0) {
+                return ByteBuffer.allocateDirect(bufsize);
+            }
+
+            if (this.len > bufsize) {
+                return ByteBuffer.allocateDirect(bufsize);
+            }
+
+            return ByteBuffer.allocateDirect(this.len);
         }
 
         byte[] getBlock() {
-            return  new byte[blockSize];
+            return new byte[this.blockSize];
+        }
+
+        void setLength(int length) {
+            this.len = length;
         }
     }
 }

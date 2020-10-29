@@ -1,37 +1,53 @@
 package gov.nasa.gsfc.spdf.cdfj;
+
 /**
  * An instant of time in timeseries methods of cdfj is defined by a base
  * time which is the
- * offset in milliseconds since Epoch 0, and an offset relative to the base 
- * time specified in one of the following time units: milliseconds, 
+ * offset in milliseconds since Epoch 0, and an offset relative to the base
+ * time specified in one of the following time units: milliseconds,
  * microseconds, nanoseconds or pico seconds.
  * The default Time Instant Model sets the offset unit be millisecond.
- * 
+ *
  */
 public interface TimeInstantModel extends java.lang.Cloneable {
+
+    /**
+     *
+     * @return
+     */
+    Object clone();
+
     /**
      * Returns base time in base time units since Epoch 0.
-     * @return 
+     *
+     * @return
+     *
      * @see #getBaseTimeUnits()
      */
-    public double getBaseTime();
+    double getBaseTime();
 
     /**
      * Returns base time units.
-     * <p>Currently fixed as TimePrecision.MILLISECOND</p>
-     * @return 
+     * <p>
+     * Currently fixed as TimePrecision.MILLISECOND
+     * </p>
+     *
+     * @return
      */
-    public TimePrecision getBaseTimeUnits();
+    TimePrecision getBaseTimeUnits();
 
     /**
      * Returns time offset units.
-     * @return 
+     *
+     * @return
      */
-    public TimePrecision getOffsetUnits();
+    TimePrecision getOffsetUnits();
 
     /**
      * Sets time offset units.
-     * <p>Units must be compatible with the underlying data resolution.</p>
+     * <p>
+     * Units must be compatible with the underlying data resolution.
+     * </p>
      * <ul>
      * <li>If the time variable is type Epoch - units can only be millisecond
      * (TimePrecision.MILLISECOND).</li>
@@ -44,13 +60,8 @@ public interface TimeInstantModel extends java.lang.Cloneable {
      * <li>For TT2000 time variable, acceptable units are: millisecond,
      * microsecond, or nanosecond.</li>
      * </ul>
+     *
      * @param precision
      */
-    public void setOffsetUnits(TimePrecision precision);
-
-    /**
-     *
-     * @return
-     */
-    public Object clone();
+    void setOffsetUnits(TimePrecision precision);
 }

@@ -1,9 +1,12 @@
 package gov.nasa.gsfc.spdf.cdfj;
-import java.util.*;
+
+import java.util.Hashtable;
+
 /**
  * CDF Time types
  */
 public final class CDFTimeType {
+
     /**
      * EPOCH Type
      */
@@ -19,30 +22,35 @@ public final class CDFTimeType {
      */
     public static final CDFTimeType TT2000 = new CDFTimeType(33);
 
-    static Hashtable<String, CDFTimeType> ht = 
-        new Hashtable<String, CDFTimeType>();
+    static Hashtable<String, CDFTimeType> ht = new Hashtable<>();
     static {
         ht.put("epoch", EPOCH);
         ht.put("epoch16", EPOCH16);
         ht.put("tt2000", TT2000);
     }
+
     int _type;
+
     private CDFTimeType(int _type) {
         this._type = _type;
+    }
+
+    /**
+     * Returns CDFTimeType of the named time type.
+     *
+     * @param s
+     *
+     * @return
+     */
+    public static CDFTimeType getType(String s) {
+        return ht.get(s.toLowerCase());
     }
 
     /**
      *
      * @return
      */
-    public int getValue() {return _type;}
-
-    /**
-     * Returns CDFTimeType of the named time type.
-     * @param s
-     * @return 
-     */
-    public static CDFTimeType getType(String s) {
-        return ht.get(s.toLowerCase());
+    public int getValue() {
+        return this._type;
     }
 }

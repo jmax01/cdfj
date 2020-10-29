@@ -1,31 +1,63 @@
 package gov.nasa.gsfc.spdf.cdfj;
-import java.nio.*;
+
+import java.nio.ByteBuffer;
 
 /**
  *
  * @author nand
  */
 public class GDR {
-    ByteBuffer record = ByteBuffer.allocate(8 + 4 + 8 + 8 + 8 +
-        8 + 4 + 4 + 4 + 4 + 4 + 8 + 4 + 4 + 4);
+
+    ByteBuffer record = ByteBuffer.allocate(8 + 4 + 8 + 8 + 8 + 8 + 4 + 4 + 4 + 4 + 4 + 8 + 4 + 4 + 4);
 
     /**
      *
      */
     protected long position;
+
     long zVDRHead;
+
     long aDRHead;
+
     long eof;
+
     int numAttr;
+
     int nzVars;
+
     int lastLeapSecondId;
 
     /**
      *
-     * @param l
+     * @return
      */
-    public void setZVDRHead(long l) {
-        zVDRHead = l;
+    public ByteBuffer get() {
+        this.record.position(0);
+        this.record.putLong(this.record.capacity());
+        this.record.putInt(2);
+        this.record.putLong(0);
+        this.record.putLong(this.zVDRHead);
+        this.record.putLong(this.aDRHead);
+        this.record.putLong(this.eof);
+        this.record.putInt(0);
+        this.record.putInt(this.numAttr);
+        this.record.putInt(-1);
+        this.record.putInt(0);
+        this.record.putInt(this.nzVars);
+        this.record.putLong(0);
+        this.record.putInt(0);
+        this.record.putInt(this.lastLeapSecondId);
+        this.record.putInt(0);
+        this.record.position(0);
+        return this.record;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public int getSize() {
+        return this.record.limit();
     }
 
     /**
@@ -33,7 +65,7 @@ public class GDR {
      * @param l
      */
     public void setADRHead(long l) {
-        aDRHead = l;
+        this.aDRHead = l;
     }
 
     /**
@@ -41,23 +73,7 @@ public class GDR {
      * @param l
      */
     public void setEof(long l) {
-        eof = l;
-    }
-
-    /**
-     *
-     * @param n
-     */
-    public void setNumAttr(int n) {
-        numAttr = n;
-    }
-
-    /**
-     *
-     * @param n
-     */
-    public void setNzVars(int n) {
-        nzVars = n;
+        this.eof = l;
     }
 
     /**
@@ -65,37 +81,30 @@ public class GDR {
      * @param n
      */
     public void setLastLeapSecondId(int n) {
-        lastLeapSecondId = n;
+        this.lastLeapSecondId = n;
     }
 
     /**
      *
-     * @return
+     * @param n
      */
-    public ByteBuffer get() {
-        record.position(0);
-        record.putLong((long)(record.capacity()));
-        record.putInt(2);
-        record.putLong(0);
-        record.putLong(zVDRHead);
-        record.putLong(aDRHead);
-        record.putLong(eof);
-        record.putInt(0);
-        record.putInt(numAttr);
-        record.putInt(-1);
-        record.putInt(0);
-        record.putInt(nzVars);
-        record.putLong(0);
-        record.putInt(0);
-        record.putInt(lastLeapSecondId);
-        record.putInt(0);
-        record.position(0);
-        return record;
+    public void setNumAttr(int n) {
+        this.numAttr = n;
     }
 
     /**
      *
-     * @return
+     * @param n
      */
-    public int getSize() {return record.limit();}
+    public void setNzVars(int n) {
+        this.nzVars = n;
+    }
+
+    /**
+     *
+     * @param l
+     */
+    public void setZVDRHead(long l) {
+        this.zVDRHead = l;
+    }
 }

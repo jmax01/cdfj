@@ -1,6 +1,8 @@
 package gov.nasa.gsfc.spdf.cdfj;
-import java.nio.*;
-import java.lang.reflect.*;
+
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  *
@@ -12,11 +14,14 @@ public final class DataTypes {
      *
      */
     public static final int ENCODING_COUNT = 17;
+
     static final ByteOrder[] endian_ness = new ByteOrder[ENCODING_COUNT];
     static {
+
         for (int i = 0; i < ENCODING_COUNT; i++) {
             endian_ness[i] = null;
         }
+
         endian_ness[1] = ByteOrder.BIG_ENDIAN;
         endian_ness[2] = ByteOrder.BIG_ENDIAN;
         endian_ness[4] = ByteOrder.LITTLE_ENDIAN;
@@ -73,55 +78,62 @@ public final class DataTypes {
      *
      */
     public static final int LAST_TYPE = 53;
+
     static final Method[] method = new Method[LAST_TYPE];
+
     static final int[] typeCategory = new int[LAST_TYPE];
+
     static final int[] size = new int[LAST_TYPE];
+
     static final long[] longInt = new long[LAST_TYPE];
     static {
+
         for (int i = 0; i < LAST_TYPE; i++) {
             method[i] = null;
             size[i] = 1;
             typeCategory[i] = -1;
         }
+
         // byte
         Class bb = ByteBuffer.class;
+
         try {
-            Method meth = bb.getMethod("get", new Class[] {});
+            Method meth = bb.getMethod("get");
             method[1] = meth;
             typeCategory[1] = SIGNED_INTEGER;
             method[11] = meth;
             typeCategory[11] = UNSIGNED_INTEGER;
             method[41] = meth;
             typeCategory[41] = SIGNED_INTEGER;
-            meth = bb.getMethod("getShort", new Class[] {});
+            meth = bb.getMethod("getShort");
             method[2] = meth;
             typeCategory[2] = SIGNED_INTEGER;
             size[2] = 2;
             method[12] = meth;
             typeCategory[12] = UNSIGNED_INTEGER;
             size[12] = 2;
-            meth = bb.getMethod("getInt", new Class[] {});
+            meth = bb.getMethod("getInt");
             method[4] = meth;
             typeCategory[4] = SIGNED_INTEGER;
             size[4] = 4;
             method[14] = meth;
             typeCategory[14] = UNSIGNED_INTEGER;
             size[14] = 4;
-            meth = bb.getMethod("getLong", new Class[] {});
+            meth = bb.getMethod("getLong");
             method[8] = meth;
             typeCategory[8] = LONG;
             size[8] = 8;
             method[33] = meth;
             typeCategory[33] = LONG;
             size[33] = 8;
-            meth = bb.getMethod("getFloat", new Class[] {});
+            meth = bb.getMethod("getFloat");
             method[21] = meth;
             typeCategory[21] = FLOAT;
             size[21] = 4;
             method[44] = meth;
             typeCategory[44] = FLOAT;
             size[44] = 4;
-            meth = bb.getMethod("getDouble", new Class[] {});
+            meth = bb.getMethod("getDouble");
             method[22] = meth;
             typeCategory[22] = DOUBLE;
             size[22] = 8;
@@ -139,9 +151,15 @@ public final class DataTypes {
             typeCategory[52] = STRING;
         } catch (NoSuchMethodException | SecurityException ex) {
         }
+
         for (int i = 0; i < LAST_TYPE; i++) {
-            if (size[i] <= 4) longInt[i] = ((long)1) << 8*size[i];
+
+            if (size[i] <= 4) {
+                longInt[i] = (1L) << (8 * size[i]);
+            }
+
         }
+
     }
 
     /**
@@ -149,55 +167,80 @@ public final class DataTypes {
      */
     public DataTypes() {
         Class tc = getClass();
+
         try {
-            Method meth = tc.getMethod("getString",
-                new Class[] {ByteBuffer.class, Integer.class});
+            Method meth = tc.getMethod("getString", ByteBuffer.class, Integer.class);
             method[51] = meth;
             method[52] = meth;
         } catch (NoSuchMethodException | SecurityException ex) {
         }
+
+    }
+
+    /**
+     *
+     * @param type
+     *
+     * @return
+     */
+    public static Object defaultPad(int type) {
+
+        if (isLongType(type)) {
+            return -9_223_372_036_854_775_807L;
+        }
+
+        if (isStringType(type)) {
+            return " ".getBytes()[0];
+        }
+
+        return new Double(0);
+    }
+
+    /**
+     *
+     * @param encoding
+     *
+     * @return
+     *
+     * @throws Throwable
+     */
+    public static ByteOrder getByteOrder(int encoding) throws Throwable {
+
+        if (endian_ness[encoding] != null) {
+            return endian_ness[encoding];
+        }
+
+        throw new Throwable("Unsupported encoding " + encoding);
     }
 
     /**
      *
      * @param buf
      * @param nc
+     *
      * @return
      */
-    public static String getString(ByteBuffer buf, Integer nc)  {
+    public static String getString(ByteBuffer buf, Integer nc) {
         ByteBuffer slice = buf.slice();
-        byte [] ba = new byte[nc];
+        byte[] ba = new byte[nc];
         int i = 0;
+
         for (; i < ba.length; i++) {
             ba[i] = slice.get();
-            if (ba[i] == 0) break;
+
+            if (ba[i] == 0) {
+                break;
+            }
+
         }
+
         return new String(ba, 0, i);
     }
 
     /**
      *
-     * @param encoding
-     * @return
-     * @throws Throwable
-     */
-    public static ByteOrder getByteOrder(int encoding) throws Throwable {
-        if (endian_ness[encoding] != null) return endian_ness[encoding];
-        throw new Throwable("Unsupported encoding " + encoding);
-    }
-
-    /**
-     *
      * @param type
-     * @return
-     */
-    public static boolean isStringType(int type) {
-        return (typeCategory[type] == STRING);
-    }
-
-    /**
      *
-     * @param type
      * @return
      */
     public static boolean isLongType(int type) {
@@ -207,11 +250,10 @@ public final class DataTypes {
     /**
      *
      * @param type
+     *
      * @return
      */
-    public static Object defaultPad(int type) {
-        if (isLongType(type)) return -9223372036854775807L;
-        if (isStringType(type)) return " ".getBytes()[0];
-        return new Double(0);
+    public static boolean isStringType(int type) {
+        return (typeCategory[type] == STRING);
     }
 }

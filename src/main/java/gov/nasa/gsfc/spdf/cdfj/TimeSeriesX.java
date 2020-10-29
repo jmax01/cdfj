@@ -10,11 +10,11 @@ public interface TimeSeriesX extends TimeSeries {
      *
      * @return
      */
-    public boolean isOneD();
+    boolean isColumnMajor();
 
     /**
      *
      * @return
      */
-    public boolean isColumnMajor();
+    boolean isOneD();
 }

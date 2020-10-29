@@ -207,7 +207,7 @@ public class ADR {
      * @param s the s
      *
      * @return the name bytes
-     * 
+     *
      */
     public byte[] getNameBytes(final String s) {
 
@@ -225,6 +225,7 @@ public class ADR {
         for (; i < padded.length; i++) {
             padded[i] = 0;
         }
+
         return padded;
     }
 
@@ -237,7 +238,6 @@ public class ADR {
     public int getSize() {
         return this.record.limit();
     }
-
 
     /**
      * Sets the ADR next.
@@ -257,7 +257,6 @@ public class ADR {
     public void setADRNext(final long aDRNext) {
         this.aDRNext = aDRNext;
     }
-
 
     /**
      * Sets the agr EDR head.
@@ -287,13 +286,12 @@ public class ADR {
      * AgrEDRs of a global-scoped attribute describe gEntries.
      * <p>
      * AgrEDRs of a variable-scoped attribute describe rEntries.
-     * 
+     *
      * @param agrEDRHead the new agr EDR head
      */
     public void setAgrEDRHead(final long agrEDRHead) {
         this.agrEDRHead = agrEDRHead;
     }
-
 
     /**
      * Sets the az EDR head.
@@ -311,7 +309,7 @@ public class ADR {
      * <p>
      * The last AzEDR will contain a file offset of 0x0000000000000000 for the file
      * offset of the next AzEDR (to indicate the end of the AzEDRs).
-     * 
+     *
      * @param azEDRHead the new az EDR head
      */
     public void setAzEDRHead(final long azEDRHead) {
@@ -328,12 +326,12 @@ public class ADR {
      * g/rEntries are numbered beginning with zero (0).
      * <p>
      * If there are no g/rEntries, this field will contain negative one (-1).
+     *
      * @param mAXgrEntry the new MA xgr entry
      */
     public void setMAXgrEntry(final int mAXgrEntry) {
         this.mAXgrEntry = mAXgrEntry;
     }
-
 
     /**
      * Sets the Max z entry.
@@ -346,13 +344,12 @@ public class ADR {
      * <p>
      * Prior to CDF V2.2 this field will always contain a value of negative one
      * (-1).
-     * 
+     *
      * @param mAXzEntry the new MA xz entry
      */
     public void setMAXzEntry(final int mAXzEntry) {
         this.mAXzEntry = mAXzEntry;
     }
-
 
     /**
      * Sets the name.
@@ -370,7 +367,7 @@ public class ADR {
      * this field) are undefined.
      *
      * @param name the new name, may not be null.
-     * 
+     *
      * @throws IllegalArgumentException if the name is longer than
      *                                  {@link ADR_NAME_LENGTH}.
      */
@@ -397,14 +394,13 @@ public class ADR {
         this.paddedName = paddedName;
     }
 
-
     /**
      * Sets the ngr entries.
      * <p>
      * The number of g/rEntries for this attribute.
      * <p>
      * Signed 4-byte integer, big-endian byte ordering.
-     * 
+     *
      *
      * @param ngrEntries the new ngr entries
      */
@@ -420,13 +416,12 @@ public class ADR {
      * Signed 4-byte integer, big-endian byte ordering.
      * <p>
      * Attributes are numbered beginning with zero (0)
-     * 
+     *
      * @param num the new num
      */
     public void setNum(final int num) {
         this.num = num;
     }
-
 
     /**
      * Sets the nz entries.
@@ -436,13 +431,12 @@ public class ADR {
      * Signed 4-byte integer, big-endian byte ordering.
      * <p>
      * Prior to CDF V2.2 this field will always contain a value of zero (0).
-     * 
+     *
      * @param nzEntries the new nz entries
      */
     public void setNzEntries(final int nzEntries) {
         this.nzEntries = nzEntries;
     }
-
 
     /**
      * Sets the scope.
@@ -460,24 +454,25 @@ public class ADR {
      * 3 Global scope assumed.
      * <p>
      * 4 Variable scope assumed.
-     * 
+     *
      * @param scope the new scope
-     * 
+     *
      * @throws {@link IllegalArgumentException} if the supplied scope is not 1,
      *                2, 3,or 4;
      */
     public void setScope(final int scope) {
 
         switch (scope) {
-        case ADR_GLOBAL_SCOPE:
-        case ADR_VARIABLE_SCOPE:
-        case ADR_GLOBAL_SCOPE_ASSUMED:
-        case ADR_VARIABLE_SCOPE_ASSUMED:
-            break;
-        default:
-            throw new IllegalArgumentException("Scope, " + scope + ", is not valid. Scope must be 1, 2, 3, or 4.");
+            case ADR_GLOBAL_SCOPE:
+            case ADR_VARIABLE_SCOPE:
+            case ADR_GLOBAL_SCOPE_ASSUMED:
+            case ADR_VARIABLE_SCOPE_ASSUMED:
+                break;
+            default:
+                throw new IllegalArgumentException("Scope, " + scope + ", is not valid. Scope must be 1, 2, 3, or 4.");
 
         }
+
         this.scope = scope;
     }
 }

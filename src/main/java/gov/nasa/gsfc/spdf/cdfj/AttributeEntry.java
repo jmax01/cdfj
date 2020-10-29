@@ -1,4 +1,5 @@
 package gov.nasa.gsfc.spdf.cdfj;
+
 /**
  * Specifes an attribute entry.
  */
@@ -8,48 +9,49 @@ public interface AttributeEntry {
      *
      * @return
      */
-    public int getType();
+    String getAttributeName();
 
     /**
      *
      * @return
      */
-    public Object getValue();
+    int getNumberOfElements();
 
     /**
      *
      * @return
      */
-    public boolean isStringType();
+    int getType();
 
     /**
      *
      * @return
      */
-    public boolean isLongType();
+    Object getValue();
 
     /**
      *
      * @return
      */
-    public String getAttributeName();
+    int getVariableNumber();
 
     /**
      *
      * @return
      */
-    public int getVariableNumber(); 
-
-    /**
-     *
-     * @return
-     */
-    public int getNumberOfElements();
+    boolean isLongType();
 
     /**
      *
      * @param ae
+     *
      * @return
      */
-    public boolean isSameAs(AttributeEntry ae);
+    boolean isSameAs(AttributeEntry ae);
+
+    /**
+     *
+     * @return
+     */
+    boolean isStringType();
 }

@@ -1,4 +1,5 @@
 package gov.nasa.gsfc.spdf.cdfj;
+
 /**
  * CDF Data types
  */
@@ -68,26 +69,42 @@ public final class CDFDataType {
      * TT2000
      */
     public static final CDFDataType TT2000 = new CDFDataType(33);
+
     int type;
+
     private CDFDataType(int type) {
         this.type = type;
+    }
+
+    /**
+     * Returns CDFDataType for a given CDFTimeType.
+     *
+     * @param type
+     *
+     * @return
+     */
+    public static CDFDataType getType(CDFTimeType type) {
+
+        if (type.getValue() == 31) {
+            return EPOCH;
+        }
+
+        if (type.getValue() == 32) {
+            return EPOCH16;
+        }
+
+        if (type.getValue() == 33) {
+            return TT2000;
+        }
+
+        return null;
     }
 
     /**
      *
      * @return
      */
-    public int getValue() {return type;}
-
-    /**
-     * Returns CDFDataType for a given CDFTimeType.
-     * @param type
-     * @return 
-     */
-    public static CDFDataType getType(CDFTimeType type) {
-        if (type.getValue() == 31) return EPOCH;
-        if (type.getValue() == 32) return EPOCH16;
-        if (type.getValue() == 33) return TT2000;
-        return null;
+    public int getValue() {
+        return this.type;
     }
 }

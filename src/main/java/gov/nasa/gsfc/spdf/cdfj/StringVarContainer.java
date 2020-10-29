@@ -1,25 +1,26 @@
 package gov.nasa.gsfc.spdf.cdfj;
-import java.nio.*;
-import java.lang.reflect.*;
+
+import java.lang.reflect.InvocationTargetException;
+import java.nio.ByteBuffer;
 
 /**
  *
  * @author nand
  */
-public final class StringVarContainer extends ByteVarContainer implements 
-    VDataContainer.CString {
+public final class StringVarContainer extends ByteVarContainer implements VDataContainer.CString {
 
     /**
      *
      * @param cdfi
      * @param vrbl
      * @param ints
+     *
      * @throws IllegalAccessException
      * @throws InvocationTargetException
      * @throws Throwable
      */
-    public StringVarContainer(CDFImpl thisCDF, Variable var, int[] pt) throws
-        IllegalAccessException, InvocationTargetException, Throwable {
+    public StringVarContainer(CDFImpl thisCDF, Variable var, int[] pt)
+            throws IllegalAccessException, InvocationTargetException, Throwable {
         super(thisCDF, var, pt);
     }
 
@@ -27,86 +28,105 @@ public final class StringVarContainer extends ByteVarContainer implements
      *
      * @param type
      * @param preserve
+     *
      * @return
      */
     public static boolean isCompatible(int type, boolean preserve) {
-        if  (isCompatible(type, preserve, Byte.TYPE)) {
+
+        if (isCompatible(type, preserve, Byte.TYPE)) {
             boolean stringType = DataTypes.isStringType(type);
             return stringType;
         }
+
         return false;
     }
 
     /**
      *
      * @return
+     *
      * @throws Throwable
      */
     @Override
     public Object _asArray() throws Throwable {
-        int rank = var.getEffectiveRank();
+        int rank = this.var.getEffectiveRank();
+
         if (rank > 1) {
             throw new Throwable("Rank > 1 not supported for strings.");
         }
+
         ByteBuffer buf = getBuffer();
-        if (buf == null) return null;
+
+        if (buf == null) {
+            return null;
+        }
+
         int words = buf.remaining();
         int records = -1;
-        int len = var.getNumberOfElements();
+        int len = this.var.getNumberOfElements();
         byte[] ba = new byte[len];
+
         switch (rank) {
-        case 0:
-            records = words/len;
-            String[] sa = new String[records];
-            for (int r = 0; r < records; r++) {
-                buf.get(ba);
-                sa[r] = new String(ba);
-            }
-            return sa;
-        case 1:
-            int n0 =
-                    (((Integer)var.getElementCount().elementAt(0)));
-            records = words/(n0*len);
-            String[][] sa1 = new String[records][n0];
-            for (int r = 0; r < records; r++) {
-                for (int e = 0; e < n0; e++) {
+            case 0:
+                records = words / len;
+                String[] sa = new String[records];
+                for (int r = 0; r < records; r++) {
                     buf.get(ba);
-                    sa1[r][e] = new String(ba);
+                    sa[r] = new String(ba);
                 }
-            }
-            return sa1;
-        default:
-            throw new Throwable("Internal error");
+                return sa;
+            case 1:
+                int n0 = (((Integer) this.var.getElementCount().elementAt(0)));
+                records = words / (n0 * len);
+                String[][] sa1 = new String[records][n0];
+                for (int r = 0; r < records; r++) {
+
+                    for (int e = 0; e < n0; e++) {
+                        buf.get(ba);
+                        sa1[r][e] = new String(ba);
+                    }
+
+                }
+                return sa1;
+            default:
+                throw new Throwable("Internal error");
         }
+
     }
 
     @Override
-    public byte[] as1DArray() {return (byte[])super.as1DArray();}
-
-    /**
-     *
-     * @return
-     */
-    @Override
-    public byte[] asOneDArray() {return (byte[])super.asOneDArray();}
-
-    /**
-     *
-     * @param cmtarget
-     * @return
-     */
-    @Override
-    public byte[] asOneDArray(boolean cmtarget) {
-        return (byte[])super.asOneDArray(cmtarget);
+    public byte[] as1DArray() {
+        return super.as1DArray();
     }
 
     /**
      *
      * @return
+     *
      * @throws Throwable
      */
     @Override
     public AArray asArray() throws Throwable {
         return new StringArray(_asArray());
+    }
+
+    /**
+     *
+     * @return
+     */
+    @Override
+    public byte[] asOneDArray() {
+        return super.asOneDArray();
+    }
+
+    /**
+     *
+     * @param cmtarget
+     *
+     * @return
+     */
+    @Override
+    public byte[] asOneDArray(boolean cmtarget) {
+        return super.asOneDArray(cmtarget);
     }
 }
