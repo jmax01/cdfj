@@ -549,10 +549,9 @@ public class GenericReader extends MetaData {
                 threadMap.remove(threadName);
                 return buffer;
             }
-        } else {
-            throw new CDFException.ReaderError("Thread " + threadName +
-            " is working");
         }
+        throw new CDFException.ReaderError("Thread " + threadName +
+        " is working");
     }
 
     /**
@@ -579,10 +578,9 @@ public class GenericReader extends MetaData {
                 threadMap.remove(threadName);
                 return array;
             }
-        } else {
-            throw new CDFException.ReaderError("Thread " + threadName +
-            " is working");
         }
+        throw new CDFException.ReaderError("Thread " + threadName +
+        " is working");
     }
 
     /**
@@ -889,15 +887,9 @@ public class GenericReader extends MetaData {
     private static boolean coreNeeded(Variable var, int[] range) {
         int[] available = var.getRecordRange();
         if (range.length == 1) {
-            if (range[0] >= available[0]) {
-                return var.isMissingRecords();
-            }
-            return true;
+            return range[0] < available[0] || var.isMissingRecords();
         }
-        if ((range[0] >= available[0]) && (range[1] <= available[1])) {
-            return var.isMissingRecords();
-        }
-        return true;
+        return (range[0] < available[0]) || (range[1] > available[1]) || var.isMissingRecords();
     }
 
     VDataContainer getContainer(String varName, Class type,

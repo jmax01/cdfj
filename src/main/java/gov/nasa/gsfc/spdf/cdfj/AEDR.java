@@ -244,69 +244,84 @@ public class AEDR {
             values = new byte[8*da.length];
             buf.get(values);
             return;
-        } else {
-            if ((dataType == 22) || (dataType == 45) || (dataType == 31) ||
-                (dataType == 32)) {
-                if (dataType == 32) setNumElems(da.length/2);
-                ByteBuffer buf = ByteBuffer.allocate(8*da.length);
-                buf.order(ByteOrder.LITTLE_ENDIAN);
-                buf.asDoubleBuffer().put(da);
-                values = new byte[8*da.length];
-                buf.get(values);
-                return;
+        }
+
+        if ((dataType == 22) || (dataType == 45) || (dataType == 31) || (dataType == 32)) {
+            if (dataType == 32)
+                setNumElems(da.length / 2);
+            ByteBuffer buf = ByteBuffer.allocate(8 * da.length);
+            buf.order(ByteOrder.LITTLE_ENDIAN);
+            buf.asDoubleBuffer().put(da);
+            values = new byte[8 * da.length];
+            buf.get(values);
+            return;
+        }
+
+        if ((dataType == 21) || (dataType == 44)) {
+            ByteBuffer buf = ByteBuffer.allocate(4 * da.length);
+            buf.order(ByteOrder.LITTLE_ENDIAN);
+
+            for (double v : da) {
+                buf.putFloat((float) v);
             }
-            if ((dataType == 21) || (dataType == 44)) {
-                ByteBuffer buf = ByteBuffer.allocate(4*da.length);
-                buf.order(ByteOrder.LITTLE_ENDIAN);
-                for (double v : da) {
-                    buf.putFloat((float) v);
-                }
-                values = new byte[4*da.length];
-                buf.position(0);
-                buf.get(values);
-                return;
+
+            values = new byte[4 * da.length];
+            buf.position(0);
+            buf.get(values);
+            return;
+        }
+
+        if ((dataType == 1) || (dataType == 11)) {
+            values = new byte[da.length];
+
+            for (int i = 0; i < da.length; i++) {
+                values[i] = (byte) da[i];
             }
-            if ((dataType == 1) || (dataType == 11)) {
-                values = new byte[da.length];
-                for (int i = 0; i < da.length; i++) {
-                    values[i] = (byte)da[i];
-                }
-                return;
+
+            return;
+        }
+
+        if ((dataType == 2) || (dataType == 12)) {
+            ByteBuffer buf = ByteBuffer.allocate(2 * da.length);
+            buf.order(ByteOrder.LITTLE_ENDIAN);
+
+            for (double v : da) {
+                buf.putShort((short) v);
             }
-            if ((dataType == 2) || (dataType == 12)) {
-                ByteBuffer buf = ByteBuffer.allocate(2*da.length);
-                buf.order(ByteOrder.LITTLE_ENDIAN);
-                for (double v : da) {
-                    buf.putShort((short) v);
-                }
-                values = new byte[2*da.length];
-                buf.position(0);
-                buf.get(values);
-                return;
+
+            values = new byte[2 * da.length];
+            buf.position(0);
+            buf.get(values);
+            return;
+        }
+
+        if (dataType == 4) {
+            ByteBuffer buf = ByteBuffer.allocate(4 * da.length);
+            buf.order(ByteOrder.LITTLE_ENDIAN);
+
+            for (double v : da) {
+                buf.putInt((int) v);
             }
-            if (dataType == 4) {
-                ByteBuffer buf = ByteBuffer.allocate(4*da.length);
-                buf.order(ByteOrder.LITTLE_ENDIAN);
-                for (double v : da) {
-                    buf.putInt((int) v);
-                }
-                values = new byte[4*da.length];
-                buf.position(0);
-                buf.get(values);
-                return;
+
+            values = new byte[4 * da.length];
+            buf.position(0);
+            buf.get(values);
+            return;
+        }
+
+        if (dataType == 14) {
+            ByteBuffer buf = ByteBuffer.allocate(4 * da.length);
+            buf.order(ByteOrder.LITTLE_ENDIAN);
+
+            for (double v : da) {
+                long lval = (long) v;
+                buf.putInt((int) lval);
             }
-            if (dataType == 14) {
-                ByteBuffer buf = ByteBuffer.allocate(4*da.length);
-                buf.order(ByteOrder.LITTLE_ENDIAN);
-                for (double v : da) {
-                    long lval = (long) v;
-                    buf.putInt((int) lval);
-                }
-                values = new byte[4*da.length];
-                buf.position(0);
-                buf.get(values);
-                return;
-            }
+
+            values = new byte[4 * da.length];
+            buf.position(0);
+            buf.get(values);
+            return;
         }
         throw new Throwable("Incompatible data type " + dataType +
         " for Double.");

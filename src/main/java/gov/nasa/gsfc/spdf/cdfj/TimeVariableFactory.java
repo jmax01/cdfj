@@ -344,11 +344,10 @@ public class TimeVariableFactory {
                 last = i;
                 if (stop < temp[i]) {
                     break;
-                } else {
-                    if (stop == temp[i]) {
-                        last = i - 1;
-                        break;
-                    }
+                }
+                if (stop == temp[i]) {
+                    last = i - 1;
+                    break;
                 }
             }
             return new int[] {low, last};
@@ -733,8 +732,7 @@ public class TimeVariableFactory {
         public boolean isTT2000() {return false;}
         @Override
         public boolean canSupportPrecision(TimePrecision tp) {
-            if (tp == TimePrecision.MICROSECOND) return true;
-            return tp == TimePrecision.MILLISECOND;
+            return tp == TimePrecision.MICROSECOND || tp == TimePrecision.MILLISECOND;
         }
     }
 

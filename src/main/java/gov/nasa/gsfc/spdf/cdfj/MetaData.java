@@ -450,8 +450,7 @@ public abstract class MetaData {
      * @return 
      */
     public final boolean existsVariable(String varName) {
-        if (varName == null) return false;
-        return (thisCDF.getVariable(varName) != null);
+        return varName != null && (thisCDF.getVariable(varName) != null);
     }
 
     /**

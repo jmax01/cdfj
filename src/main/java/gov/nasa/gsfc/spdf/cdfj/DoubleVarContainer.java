@@ -167,7 +167,7 @@ public final class DoubleVarContainer extends BaseVarContainer implements
                 for (int e = 0; e < _num; e++) {
                     Number num = (Number)method.invoke(bv, new Object[] {});
                     int x = num.intValue();
-                    data[e] = (x >= 0)?(double)x:(double)(longInt + x);
+                    data[e] = (double) (x >= 0 ? x : longInt + x);
                 }
                 dbuf.put(data, 0, _num);
                 position += 8*_num;
@@ -340,18 +340,17 @@ public final class DoubleVarContainer extends BaseVarContainer implements
                 pos += n;
             }
             return _a1;
-        } else {
-            int ne = elements.length;
-            double[][] data = new double[records][ne];
-            int pos = 0;
-            for (int r = 0; r < records; r++) {
-                for (int i = 0; i < ne; i++) {
-                    data[r][i] = _buf.get(pos + elements[i]);
-                }
-                pos += n;
-            }
-            return data;
         }
+        int ne = elements.length;
+        double[][] data = new double[records][ne];
+        int pos = 0;
+        for (int r = 0; r < records; r++) {
+            for (int i = 0; i < ne; i++) {
+                data[r][i] = _buf.get(pos + elements[i]);
+            }
+            pos += n;
+        }
+        return data;
     }
 
     /**

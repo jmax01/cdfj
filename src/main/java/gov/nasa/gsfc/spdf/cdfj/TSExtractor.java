@@ -279,30 +279,29 @@ public class TSExtractor extends Extractor {
                 }
             }
             return new Object[] {_times, _data};
-        } else {
-            if (!(o.getClass().getComponentType() == Long.TYPE)) return null;
-            long lpad = pad.longValue();
-            long[] ldata = (long[])o;
-            int npad = 0;
-            for (int i = 0; i < ldata.length; i++) {
-                if (sensor.hasRecord(first + i)) continue;
-                if (ldata[i] == lpad) npad++;
-            }
-            if (npad == 0) {
-                return new Object[] {times, ldata};
-            }
-            long[] _data = new long[ldata.length - npad];
-            double[] _times = new double[ldata.length - npad];
-            int index = 0;
-            for (int i = 0; i < ldata.length; i++) {
-                if (sensor.hasRecord(first + i) || (ldata[i] != lpad)) {
-                    _data[index] = ldata[i];
-                    _times[index] = times[i];
-                    index++;
-                }
-            }
-            return new Object[] {_times, _data};
         }
+        if (o.getClass().getComponentType() != Long.TYPE) return null;
+        long lpad = pad.longValue();
+        long[] ldata = (long[])o;
+        int npad = 0;
+        for (int i = 0; i < ldata.length; i++) {
+            if (sensor.hasRecord(first + i)) continue;
+            if (ldata[i] == lpad) npad++;
+        }
+        if (npad == 0) {
+            return new Object[] {times, ldata};
+        }
+        long[] _data = new long[ldata.length - npad];
+        double[] _times = new double[ldata.length - npad];
+        int index = 0;
+        for (int i = 0; i < ldata.length; i++) {
+            if (sensor.hasRecord(first + i) || (ldata[i] != lpad)) {
+                _data[index] = ldata[i];
+                _times[index] = times[i];
+                index++;
+            }
+        }
+        return new Object[] {_times, _data};
     }
 
     /**
@@ -368,9 +367,7 @@ public class TSExtractor extends Extractor {
         double[] stimes;
         Stride strideObject = new Stride(stride);
         if (timeRange == null) {
-            vdata = (which == null)?
-                   (double[])getSeries0(rdr.thisCDF, var, strideObject):
-                   (double[])getElement1(rdr.thisCDF, var, which, strideObject);
+            vdata = (double[]) (which == null ? getSeries0(rdr.thisCDF, var, strideObject) : getElement1(rdr.thisCDF, var, which, strideObject));
         } else {
             recordRange = getRecordRange(rdr, var, timeRange);
             if (recordRange == null) return null;
@@ -387,53 +384,47 @@ public class TSExtractor extends Extractor {
             if (timeRange == null) {
                 if (_stride == 1) {
                     return new double [][] {times, vdata};
-                } else {
-                    stimes = new double[vdata.length];
-                    for (int i = 0; i < vdata.length; i ++) {
-                        stimes[i] = times[i*_stride];
-                    }
-                    return new double [][] {stimes, vdata};
                 }
-            } else {
-                stimes = new double[vdata.length];
-                if (_stride == 1) {
-                    System.arraycopy(times, recordRange[0], stimes, 0,
-                        vdata.length);
-                    return new double [][] {stimes, vdata};
-                } else {
-                    int srec = recordRange[0];
-                    for (int i = 0; i < vdata.length; i ++) {
-                        stimes[i] = times[srec + i*_stride];
-                    }
-                    return new double [][] {stimes, vdata};
-                }
-            }
-        }
-        // fill values need to be filtered
-        if (timeRange == null) {
-            if (_stride == 1) {
-                return filterFill(times, vdata, fill[1], 0);
-            } else {
                 stimes = new double[vdata.length];
                 for (int i = 0; i < vdata.length; i ++) {
                     stimes[i] = times[i*_stride];
                 }
-                return filterFill(stimes, vdata, fill[1], 0);
+                return new double [][] {stimes, vdata};
             }
-        } else {
             stimes = new double[vdata.length];
             if (_stride == 1) {
                 System.arraycopy(times, recordRange[0], stimes, 0,
                     vdata.length);
-                return filterFill(stimes, vdata, fill[1], 0);
             } else {
                 int srec = recordRange[0];
                 for (int i = 0; i < vdata.length; i ++) {
                     stimes[i] = times[srec + i*_stride];
                 }
-                return filterFill(stimes, vdata, fill[1], 0);
+            }
+            return new double [][] {stimes, vdata};
+        }
+        // fill values need to be filtered
+        if (timeRange == null) {
+            if (_stride == 1) {
+                return filterFill(times, vdata, fill[1], 0);
+            }
+            stimes = new double[vdata.length];
+            for (int i = 0; i < vdata.length; i ++) {
+                stimes[i] = times[i*_stride];
+            }
+            return filterFill(stimes, vdata, fill[1], 0);
+        }
+        stimes = new double[vdata.length];
+        if (_stride == 1) {
+            System.arraycopy(times, recordRange[0], stimes, 0,
+                vdata.length);
+        } else {
+            int srec = recordRange[0];
+            for (int i = 0; i < vdata.length; i ++) {
+                stimes[i] = times[srec + i*_stride];
             }
         }
+        return filterFill(stimes, vdata, fill[1], 0);
     }
 
     /**
@@ -626,10 +617,9 @@ public class TSExtractor extends Extractor {
                 if (!oned) {
                     return thisCDF.getRange(vname, recordRange[0],
                     recordRange[1]);
-                } else {
-                    return thisCDF.getRangeOneD(vname, recordRange[0],
-                    recordRange[1], columnMajor);
                 }
+                return thisCDF.getRangeOneD(vname, recordRange[0],
+                recordRange[1], columnMajor);
             } catch (Throwable th) {
                 throw new CDFException.ReaderError(th.getMessage());
             }

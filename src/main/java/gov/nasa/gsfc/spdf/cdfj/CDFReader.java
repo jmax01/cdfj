@@ -221,8 +221,7 @@ public class CDFReader extends GenericReader {
         }
     }
     boolean overlaps(double[] t) {
-        if (t[0] == Double.MIN_VALUE) return false;
-        return t[0] != Double.MAX_VALUE;
+        return t[0] != Double.MIN_VALUE && t[0] != Double.MAX_VALUE;
     }
 
     /**
@@ -352,8 +351,7 @@ public class CDFReader extends GenericReader {
             boolean isTT2000 =
                 TimeVariableFactory.getTimeVariable(this, varName).isTT2000();
             long l = TSExtractor.getTime(baseTime);
-            double msec = (!isTT2000)?(double)l:
-                TimeUtil.milliSecondSince1970(l);
+            double msec = (isTT2000) ? TimeUtil.milliSecondSince1970(l) : (double) l;
             msec += TimeVariableFactory.JANUARY_1_1970_LONG;
             return getTimeInstantModel(msec);
         } catch (Throwable th) {

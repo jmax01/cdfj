@@ -170,7 +170,7 @@ public final class FloatVarContainer extends BaseVarContainer implements
                 for (int e = 0; e < _num; e++) {
                     Number num = (Number)method.invoke(bv, new Object[] {});
                     int x = num.intValue();
-                    data[e] = (x >= 0)?(float)x:(float)(longInt + x);
+                    data[e] = (float) (x >= 0 ? x : longInt + x);
                 }
                 fbuf.put(data, 0, _num);
                 position += 4*_num;

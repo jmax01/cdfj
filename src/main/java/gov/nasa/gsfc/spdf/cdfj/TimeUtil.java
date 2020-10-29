@@ -9,7 +9,7 @@ import java.text.*;
 public class TimeUtil {
     static final long[] jtimes;
     static final int[] leapSecondIds;
-    static final long[] tt_times;;
+    static final long[] tt_times;
     static final int HIGHEST;
     static SimpleDateFormat sdf =
         new SimpleDateFormat("y'-'M'-'dd'T'HH:mm:ss.SSS");
@@ -294,10 +294,9 @@ public class TimeUtil {
                     if (varTime < tt_times[i + 1]) break;
                 }
                 return varTime + (i - id)*1000000000L;
-            } else {
-                if (varTime < tt_times[jtimes.length - 1]) return varTime;
-                throw new Throwable("Out of date Leap second table");
             }
+            if (varTime < tt_times[jtimes.length - 1]) return varTime;
+            throw new Throwable("Out of date Leap second table");
         }
     }
 }

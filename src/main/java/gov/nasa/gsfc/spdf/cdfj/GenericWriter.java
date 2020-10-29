@@ -369,7 +369,7 @@ public class GenericWriter {
      */
     public void defineVariable(String name, CDFDataType dataType, int[] dim,
         int size) throws CDFException.WriterError {
-        if (!(dataType == CDFDataType.CHAR) && (size > 1)) throw new
+        if (dataType != CDFDataType.CHAR && (size > 1)) throw new
             CDFException.WriterError( "incompatible size for type " + dataType);
         boolean[] varys = new boolean[dim.length];
         for (int i = 0; i < varys.length; i++) varys[i] = true;
@@ -472,7 +472,7 @@ public class GenericWriter {
      */ 
     public void addNRVVariable(String name, CDFDataType dataType, int[] dim,
         int size, Object value) throws CDFException.WriterError {
-        if (!(dataType == CDFDataType.CHAR) && (size > 1)) throw new
+        if (dataType != CDFDataType.CHAR && (size > 1)) throw new
             CDFException.WriterError( "incompatible size for type " + dataType);
         boolean[] varys = new boolean[dim.length];
         for (int i = 0; i < varys.length; i++) varys[i] = true;

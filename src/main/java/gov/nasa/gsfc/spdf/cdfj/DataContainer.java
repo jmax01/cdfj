@@ -105,8 +105,7 @@ public class DataContainer {
                     doNotCompress = (recordRange.length == 2);
                     _doNotCompress = doNotCompress;
                 } else {
-                    if ((doNotCompress && (recordRange.length > 2)) ||
-                       (!doNotCompress && (recordRange.length == 2))) {
+                    if (doNotCompress ? recordRange.length > 2 : recordRange.length == 2) {
                        String t = "compressed";
                        if (!doNotCompress) t = "uncompressed";
                         throw new Throwable("Changing compression mode of" +
@@ -666,8 +665,7 @@ public class DataContainer {
             e16[1] =  buf.getDouble(buf.limit() - 8);
             double[] next = (double[])nextTime;
             if (next[0] > e16[0]) return true;
-            if (next[0] < e16[0]) return false;
-            return (next[1] > e16[1]);
+            return !(next[0] < e16[0]) && (next[1] > e16[1]);
         }
         double[] next = (double[])nextTime;
         return (next[0] > buf.getDouble(buf.limit() - 8));

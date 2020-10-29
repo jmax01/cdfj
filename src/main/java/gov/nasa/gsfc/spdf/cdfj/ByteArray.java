@@ -54,7 +54,7 @@ public class ByteArray extends AArray {
      */
     @Override
     public ByteBuffer buffer(Class<?> cl, int ignore) throws Throwable {
-        if (!(cl == Byte.TYPE)) {
+        if (cl != Byte.TYPE) {
             throw new Throwable("Only byte targets supported");
         }
         if (dim > 4) throw new Throwable("Rank > 4 not supported");

@@ -54,7 +54,7 @@ public class FloatArray extends AArray {
      */
     @Override
     public ByteBuffer buffer(Class<?> cl, int ignore) throws Throwable {
-        if (!(cl == Float.TYPE)) {
+        if (cl != Float.TYPE) {
             throw new Throwable("Only float targets supported");
         }
         if (dim > 4) throw new Throwable("Rank > 4 not supported");

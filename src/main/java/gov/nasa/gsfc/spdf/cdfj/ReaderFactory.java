@@ -38,9 +38,10 @@ public final class ReaderFactory {
         final String _fname = file.getPath();
         cdf.setSource(new CDFFactory.CDFSource() {
             @Override
-            public String getName() {return _fname;};
+            public String getName() {return _fname;}
+
             @Override
-            public boolean isFile() {return true;};
+            public boolean isFile() {return true;}
         });
         CDFReader rdr = new CDFReader();
         rdr.setImpl(cdf);
@@ -78,9 +79,10 @@ public final class ReaderFactory {
         final String _url = url.toString();
         cdf.setSource(new CDFFactory.CDFSource() {
             @Override
-            public String getName() {return _url;};
+            public String getName() {return _url;}
+
             @Override
-            public boolean isFile() {return false;};
+            public boolean isFile() {return false;}
         });
         return rdr;
     }
@@ -99,24 +101,23 @@ public final class ReaderFactory {
         if (magic == CDFFactory.CDF2_MAGIC_DOT5) {
             int release = buf.getInt(24);
             return new CDF2Impl(buf, release, ch);
-        } else {
-            ShortBuffer sbuf = buf.asShortBuffer();
-            if (sbuf.get() == (short)0xcdf2) {
-                if (sbuf.get() == (short)0x6002) {
-                    short x = sbuf.get();
-                    if (x == 0) {
-                        if (sbuf.get() == -1) {
-                            return new CDF2Impl(buf, 6, ch);
-                        }
-                    } else {
-                        if ((x == (short)0xcccc) && (sbuf.get() == 1)) {
-                            // is compressed - positioned at CCR
-                            ByteBuffer mbuf = CDFFactory.uncompressed(buf, 2);
-                            return new CDF2Impl(mbuf, 6, ch);
-                        }
+        }
+        ShortBuffer sbuf = buf.asShortBuffer();
+        if (sbuf.get() == (short)0xcdf2) {
+            if (sbuf.get() == (short)0x6002) {
+                short x = sbuf.get();
+                if (x == 0) {
+                    if (sbuf.get() == -1) {
+                        return new CDF2Impl(buf, 6, ch);
                     }
-                        
+                } else {
+                    if ((x == (short)0xcccc) && (sbuf.get() == 1)) {
+                        // is compressed - positioned at CCR
+                        ByteBuffer mbuf = CDFFactory.uncompressed(buf, 2);
+                        return new CDF2Impl(mbuf, 6, ch);
+                    }
                 }
+
             }
         }
         return null;
@@ -152,9 +153,10 @@ public final class ReaderFactory {
         final String _fname = file.getPath();
         cdf.setSource(new CDFFactory.CDFSource() {
             @Override
-            public String getName() {return _fname;};
+            public String getName() {return _fname;}
+
             @Override
-            public boolean isFile() {return true;};
+            public boolean isFile() {return true;}
         });
         CDFReader rdr = new CDFReader();
         rdr.setImpl(cdf);

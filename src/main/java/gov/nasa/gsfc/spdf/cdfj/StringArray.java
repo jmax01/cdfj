@@ -51,7 +51,7 @@ public class StringArray extends AArray {
      */
     @Override
     public ByteBuffer buffer(Class<?> cl, int size) throws Throwable {
-        if (!(cl == String.class)) {
+        if (cl != String.class) {
             throw new Throwable("Valid for String type only");
         }
         if (dim > 4) throw new Throwable("Rank > 4 not supported");

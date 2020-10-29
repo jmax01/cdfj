@@ -364,52 +364,36 @@ public abstract class BaseVarContainer implements Runnable {
 
     public static boolean isCompatible(int type, boolean preserve, Class cl) {
         if (cl == Long.TYPE) {
-            if (((DataTypes.typeCategory[type] == DataTypes.SIGNED_INTEGER) ||
-               (DataTypes.typeCategory[type] == DataTypes.UNSIGNED_INTEGER))) {
-                return true;
-            }
-            return (DataTypes.typeCategory[type] == DataTypes.LONG);
+            return (DataTypes.typeCategory[type] == DataTypes.SIGNED_INTEGER) ||
+                    (DataTypes.typeCategory[type] == DataTypes.UNSIGNED_INTEGER) || (DataTypes.typeCategory[type] == DataTypes.LONG);
         }
         if (cl == Double.TYPE) {
             if (type > 50) return false;
-            if (DataTypes.typeCategory[type] == DataTypes.LONG) {
-                if (preserve) return false;
-            }
-            return true;
+            return DataTypes.typeCategory[type] != DataTypes.LONG || !preserve;
         }
         if (cl == Float.TYPE) {
             if (type > 50) return false;
             if (DataTypes.typeCategory[type] == DataTypes.FLOAT) return true;
             if ((DataTypes.typeCategory[type] == DataTypes.LONG) ||
                (DataTypes.typeCategory[type] == DataTypes.DOUBLE)) {
-                if (preserve) return false;
-            } else {
-                if (preserve) {
-                    if ((type == 4) || (type == 14)) return false;
-                }
+                return !preserve;
             }
-            return true;
+
+            return !preserve || (type != 4) && (type != 14);
         }
         if (cl == Integer.TYPE) {
             if (type > 50) return false;
-            if (!((DataTypes.typeCategory[type] == DataTypes.SIGNED_INTEGER) ||
-               (DataTypes.typeCategory[type] == DataTypes.UNSIGNED_INTEGER))) {
-                return false;
-            } else {
-                if (preserve && (type == 14)) return false;
-            }
-            return true;
+            return ((DataTypes.typeCategory[type] == DataTypes.SIGNED_INTEGER) ||
+                    (DataTypes.typeCategory[type] == DataTypes.UNSIGNED_INTEGER)) && (!preserve || (type != 14));
         }
         if (cl == Short.TYPE) {
             if (type > 50) return false;
             if ((type == 1) || (type == 41) || (type == 2)) return true;
-            if (type == 11) return true;
-            return (type == 12) && !preserve;
+            return type == 11 || (type == 12) && !preserve;
         }
         if (cl == Byte.TYPE) {
             if (preserve) {
-                if ((type == 1) || (type == 41) || (type == 11)) return true;
-                return type > 50;
+                return (type == 1) || (type == 41) || (type == 11) || type > 50;
             }
             return true;
         }

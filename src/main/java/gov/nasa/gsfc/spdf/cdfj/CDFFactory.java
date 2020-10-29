@@ -78,24 +78,23 @@ public final class CDFFactory {
         if (magic == CDF2_MAGIC_DOT5) {
             int release = buf.getInt(24);
             return new CDF2Impl(buf, release);
-        } else {
-            ShortBuffer sbuf = buf.asShortBuffer();
-            if (sbuf.get() == (short)0xcdf2) {
-                if (sbuf.get() == (short)0x6002) {
-                    short x = sbuf.get();
-                    if (x == 0) {
-                        if (sbuf.get() == -1) {
-                            return new CDF2Impl(buf, 6);
-                        }
-                    } else {
-                        if ((x == (short)0xcccc) && (sbuf.get() == 1)) {
-                            // is compressed - positioned at CCR
-                            ByteBuffer mbuf = uncompressed(buf, 2);
-                            return new CDF2Impl(mbuf, 6);
-                        }
+        }
+        ShortBuffer sbuf = buf.asShortBuffer();
+        if (sbuf.get() == (short)0xcdf2) {
+            if (sbuf.get() == (short)0x6002) {
+                short x = sbuf.get();
+                if (x == 0) {
+                    if (sbuf.get() == -1) {
+                        return new CDF2Impl(buf, 6);
                     }
-                        
+                } else {
+                    if ((x == (short)0xcccc) && (sbuf.get() == 1)) {
+                        // is compressed - positioned at CCR
+                        ByteBuffer mbuf = uncompressed(buf, 2);
+                        return new CDF2Impl(mbuf, 6);
+                    }
                 }
+
             }
         }
         return null;
@@ -129,9 +128,10 @@ public final class CDFFactory {
         });
         ((CDFImpl)cdf).setSource(new CDFSource() {
             @Override
-            public String getName() {return _fname;};
+            public String getName() {return _fname;}
+
             @Override
-            public boolean isFile() {return true;};
+            public boolean isFile() {return true;}
         });
         cdfMap.put(cdf, _fname);
         return cdf;
@@ -154,9 +154,10 @@ public final class CDFFactory {
         CDFImpl cdf = getCDF(ba);
         cdf.setSource(new CDFSource() {
             @Override
-            public String getName() {return _url;};
+            public String getName() {return _url;}
+
             @Override
-            public boolean isFile() {return false;};
+            public boolean isFile() {return false;}
         });
         return cdf;
     }
@@ -217,31 +218,31 @@ public final class CDFFactory {
          *
          * @return
          */
-        public String getName() {return "";};
+        public String getName() {return "";}
 
         /**
          *
          * @return
          */
-        public boolean isFile() {return false;};
+        public boolean isFile() {return false;}
 
         /**
          *
          * @return
          */
-        public boolean isURL() {return false;};
+        public boolean isURL() {return false;}
 
         /**
          *
          * @return
          */
-        public boolean isByteArray() {return false;};
+        public boolean isByteArray() {return false;}
 
         /**
          *
          * @return
          */
-        public boolean isByteBuffer() {return false;};
+        public boolean isByteBuffer() {return false;}
     }
     private static long mappedMemoryUsed() {
         if (cdfMap.size() == 0) return 0;

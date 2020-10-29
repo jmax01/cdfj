@@ -208,7 +208,7 @@ public class Extractor {
                 while (offset <= last) {
                     Number num = (Number)method.invoke(bv, new Object[] {});
                     int x = num.intValue();
-                    data[offset++] = (x >= 0)?(double)x:(double)(longInt + x);
+                    data[offset++] = (double) (x >= 0 ? x : longInt + x);
                 }
                 break;
             case 5:
@@ -313,22 +313,20 @@ public class Extractor {
                     }
                 }
                 return lpad;
-            } else {
-                double[] dpad = new double[n];
-                if (!fillDefined) {
-                    for (int i = 0; i < n; i++) {
-                        dpad[i] = Double.NEGATIVE_INFINITY;
-                    }
-                } else {
-                    for (int i = 0; i < n; i++) {
-                        dpad[i] = fillValue.doubleValue();
-                    }
-                }
-                return dpad;
             }
-        } else {
-            return o;
+            double[] dpad = new double[n];
+            if (!fillDefined) {
+                for (int i = 0; i < n; i++) {
+                    dpad[i] = Double.NEGATIVE_INFINITY;
+                }
+            } else {
+                for (int i = 0; i < n; i++) {
+                    dpad[i] = fillValue.doubleValue();
+                }
+            }
+            return dpad;
         }
+        return o;
     }
 
     /**
@@ -345,24 +343,19 @@ public class Extractor {
                  double dfill = ((double[])fill.get(0))[0];
                  if (DataTypes.typeCategory[type] == DataTypes.LONG) {
                      return new long[] {0l, (long)dfill};
-                 } else {
-                     return new double[] {0, dfill};
                  }
-            } else {
-                 long lfill = ((long[])fill.get(0))[0];
-                 if (DataTypes.typeCategory[type] == DataTypes.LONG) {
-                     return new long[] {0l, lfill};
-                 } else {
-                     return new double[] {0, (double)lfill};
-                 }
-            }
-        } else {
+                 return new double[] {0, dfill};
+             }
+            long lfill = ((long[])fill.get(0))[0];
             if (DataTypes.typeCategory[type] == DataTypes.LONG) {
-                return new long[] {Long.MIN_VALUE, 0l};
-            } else {
-                return new double[] {Double.NEGATIVE_INFINITY, 0};
+                return new long[] {0l, lfill};
             }
+            return new double[] {0, (double)lfill};
         }
+        if (DataTypes.typeCategory[type] == DataTypes.LONG) {
+            return new long[] {Long.MIN_VALUE, 0l};
+        }
+        return new double[] {Double.NEGATIVE_INFINITY, 0};
     }
 
     /**
@@ -524,7 +517,7 @@ public class Extractor {
             for (int e = 0; e < count; e++) {
                 Number num = (Number)method.invoke(bv, new Object[] {});
                 int x = num.intValue();
-                data[n][e] = (x >= 0)?(double)x:(double)(longInt + x);
+                data[n][e] = (double) (x >= 0 ? x : longInt + x);
             }
         }
     }
@@ -539,7 +532,7 @@ public class Extractor {
             bv.position(pos);
             Number num = (Number)method.invoke(bv, new Object[] {});
             int x = num.intValue();
-            data[n] = (x >= 0)?(double)x:(double)(longInt + x);
+            data[n] = (double) (x >= 0 ? x : longInt + x);
             pos += size;
         }
     }
@@ -554,7 +547,7 @@ public class Extractor {
             bv.position(pos);
             Number num = (Number)method.invoke(bv, new Object[] {});
             int x = num.intValue();
-            data[index++] = (x >= 0)?(double)x:(double)(longInt + x);
+            data[index++] = (double) (x >= 0 ? x : longInt + x);
             pos += size;
         }
         return index;
@@ -572,7 +565,7 @@ public class Extractor {
                 bv.position(pos + offsets[e]);
                 Number num = (Number)method.invoke(bv, new Object[] {});
                 int x = num.intValue();
-                data[n][e] = (x >= 0)?(double)x:(double)(longInt + x);
+                data[n][e] = (double) (x >= 0 ? x : longInt + x);
             }
             pos += size;
         }
@@ -590,7 +583,7 @@ public class Extractor {
                 bv.position(pos + offsets[e]);
                 Number num = (Number)method.invoke(bv, new Object[] {});
                 int x = num.intValue();
-                data[index][e] = (x >= 0)?(double)x:(double)(longInt + x);
+                data[index][e] = (double) (x >= 0 ? x : longInt + x);
             }
             pos += size;
             index++;
@@ -971,7 +964,7 @@ public class Extractor {
                                 for (int l = 0; l < n1; l++) {
                                     int x = bv.get();
                                     data[offset][m][l] =
-                                        (x >= 0)?(double)x:(double)(_num + x);
+                                            (double) (x >= 0 ? x : _num + x);
                                 }
                             }
                             offset++;
@@ -982,7 +975,7 @@ public class Extractor {
                                 for (int l = 0; l < n0; l++) {
                                     int x = bv.get();
                                     data[offset][l][m] =
-                                        (x >= 0)?(double)x:(double)(_num + x);
+                                            (double) (x >= 0 ? x : _num + x);
                                 }
                             }
                             offset++;
@@ -999,7 +992,7 @@ public class Extractor {
                                 for (int l = 0; l < n1; l++) {
                                     int x = bvs.get();
                                     data[offset][m][l] =
-                                        (x >= 0)?(double)x:(double)(_num + x);
+                                            (double) (x >= 0 ? x : _num + x);
                                 }
                             }
                             offset++;
@@ -1010,7 +1003,7 @@ public class Extractor {
                                 for (int l = 0; l < n0; l++) {
                                     int x = bvs.get();
                                     data[offset][l][m] =
-                                        (x >= 0)?(double)x:(double)(_num + x);
+                                            (double) (x >= 0 ? x : _num + x);
                                 }
                             }
                             offset++;
@@ -1027,7 +1020,7 @@ public class Extractor {
                                 for (int l = 0; l < n1; l++) {
                                     int x = bvi.get();
                                     data[offset][m][l] =
-                                        (x >= 0)?(double)x:(double)(_num + x);
+                                            (double) (x >= 0 ? x : _num + x);
                                 }
                             }
                             offset++;
@@ -1038,7 +1031,7 @@ public class Extractor {
                                 for (int l = 0; l < n0; l++) {
                                     int x = bvi.get();
                                     data[offset][l][m] =
-                                        (x >= 0)?(double)x:(double)(_num + x);
+                                            (double) (x >= 0 ? x : _num + x);
                                 }
                             }
                             offset++;
@@ -1095,7 +1088,7 @@ public class Extractor {
                 long longInt = DataTypes.longInt[type];
                 num = (Number)method.invoke(bv, new Object[] {});
                 int x = num.intValue();
-                double d = (x >= 0)?(double)x:(double)(longInt + x);
+                double d = (double) (x >= 0 ? x : longInt + x);
                 return d;
             case 5:
                 return bv.getLong(pos);
@@ -1160,7 +1153,7 @@ public class Extractor {
                 for (int i = 0; i < n; i++) {
                     Number num = (Number)method.invoke(bv, new Object[] {});
                     int x = num.intValue();
-                    da[i] = (x >= 0)?(double)x:(double)(longInt + x);
+                    da[i] = (double) (x >= 0 ? x : longInt + x);
                 }
                 return da;
             }
@@ -1261,7 +1254,7 @@ public class Extractor {
                             Number num = 
                                 (Number)method.invoke(bv, new Object[] {});
                             int x = num.intValue();
-                            double d = (x >= 0)?(double)x:(double)(longInt + x);
+                            double d = (double) (x >= 0 ? x : longInt + x);
                             da[i][j] = d;
                         }
                     }
@@ -1271,7 +1264,7 @@ public class Extractor {
                             Number num = 
                                 (Number)method.invoke(bv, new Object[] {});
                             int x = num.intValue();
-                            double d = (x >= 0)?(double)x:(double)(longInt + x);
+                            double d = (double) (x >= 0 ? x : longInt + x);
                             da[j][i] = d;
                         }
                     }
@@ -1342,22 +1335,20 @@ public class Extractor {
         if (locations == null) {
             fillWithPad(longType, _data, start, end, _pad);
             return _data;
-        } else {
-            blks =  getBlockRange(locations, var.recordVariance(), start, end);
-            if (blks == null) { // no overlap 
-                if (!(var.missingRecordValueIsPad() ||
-                    var.missingRecordValueIsPrevious())) {
-                    return null;
-                } else {
-                    if (var.missingRecordValueIsPad()) {
-                        fillWithPad(longType, _data, start, end, _pad);
-                    }
-                    if (var.missingRecordValueIsPrevious()) {
-                        fillWithPrevious(var, longType, _data, start, end, _pad);
-                    }
-                    return _data;
-                }
+        }
+        blks =  getBlockRange(locations, var.recordVariance(), start, end);
+        if (blks == null) { // no overlap
+            if (!(var.missingRecordValueIsPad() ||
+                var.missingRecordValueIsPrevious())) {
+                return null;
             }
+            if (var.missingRecordValueIsPad()) {
+                    fillWithPad(longType, _data, start, end, _pad);
+                }
+            if (var.missingRecordValueIsPrevious()) {
+                    fillWithPrevious(var, longType, _data, start, end, _pad);
+                }
+            return _data;
         }
         boolean substitute = var.missingRecordValueIsPrevious();
 /*
@@ -1486,7 +1477,7 @@ public class Extractor {
                 while (offset <= (last - start)) {
                     Number num = (Number)method.invoke(bv, new Object[] {});
                     int x = num.intValue();
-                    data[offset++] = (x >= 0)?(double)x:(double)(longInt + x);
+                    data[offset++] = (double) (x >= 0 ? x : longInt + x);
                 }
                 break;
             case 5:
@@ -2284,7 +2275,7 @@ public class Extractor {
                                     (Number)method.invoke(bv, new Object[] {});
                                     int x = num.intValue();
                                     data[n][m][l][k] =
-                                      (x >= 0)?(double)x:(double)(longInt + x);
+                                            (double) (x >= 0 ? x : longInt + x);
                                 }
                             }
                         }
@@ -2298,7 +2289,7 @@ public class Extractor {
                                     (Number)method.invoke(bv, new Object[] {});
                                     int x = num.intValue();
                                     data[n][k][l][m] =
-                                      (x >= 0)?(double)x:(double)(longInt + x);
+                                            (double) (x >= 0 ? x : longInt + x);
                                 }
                             }
                         }
@@ -2416,8 +2407,7 @@ public class Extractor {
                                 Number num = 
                                     (Number)method.invoke(bv, new Object[] {});
                                 int x = num.intValue();
-                                double d = (x >= 0)?(double)x:
-                                    (double)(longInt + x);
+                                double d = (double) (x >= 0 ? x : longInt + x);
                                 da[i][j][k] = d;
                             }
                         }
@@ -2429,8 +2419,7 @@ public class Extractor {
                                 Number num = 
                                     (Number)method.invoke(bv, new Object[] {});
                                 int x = num.intValue();
-                                double d = (x >= 0)?(double)x:
-                                    (double)(longInt + x);
+                                double d = (double) (x >= 0 ? x : longInt + x);
                                 da[k][j][i] = d;
                             }
                         }
@@ -2502,7 +2491,7 @@ public class Extractor {
             for (int e = 0; e < number; e++) {
                 Number num = (Number)method.invoke(bv, new Object[] {});
                 int x = num.intValue();
-                data[offset + e] = (x >= 0)?(double)x:(double)(longInt + x);
+                data[offset + e] = (double) (x >= 0 ? x : longInt + x);
             }
             break;
         case 5:
@@ -2603,10 +2592,9 @@ public class Extractor {
                 if (longType && preserve) {
                     do1DMissing(ldata, longPadValue);
                     return ldata;
-                } else {
-                    do1DMissing(data, padValue);
-                    return data;
                 }
+                do1DMissing(data, padValue);
+                return data;
             }
             if (blk == locations.size()) return null;
         }
@@ -2658,27 +2646,26 @@ public class Extractor {
                                 do1DMissing(ldata, longPadValue, 0, elements);
                             }
                             return ldata;
-                        } else {
-                            if (available) {
+                        }
+                        if (available) {
 /*
-                                int[] _edim = edim;
-                                if (swap) {
-                                    if (!var.rowMajority()) {
-                                        _edim = new int[edim.length];
-                                        for (int i = 0; i < edim.length; i++) {
-                                            _edim[i] = edim[edim.length -1 -i]; 
-                                        }           
+                            int[] _edim = edim;
+                            if (swap) {
+                                if (!var.rowMajority()) {
+                                    _edim = new int[edim.length];
+                                    for (int i = 0; i < edim.length; i++) {
+                                        _edim[i] = edim[edim.length -1 -i];
                                     }
                                 }
-*/
-                                do1D(bv, type, temp, data, 0, elements, swap,
-                                    _edim);
-                            } else {
-                                do1DMissing(data, padValue);
                             }
-                            return data;
+*/
+                            do1D(bv, type, temp, data, 0, elements, swap,
+                                _edim);
+                        } else {
+                            do1DMissing(data, padValue);
                         }
-                    }            
+                        return data;
+                    }
                 }
                 firstBlock = false;
             }
@@ -2970,7 +2957,7 @@ public class Extractor {
                         new Object[] {});
                     int x = num.intValue();
                     data[offset++] =
-                        (x >= 0)?(double)x:(double)(longInt + x);
+                            (double) (x >= 0 ? x : longInt + x);
                 }
             }
             break;
@@ -3008,10 +2995,9 @@ public class Extractor {
         int advance = _stride*size;
         if (_stride == 1) {
             return getSeries0(thisCDF, var);
-        } else {
-            numpt = numberOfValues/_stride;
-            if ((numpt*_stride) <  numberOfValues) numpt++;
         }
+        numpt = numberOfValues/_stride;
+        if ((numpt*_stride) <  numberOfValues) numpt++;
         long[] ldata = null;
         double[] data = null;
         boolean longType = false;
@@ -3066,7 +3052,7 @@ public class Extractor {
                     bv.position(pos*size);
                     Number num = (Number)method.invoke(bv, new Object[] {});
                     int x = num.intValue();
-                    data[next++] = (x >= 0)?(double)x:(double)(longInt + x);
+                    data[next++] = (double) (x >= 0 ? x : longInt + x);
                 }
                 break;
             case 5:
@@ -3208,7 +3194,7 @@ public class Extractor {
             bv.position(pos);
             Number num = (Number)method.invoke(bv, new Object[] {});
             int x = num.intValue();
-            data[index++] = (x >= 0)?(double)x:(double)(longInt + x);
+            data[index++] = (double) (x >= 0 ? x : longInt + x);
             n += _stride;
             pos += advance;
         }
@@ -3308,7 +3294,7 @@ public class Extractor {
                 for (; n <= last; n += _stride) {
                     Number num = (Number)method.invoke(bv, new Object[] {});
                     int x = num.intValue();
-                    data[index++] = (x >= 0)?(double)x:(double)(longInt + x);
+                    data[index++] = (double) (x >= 0 ? x : longInt + x);
                 }
                 break;
             case 5:
@@ -3481,7 +3467,7 @@ public class Extractor {
             bv.position(pos);
             Number num = (Number)method.invoke(bv, new Object[] {});
             int x = num.intValue();
-            data[index++] = (x >= 0)?(double)x:(double)(longInt + x);
+            data[index++] = (double) (x >= 0 ? x : longInt + x);
             pos += size;
         }
         return index;
@@ -3536,7 +3522,7 @@ public class Extractor {
      */
     public static double [] getOneDSeries(CDFImpl thisCDF, Variable var,
         int[] pt, boolean cm) throws Throwable {
-        boolean toswap = (cm)?thisCDF.rowMajority():!thisCDF.rowMajority();
+        boolean toswap = cm == thisCDF.rowMajority();
         return (double[])get1DSeries(thisCDF, var, pt, false, toswap);
     }
     static void do1DSwap(ByteBuffer bv, int type, Object temp, Object result,
@@ -3620,7 +3606,7 @@ public class Extractor {
             for (int e = 0; e < number; e++) {
                 Number num = (Number)method.invoke(bv, new Object[] {});
                 int x = num.intValue();
-                td[e] = (x >= 0)?(double)x:(double)(longInt + x);
+                td[e] = (double) (x >= 0 ? x : longInt + x);
             }
             break;
         case 5:

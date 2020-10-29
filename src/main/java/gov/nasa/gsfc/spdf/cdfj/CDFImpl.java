@@ -335,9 +335,8 @@ import java.util.zip.*;
         CDFVariable var= ivariableTable.get( number );
         if ( vtype.equals(var.vtype) ) {
             return var;
-        } else {
-            throw new IllegalArgumentException("unsupported case, file must contain only zvariables or rvariables");
         }
+        throw new IllegalArgumentException("unsupported case, file must contain only zvariables or rvariables");
     }
 
     /**
@@ -540,8 +539,8 @@ import java.util.zip.*;
                    String[] oldStrings = (String[]) stringValues;
                    String[] newStrings = (String[]) newValue;
                    return Arrays.equals(oldStrings, newStrings);
-                } else
-                   return (stringValue.equals(ae.getValue()));
+                }
+                return (stringValue.equals(ae.getValue()));
             }
             if (isLongType() != ae.isLongType()) return false;
             if (isLongType()) {
@@ -819,8 +818,7 @@ import java.util.zip.*;
         @Override
         public boolean isCompressed() {
             if (!completed) complete();
-            if (locator == null) return false;
-            return locator.isReallyCompressed();
+            return locator != null && locator.isReallyCompressed();
         }
 
         /**
@@ -849,13 +847,12 @@ import java.util.zip.*;
                     long [] la = new long[ltemp.length];
                     System.arraycopy(ltemp, 0, la, 0, ltemp.length);
                     return la;
-                } else {
-                    double [] dtemp = new double[ltemp.length];
-                    for (int i = 0; i < ltemp.length; i++) {
-                        dtemp[i] = (double)ltemp[i];
-                    }
-                    return dtemp;
                 }
+                double [] dtemp = new double[ltemp.length];
+                for (int i = 0; i < ltemp.length; i++) {
+                    dtemp[i] = (double)ltemp[i];
+                }
+                return dtemp;
             }
             double [] dtemp = (double[]) padValue;
             double [] da = new double[dtemp.length];
@@ -1540,24 +1537,19 @@ import java.util.zip.*;
                  double dfill = ((double[])fill.get(0))[0];
                  if (DataTypes.typeCategory[type] == DataTypes.LONG) {
                      return new long[] {0l, (long)dfill};
-                 } else {
-                     return new double[] {0, dfill};
                  }
-            } else {
-                 long lfill = ((long[])fill.get(0))[0];
-                 if (DataTypes.typeCategory[type] == DataTypes.LONG) {
-                     return new long[] {0l, lfill};
-                 } else {
-                     return new double[] {0, (double)lfill};
-                 }
-            }
-        } else {
+                 return new double[] {0, dfill};
+             }
+            long lfill = ((long[])fill.get(0))[0];
             if (DataTypes.typeCategory[type] == DataTypes.LONG) {
-                return new long[] {Long.MIN_VALUE, 0l};
-            } else {
-                return new double[] {Double.NEGATIVE_INFINITY, 0};
+                return new long[] {0l, lfill};
             }
+            return new double[] {0, (double)lfill};
         }
+        if (DataTypes.typeCategory[type] == DataTypes.LONG) {
+            return new long[] {Long.MIN_VALUE, 0l};
+        }
+        return new double[] {Double.NEGATIVE_INFINITY, 0};
     }
     /**
      * returns ByteBuffer containing count values for variable var starting at
@@ -1682,7 +1674,7 @@ import java.util.zip.*;
                         (Number)DataTypes.method[type].invoke(vbufLocal,
                         new Object [] {});
                     int n = num.intValue();
-                    value[i] = (n >= 0)?(double)n:(double)(longInt + n);
+                    value[i] = (double) (n >= 0 ? n : longInt + n);
                 }
             }
         } catch(IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
@@ -1880,13 +1872,12 @@ import java.util.zip.*;
             container.run();
             StringArray sa = (StringArray)container.asArray();
             return sa.array();
-        } else {
-            DoubleVarContainer dbuf =
-                new DoubleVarContainer(this, var, new int[] {point},
-                false, ByteOrder.nativeOrder());
-            dbuf.run();
-            return dbuf.asArray().array();
         }
+        DoubleVarContainer dbuf =
+            new DoubleVarContainer(this, var, new int[] {point},
+            false, ByteOrder.nativeOrder());
+        dbuf.run();
+        return dbuf.asArray().array();
     }
 
     // --- RANGE

@@ -130,7 +130,7 @@ public final class LongVarContainer extends BaseVarContainer implements
                 for (int e = 0; e < _num; e++) {
                     Number num = (Number)method.invoke(bv, new Object[] {});
                     int x = num.intValue();
-                    data[e] = (x >= 0)?(long)x:(long)(longInt + x);
+                    data[e] = (long) (x >= 0 ? x : longInt + x);
                 }
                 lbuf.put(data, 0, _num);
                 position += 8*_num;
