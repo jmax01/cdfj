@@ -6,3 +6,8 @@
 .classpath
 .settings/
 .project
+/.idea/
+/cdfj.iml
+/index.html
+/script.js
+/styles.css

@@ -633,11 +633,11 @@ public class GenericWriter {
         boolean[] _varys;
         synchronized (dim) {
             _dim = new int[dim.length];
-            for (int i = 0; i < dim.length; i++) _dim[i] = dim[i];
+            System.arraycopy(dim, 0, _dim, 0, dim.length);
         }
         synchronized (varys) {
             _varys = new boolean[varys.length];
-            for (int i = 0; i < varys.length; i++) _varys[i] = varys[i];
+            System.arraycopy(varys, 0, _varys, 0, varys.length);
         }
         if (dataType == CDFDataType.EPOCH16) {
             if (dim.length > 0) throw new CDFException.WriterError(

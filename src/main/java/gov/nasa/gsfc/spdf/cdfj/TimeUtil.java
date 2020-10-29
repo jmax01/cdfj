@@ -206,7 +206,7 @@ public class TimeUtil {
      */
     static long milliSecondSince1970(int[] time, boolean tt) throws Throwable {
         int[] t = new int[6];
-        for (int i = 0; i < 3; i++) t[i] = time[i];
+        System.arraycopy(time, 0, t, 0, 3);
         t[1]--;
         for (int i = 3; i < 6; i++) t[i] = 0;
         int n = time.length;

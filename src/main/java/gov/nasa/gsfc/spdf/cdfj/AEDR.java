@@ -205,7 +205,7 @@ public class AEDR {
             "Incompatible data type " + dataType + " for Byte.");
         }
         values = new byte[ba.length];
-        for (int i = 0; i < ba.length; i++) values[i] = ba[i];
+        System.arraycopy(ba, 0, values, 0, ba.length);
         setNumElems(ba.length);
     }
 

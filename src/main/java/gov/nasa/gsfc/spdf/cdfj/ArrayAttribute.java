@@ -81,7 +81,7 @@ public class ArrayAttribute {
         if (cl == String.class) {
             String[] sin = (String[]) o;
             if (sa.length == sin.length) {
-                for (int i = 0; i < sin.length; i++) sa[i] = sin[i];
+                System.arraycopy(sin, 0, sa, 0, sin.length);
                 return;
             }
             throw new Throwable("Length of the receiver array does not " +
@@ -99,7 +99,7 @@ public class ArrayAttribute {
         if (cl == Long.TYPE) {
             long[] lin = (long[]) o;
             if (la.length == lin.length) {
-                for (int i = 0; i < lin.length; i++) la[i] = lin[i];
+                System.arraycopy(lin, 0, la, 0, lin.length);
                 return;
             }
             throw new Throwable("Length of the receiver array does not " +
@@ -117,7 +117,7 @@ public class ArrayAttribute {
         if (cl == Double.TYPE) {
             double[] din = (double[]) o;
             if (da.length == din.length) {
-                for (int i = 0; i < din.length; i++) da[i] = din[i];
+                System.arraycopy(din, 0, da, 0, din.length);
                 return;
             }
             throw new Throwable("Length of the receiver array does not " +

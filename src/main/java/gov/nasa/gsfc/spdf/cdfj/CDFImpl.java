@@ -148,9 +148,7 @@ import java.util.zip.*;
      */
     public String [] getVariableNames() {
         String [] sa = new String [varNames.length];
-        for (int i = 0; i < sa.length; i++) {
-            sa[i] = varNames[i];
-        }
+        System.arraycopy(varNames, 0, sa, 0, sa.length);
         return sa;
     }
 
@@ -1447,16 +1445,14 @@ import java.util.zip.*;
      */
     public class DataLocator implements VariableDataLocator,
         java.io.Serializable {
-        private transient ByteBuffer _buf;
         private int numberOfValues;
         private boolean compressed;
         protected Vector locations = new Vector();
         protected DataLocator(ByteBuffer b, int n, boolean compr) {
-            _buf = b;
             numberOfValues = n;
             compressed = compr;
-            _buf.position(offset_FIRST_VXR);
-            long offset = longInt(_buf);
+            b.position(offset_FIRST_VXR);
+            long offset = longInt(b);
             ByteBuffer bx = getRecord(offset);
             Vector v =  _getLocations(bx);
             registerNodes(bx, v);

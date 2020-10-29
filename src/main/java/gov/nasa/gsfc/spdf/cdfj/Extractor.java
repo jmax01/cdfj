@@ -398,9 +398,7 @@ public class Extractor {
             ByteBuffer bv = positionBuffer((CDFImpl)thisCDF, var, loc[2],
                 (last - first + 1));
             while (offset < first) {
-                for (int m = 0; m < elements; m++) {
-                    data[offset][m] = padValue[m];
-                }
+                if (elements >= 0) System.arraycopy(padValue, 0, data[offset], 0, elements);
                 offset++;
             }
             Method method;
@@ -836,9 +834,7 @@ public class Extractor {
             if (var.rowMajority()) {
                 while (offset < first) {
                     for (int m = 0; m < n0; m++) {
-                        for (int l = 0; l < n1; l++) {
-                            data[offset][m][l] = padValue[m*n0 + l];
-                        }
+                        if (n1 >= 0) System.arraycopy(padValue, m * n0 + 0, data[offset][m], 0, n1);
                     }
                     offset++;
                 }
@@ -1617,9 +1613,7 @@ public class Extractor {
             int last = ((Integer)oa[2]);
             // fill if necessary
             while (offset < (first - start)) {
-                for (int m = 0; m < elements; m++) {
-                    data[offset][m] = padValue[m];
-                }
+                if (elements >= 0) System.arraycopy(padValue, 0, data[offset], 0, elements);
                 offset++;
             }
             switch (DataTypes.typeCategory[type]) {
@@ -1668,9 +1662,7 @@ public class Extractor {
         }
         if (!var.recordVariance()) {
             for (int i = start; i <= end; i++) {
-                for (int m = 0; m < elements; m++) {
-                    data[i - start][m] = data[0][m];
-                }
+                if (elements >= 0) System.arraycopy(data[0], 0, data[i - start], 0, elements);
             }
         }
         return data;
@@ -1945,15 +1937,11 @@ public class Extractor {
         if (!var.recordVariance()) {
             if (!longType) {
                 for (int i = start; i <= end; i++) {
-                    for (int e = 0; e < ne; e++) {
-                        data[i - start][e] = data[0][e];
-                    }
+                    System.arraycopy(data[0], 0, data[i - start], 0, ne);
                 }
             } else {
                 for (int i = start; i <= end; i++) {
-                    for (int e = 0; e < ne; e++) {
-                        ldata[i - start][e] = ldata[0][e];
-                    }
+                    System.arraycopy(ldata[0], 0, ldata[i - start], 0, ne);
                 }
             }
         }
@@ -2238,9 +2226,7 @@ public class Extractor {
                         for (int m = 0; m < n0; m++) {
                             for (int l = 0; l < n1; l++) {
                                 bvd.get(temp);
-                                for (int k = 0; k < n2; k++) {
-                                    data[n][m][l][k] = temp[k];
-                                }
+                                if (n2 >= 0) System.arraycopy(temp, 0, data[n][m][l], 0, n2);
                             }
                         }
                     }
