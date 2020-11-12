@@ -1,6 +1,7 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
 /**
+ * The Class Stride.
  *
  * @author nand
  */
@@ -11,10 +12,11 @@ public class Stride {
     int nv;
 
     /**
+     * Instantiates a new stride.
      *
-     * @param ints
+     * @param stride the stride
      */
-    public Stride(int[] stride) {
+    public Stride(final int[] stride) {
 
         if (stride.length == 0) {
             this.stride = null;
@@ -30,8 +32,9 @@ public class Stride {
     }
 
     /**
+     * Gets the stride.
      *
-     * @return
+     * @return the stride
      */
     public int getStride() {
         int _stride = 1;
@@ -59,12 +62,13 @@ public class Stride {
     }
 
     /**
+     * Gets the stride.
      *
-     * @param nv
+     * @param nv the nv
      *
-     * @return
+     * @return the stride
      */
-    public int getStride(int nv) {
+    public int getStride(final int nv) {
         this.nv = nv;
         return getStride();
     }

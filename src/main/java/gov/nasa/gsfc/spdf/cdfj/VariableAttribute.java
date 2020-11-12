@@ -1,6 +1,7 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
 /**
+ * The Interface VariableAttribute.
  *
  * @author nand
  */
@@ -11,16 +12,16 @@ public interface VariableAttribute extends Attribute {
      * String or String[] is returned.if entry type is long, a long[] is returned.
      * In other cases a double[] is returned
      *
-     * @param n
+     * @param n the n
      *
-     * @return
+     * @return the entry
      */
     Object getEntry(int n);
 
     /**
      * returns count of entries for this variable attribute.
      *
-     * @return
+     * @return the entry count
      */
     int getEntryCount();
 
@@ -28,23 +29,19 @@ public interface VariableAttribute extends Attribute {
      * returns whether nth entry is of type long.A Throwable is thrown for invalid
      * entry number
      *
-     * @param n
+     * @param n the n
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return true, if is long type
      */
-    boolean isLongType(int n) throws Throwable;
+    boolean isLongType(int n);
 
     /**
      * returns whether nth entry is of type string.A Throwable is thrown for invalid
      * entry number
      *
-     * @param n
+     * @param n the n
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return true, if is string type
      */
-    boolean isStringType(int n) throws Throwable;
+    boolean isStringType(int n);
 }

@@ -7,36 +7,42 @@ import java.nio.ByteBuffer;
  */
 public interface TimeVariableX extends TimeVariable {
 
+    /**
+     * Gets the precision.
+     *
+     * @return the precision
+     */
     @Override
     TimePrecision getPrecision();
 
     /**
+     * Gets the raw buffer.
      *
-     * @return
+     * @return the raw buffer
      */
     ByteBuffer getRawBuffer();
 
     /**
+     * Gets the record range.
      *
-     * @param timeRange
+     * @param timeRange the time range
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the record range
+     * @
      */
-    int[] getRecordRange(double[] timeRange) throws Throwable;
+    int[] getRecordRange(double[] timeRange);
 
     /**
+     * Gets the record range.
      *
-     * @param startTime
-     * @param stopTime
-     * @param ts
+     * @param startTime the start time
+     * @param stopTime  the stop time
+     * @param ts        the ts
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the record range
+     * @
      */
-    int[] getRecordRange(int[] startTime, int[] stopTime, TimeInstantModel ts) throws Throwable;
+    int[] getRecordRange(int[] startTime, int[] stopTime, TimeInstantModel ts);
 
     /**
      * Returns relative times for the specified time range using the given
@@ -44,11 +50,9 @@ public interface TimeVariableX extends TimeVariable {
      * <p>
      *
      * @param timeRange relative time range
-     * @param tspec
+     * @param tspec     the tspec
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the times
      */
-    double[] getTimes(double[] timeRange, TimeInstantModel tspec) throws Throwable;
+    double[] getTimes(double[] timeRange, TimeInstantModel tspec);
 }

@@ -5,51 +5,29 @@ import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
 /**
+ * The Class IntArray.
  *
  * @author nand
  */
 public class IntArray extends AArray {
 
     /**
+     * Instantiates a new int array.
      *
-     * @param o
-     *
-     * @throws Throwable
+     * @param o the o
      */
-    public IntArray(Object o) throws Throwable {
+    public IntArray(final Object o) {
         super(o);
     }
 
     /**
+     * Instantiates a new int array.
      *
-     * @param o
-     * @param bln
-     *
-     * @throws Throwable
+     * @param o        the o
+     * @param majority the majority
      */
-    public IntArray(Object o, boolean majority) throws Throwable {
+    public IntArray(final Object o, final boolean majority) {
         super(o, majority);
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Override
-    public Object array() {
-
-        switch (this.dim) {
-            case 1:
-                return this.o;
-            case 2:
-                return this.o;
-            case 3:
-                return this.o;
-            case 4:
-                return this.o;
-        }
-
-        return null;
     }
 
     /**
@@ -58,14 +36,14 @@ public class IntArray extends AArray {
      * @param ignore
      */
     @Override
-    public ByteBuffer buffer(Class<?> cl, int ignore) throws Throwable {
+    public ByteBuffer buffer(final Class<?> cl, final int ignore) {
 
         if (((cl != Integer.TYPE) && (cl != Short.TYPE))) {
-            throw new Throwable("Only int and short targets supported");
+            throw new IllegalArgumentException("Only int and short targets supported");
         }
 
-        if (this.dim > 4) {
-            throw new Throwable("Rank > 4 not supported");
+        if (this.dimensions > 4) {
+            throw new IllegalArgumentException("Rank > 4 not supported");
         }
 
         int elementSize = (cl == Short.TYPE) ? 2 : 4;
@@ -78,23 +56,25 @@ public class IntArray extends AArray {
         return doInt(buf);
     }
 
-    ByteBuffer doInt(ByteBuffer buf) {
-        int[] _dim = this.aa.getDimensions();
+    ByteBuffer doInt(final ByteBuffer buf) {
+
+        int[] _dim = this.attributeArray.getDimensions();
+
         IntBuffer _buf = buf.asIntBuffer();
 
-        switch (this.dim) {
+        switch (this.dimensions) {
             case 1:
-                int[] data = (int[]) this.o;
-                _buf.put(data);
+                int[] data1 = (int[]) this.data;
+                _buf.put(data1);
                 return buf;
             case 2:
-                int[][] data2 = (int[][]) this.o;
+                int[][] data2 = (int[][]) this.data;
                 for (int i = 0; i < _dim[0]; i++) {
                     _buf.put(data2[i]);
                 }
                 return buf;
             case 3:
-                int[][][] data3 = (int[][][]) this.o;
+                int[][][] data3 = (int[][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -122,7 +102,7 @@ public class IntArray extends AArray {
                 }
                 return buf;
             case 4:
-                int[][][][] data4 = (int[][][][]) this.o;
+                int[][][][] data4 = (int[][][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -157,27 +137,31 @@ public class IntArray extends AArray {
 
                 }
                 return buf;
+            default:
+                throw new IllegalArgumentException("Rank > 4 not supported");
         }
 
-        return null;
     }
 
-    ByteBuffer doShort(ByteBuffer buf) {
-        int[] _dim = this.aa.getDimensions();
+    ByteBuffer doShort(final ByteBuffer buf) {
+
+        int[] _dim = this.attributeArray.getDimensions();
+
         short[] temp = null;
+
         ShortBuffer _buf = buf.asShortBuffer();
 
-        switch (this.dim) {
+        switch (this.dimensions) {
             case 1:
-                int[] data = (int[]) this.o;
-                temp = new short[data.length];
-                for (int i = 0; i < data.length; i++) {
-                    temp[i] = (short) data[i];
+                int[] data1 = (int[]) this.data;
+                temp = new short[data1.length];
+                for (int i = 0; i < data1.length; i++) {
+                    temp[i] = (short) data1[i];
                 }
                 _buf.put(temp);
                 return buf;
             case 2:
-                int[][] data2 = (int[][]) this.o;
+                int[][] data2 = (int[][]) this.data;
                 temp = new short[_dim[1]];
                 for (int i = 0; i < _dim[0]; i++) {
                     int[] di = data2[i];
@@ -190,7 +174,7 @@ public class IntArray extends AArray {
                 }
                 return buf;
             case 3:
-                int[][][] data3 = (int[][][]) this.o;
+                int[][][] data3 = (int[][][]) this.data;
                 if (this.rowMajority) {
                     temp = new short[_dim[2]];
 
@@ -225,7 +209,7 @@ public class IntArray extends AArray {
                 }
                 return buf;
             case 4:
-                int[][][][] data4 = (int[][][][]) this.o;
+                int[][][][] data4 = (int[][][][]) this.data;
                 if (this.rowMajority) {
                     temp = new short[_dim[3]];
 
@@ -267,8 +251,10 @@ public class IntArray extends AArray {
 
                 }
                 return buf;
+            default:
+                throw new IllegalArgumentException("Rank > 4 not supported");
+
         }
 
-        return null;
     }
 }

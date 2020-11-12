@@ -9,7 +9,7 @@ public interface TimeVariable {
      * Returns whether the given {@link TimePrecision precision} is available
      * for this variable.
      *
-     * @param tp
+     * @param tp the tp
      *
      * @return false if the required precision is finer than this variable's
      *         resolution.
@@ -25,21 +25,21 @@ public interface TimeVariable {
      * This number may be useful as a base time for a time instant model
      * when looking at high time resolution data.
      *
-     * @return
+     * @return the first milli second
      */
     double getFirstMilliSecond();
 
     /**
      * Returns name of the variable.
      *
-     * @return
+     * @return the name
      */
     String getName();
 
     /**
      * Returns {@link TimePrecision time precision} of the variable.
      *
-     * @return
+     * @return the precision
      */
     TimePrecision getPrecision();
 
@@ -53,18 +53,16 @@ public interface TimeVariable {
      * @param stopTime  a 3 to 7 element int[], containing year, month,
      *                  day,hour, minute, second and millisecond.
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the record range
      */
-    int[] getRecordRange(int[] startTime, int[] stopTime) throws Throwable;
-    // public int[] getRecordRange(double[] timeRange) throws Throwable;
+    int[] getRecordRange(int[] startTime, int[] stopTime);
+    // public int[] getRecordRange(double[] timeRange) ;
 
     /**
      * Returns relative times using the default
      * {@link TimeInstantModel time instant model}.
      *
-     * @return
+     * @return the times
      */
     double[] getTimes();
 
@@ -72,13 +70,11 @@ public interface TimeVariable {
      * Returns relative times for the specified record range using the default
      * {@link TimeInstantModel time instant model}.
      *
-     * @param recordRange
+     * @param recordRange the record range
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the times
      */
-    double[] getTimes(int[] recordRange) throws Throwable;
+    double[] getTimes(int[] recordRange);
 
     /**
      * Returns relative times for the specified time range using the default
@@ -90,11 +86,9 @@ public interface TimeVariable {
      * @param stopTime  a 3 to 7 element int[], containing year, month,
      *                  day,hour, minute, second and millisecond.
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the times
      */
-    double[] getTimes(int[] startTime, int[] stopTime) throws Throwable;
+    double[] getTimes(int[] startTime, int[] stopTime);
 
     /**
      * Returns relative times for the specified time range using the given
@@ -105,43 +99,37 @@ public interface TimeVariable {
      *                  day,hour, minute, second and millisecond.
      * @param stopTime  a 3 to 7 element int[], containing year, month,
      *                  day,hour, minute, second and millisecond.
-     * @param tspec
+     * @param tspec     the tspec
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the times
      */
-    double[] getTimes(int[] startTime, int[] stopTime, TimeInstantModel tspec) throws Throwable;
+    double[] getTimes(int[] startTime, int[] stopTime, TimeInstantModel tspec);
 
     /**
      * Returns relative times for the specified record range using the specified
      * {@link TimeInstantModel time instant model}.
      *
-     * @param recordRange
-     * @param tspec
+     * @param recordRange the record range
+     * @param tspec       the tspec
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the times
      */
-    double[] getTimes(int[] recordRange, TimeInstantModel tspec) throws Throwable;
+    double[] getTimes(int[] recordRange, TimeInstantModel tspec);
 
     /**
      * Returns relative times using the specified
      * {@link TimeInstantModel time instant model}.
      *
-     * @param tspec
+     * @param tspec the tspec
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the times
      */
-    double[] getTimes(TimeInstantModel tspec) throws Throwable;
+    double[] getTimes(TimeInstantModel tspec);
 
     /**
-     * Returns whether this is a TT2000 type variable
+     * Returns whether this is a TT2000 type variable.
      *
-     * @return
+     * @return true, if is tt2000
      */
     boolean isTT2000();
 }

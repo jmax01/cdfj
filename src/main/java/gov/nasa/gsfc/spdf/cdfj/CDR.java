@@ -3,6 +3,7 @@ package gov.nasa.gsfc.spdf.cdfj;
 import java.nio.ByteBuffer;
 
 /**
+ * The Class CDR.
  *
  * @author nand
  */
@@ -16,7 +17,7 @@ public class CDR {
 
     static int libraryIdentifier = 1;
 
-    static final byte[] magic = new byte[] { (byte) 0xCD, (byte) 0xF3, 0, 1, 0, 0, (byte) 0xFF, (byte) 0xFF };
+    static final byte[] magic = { (byte) 0xCD, (byte) 0xF3, 0, 1, 0, 0, (byte) 0xFF, (byte) 0xFF };
 
     static String copyRight = "\012Common Data Format (CDF)\012https://cdf.gsfc.nasa.gov\012Space Physics Data Facility\012NASA/Goddard Space Flight Center\012Greenbelt, Maryland 20771 USA\012(User support: gsfc-cdf-support@lists.nasa.gov)\012";
 
@@ -27,8 +28,9 @@ public class CDR {
     ByteBuffer record = ByteBuffer.allocate(8 + 4 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 256);
 
     /**
+     * Gets the.
      *
-     * @return
+     * @return the byte buffer
      */
     public ByteBuffer get() {
         this.record.position(0);
@@ -46,7 +48,8 @@ public class CDR {
         this.record.putInt(0);
         this.record.put(copyRight.getBytes());
         int len = 256 - copyRight.length();
-        this.record.put(String.format("%-" + len + "." + len + "s", " ").getBytes());
+        this.record.put(String.format("%-" + len + "." + len + "s", " ")
+                .getBytes());
         // for (int i = copyRight.length(); i < 256; i++) {
         // record.put((byte)0x20);
         // }
@@ -59,26 +62,29 @@ public class CDR {
     }
 
     /**
+     * Gets the size.
      *
-     * @return
+     * @return the size
      */
     public int getSize() {
         return this.record.capacity() + magic.length;
     }
 
     /**
+     * Sets the encoding.
      *
-     * @param enc
+     * @param enc the new encoding
      */
-    public void setEncoding(int enc) {
+    public void setEncoding(final int enc) {
         this.encoding = enc;
     }
 
     /**
+     * Sets the MD 5 needed.
      *
-     * @param needDigest
+     * @param needDigest the new MD 5 needed
      */
-    public void setMD5Needed(boolean needDigest) {
+    public void setMD5Needed(final boolean needDigest) {
 
         if (needDigest) {
             this.flags |= 0xc;
@@ -91,10 +97,11 @@ public class CDR {
     }
 
     /**
+     * Sets the row majority.
      *
-     * @param majority
+     * @param majority the new row majority
      */
-    public void setRowMajority(boolean majority) {
+    public void setRowMajority(final boolean majority) {
 
         if (majority) {
             this.flags |= 1;

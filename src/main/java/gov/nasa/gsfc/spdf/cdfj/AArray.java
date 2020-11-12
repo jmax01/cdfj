@@ -6,60 +6,62 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 /**
+ * The Class AArray.
  *
  * @author nand
  */
 public abstract class AArray {
 
-    ArrayAttribute aa;
+    final ArrayAttribute attributeArray;
 
-    Object o;
+    final Object data;
 
-    int dim;
+    final int dimensions;
 
-    boolean rowMajority = true;
+    final boolean rowMajority;
 
     /**
+     * Instantiates a new a array.
      *
-     * @param o
-     *
-     * @throws Throwable
+     * @param data the data
      */
-    public AArray(Object o) throws Throwable {
-        this(o, true);
+    public AArray(final Object data) {
+        this(data, true);
     }
 
     /**
+     * Instantiates a new a array.
      *
-     * @param o
-     * @param bln
-     *
-     * @throws Throwable
+     * @param data        the data
+     * @param rowMajority the row majority
      */
-    public AArray(Object o, boolean rowMajority) throws Throwable {
-        Class<?> cl = o.getClass();
+    public AArray(final Object data, final boolean rowMajority) {
+
+        Class<?> cl = data.getClass();
 
         if (!cl.isArray()) {
-            throw new Throwable("AArray: Object " + o + " is not an array");
+            throw new IllegalArgumentException("AArray: Object " + cl + " is not an array");
         }
 
-        this.o = o;
-        this.aa = new ArrayAttribute(o);
-        this.dim = this.aa.getDimensions().length;
+        this.data = data;
+        this.attributeArray = new ArrayAttribute(data);
+        this.dimensions = this.attributeArray.getDimensions().length;
         this.rowMajority = rowMajority;
     }
 
     /**
+     * Gets the point.
      *
-     * @param o
+     * @param data the data
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the point
      */
-    public static Object getPoint(Object o) throws Throwable {
-        ArrayAttribute aa = new ArrayAttribute(o);
+    public static Object getPoint(final Object data) {
+
+        ArrayAttribute aa = new ArrayAttribute(data);
+
         int[] dim = aa.getDimensions();
+
         Object a = null;
 
         if (dim.length == 1) {
@@ -82,65 +84,75 @@ public abstract class AArray {
             return null;
         }
 
-        Array.set(a, 0, o);
+        Array.set(a, 0, data);
         return a;
     }
 
     /**
+     * Array.
      *
-     * @return
+     * @return the object
      */
-    public abstract Object array();
+    public final Object array() {
 
-    /**
-     *
-     * @return
-     *
-     * @throws Throwable
-     */
-    public ByteBuffer buffer() throws Throwable {
+        switch (this.dimensions) {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+                return this.data;
+            default:
+                throw new IllegalStateException("Rank > 4 not supported");
 
-        if (this.aa.getType() == String.class) {
-            throw new Throwable("Invalid call for String type");
         }
 
-        return buffer(this.aa.getType(), 0);
     }
 
     /**
+     * Buffer.
      *
-     * @param cl
-     *
-     * @return
-     *
-     * @throws Throwable
+     * @return the byte buffer
      */
-    public ByteBuffer buffer(Class<?> cl) throws Throwable {
+    public ByteBuffer buffer() {
+
+        if (this.attributeArray.getType() == String.class) {
+            throw new IllegalStateException("Invalid call for String type");
+        }
+
+        return buffer(this.attributeArray.getType(), 0);
+    }
+
+    /**
+     * Buffer.
+     *
+     * @param cl the cl
+     *
+     * @return the byte buffer
+     */
+    public ByteBuffer buffer(final Class<?> cl) {
         return buffer(cl, 0);
     }
 
     /**
+     * Buffer.
      *
-     * @param cl
-     * @param size
+     * @param cl   the cl
+     * @param size the size
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the byte buffer
      */
-    public abstract ByteBuffer buffer(Class<?> cl, int size) throws Throwable;
+    public abstract ByteBuffer buffer(Class<?> cl, int size);
 
     /**
+     * Buffer.
      *
-     * @param size
+     * @param size the size
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the byte buffer
      */
-    public ByteBuffer buffer(int size) throws Throwable {
+    public ByteBuffer buffer(final int size) {
 
-        if (this.aa.getType() == String.class) {
+        if (this.attributeArray.getType() == String.class) {
             return buffer(String.class, size);
         }
 
@@ -148,26 +160,28 @@ public abstract class AArray {
     }
 
     /**
+     * Gets the dimensions.
      *
-     * @return
+     * @return the dimensions
      */
     public int[] getDimensions() {
-        return this.aa.getDimensions();
+        return this.attributeArray.getDimensions();
     }
 
     /**
+     * Validate dimensions.
      *
-     * @param dimensions
+     * @param dimensions the dimensions
      *
-     * @return
+     * @return true, if successful
      */
-    public boolean validateDimensions(int[] dimensions) {
-        return Arrays.equals(dimensions, this.aa.getDimensions());
+    public boolean validateDimensions(final int[] _dimensions) {
+        return Arrays.equals(_dimensions, this.attributeArray.getDimensions());
     }
 
-    ByteBuffer allocate(int elementSize) {
+    ByteBuffer allocate(final int elementSize) {
         int size = elementSize;
-        int[] _dim = this.aa.getDimensions();
+        int[] _dim = this.attributeArray.getDimensions();
 
         for (int j : _dim) {
             size *= j;

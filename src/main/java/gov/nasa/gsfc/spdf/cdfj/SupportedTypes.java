@@ -5,7 +5,7 @@ import java.util.Arrays;
 /**
  * Supported CDF data types.
  */
-public class SupportedTypes {
+public final class SupportedTypes {
 
     static final CDFDataType[] supportedTypes = new CDFDataType[DataTypes.LAST_TYPE];
     static {
@@ -29,15 +29,18 @@ public class SupportedTypes {
         supportedTypes[52] = CDFDataType.CHAR;
     }
 
+    private SupportedTypes() {
+    }
+
     /**
      * Returns CDFDataType object for specified CDF type.returns null if the type is
      * not supported by this package.
      *
-     * @param type
+     * @param type the type
      *
-     * @return
+     * @return the CDF data type
      */
-    public static CDFDataType cdfType(int type) {
+    public static CDFDataType cdfType(final int type) {
 
         if ((type < 0) || (type > (supportedTypes.length - 1))) {
             return null;

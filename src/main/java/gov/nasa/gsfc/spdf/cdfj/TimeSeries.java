@@ -1,5 +1,7 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
+import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
+
 /**
  * Time series specification. TimeSeries objects are returned by a subset of
  * CDFReader methods, such as those that specify a TimeInstantModel.
@@ -10,7 +12,7 @@ public interface TimeSeries {
      * Returns time instant model used to derive times returned
      * by {@link #getTimes() getTimes()}.
      *
-     * @return
+     * @return the time instant model
      */
     TimeInstantModel getTimeInstantModel();
 
@@ -19,9 +21,9 @@ public interface TimeSeries {
      * {@link TimeInstantModel time instant model}
      * returned by {@link #getTimeInstantModel() getTimeInstantModel()}.
      *
-     * @return
+     * @return the times
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      *
      * @see CDFReader#timeModelInstance()
      */
@@ -40,7 +42,7 @@ public interface TimeSeries {
      *         where n is the length of the array returned by
      *         {@link #getTimes() getTimes()}
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    Object getValues() throws CDFException.ReaderError;
+    Object getValues() throws ReaderError;
 }

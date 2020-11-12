@@ -1,7 +1,7 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
 /**
- * Data locations for a Variable
+ * Data locations for a Variable.
  */
 public interface VariableDataLocator {
 

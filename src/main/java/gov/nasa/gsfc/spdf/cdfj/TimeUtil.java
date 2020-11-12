@@ -4,13 +4,14 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * The Class TimeUtil.
  *
  * @author nand
  */
-public class TimeUtil {
+public final class TimeUtil {
 
     static final long[] jtimes;
 
@@ -22,9 +23,7 @@ public class TimeUtil {
 
     static SimpleDateFormat sdf = new SimpleDateFormat("y'-'M'-'dd'T'HH:mm:ss.SSS");
 
-    /**
-     *
-     */
+    /** The Constant TT_JANUARY_1_1970. */
     public static final long TT_JANUARY_1_1970 = -946_727_957_816_000_000L;
 
     static final long JANUARY_1_1972 = Date.UTC(72, 0, 1, 0, 0, 0);
@@ -72,7 +71,7 @@ public class TimeUtil {
          * while ((c = is.read()) != -1) ba[index++] = (byte)c;
          * String s = new String(ba);
          * Scanner sc = new Scanner(s);
-         * Vector lines = new Vector();
+         * CopyOnWriteArrayList lines = new CopyOnWriteArrayList();
          * while (sc.hasNextLine()) lines.add(sc.nextLine());
          * int n = lines.size() -2;
          * while (n > 0) {
@@ -90,8 +89,8 @@ public class TimeUtil {
          * "Using existing table for version 3.6");
          * }
          */
-        Vector<Long> times = new Vector<>();
-        Vector<Integer> ids = new Vector<>();
+        CopyOnWriteArrayList<Long> times = new CopyOnWriteArrayList<>();
+        CopyOnWriteArrayList<Integer> ids = new CopyOnWriteArrayList<>();
 
         for (int i = 0; i < transition.length; i++) {
 
@@ -129,18 +128,21 @@ public class TimeUtil {
 
     static Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
+    private TimeUtil() {
+    }
+
     /**
+     * Gets the offset.
      *
-     * @param l
+     * @param l the l
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the offset
+     * @
      */
-    public static double getOffset(long l) throws Throwable {
+    public static double getOffset(final long l) {
 
         if (l < JANUARY_1_1972) {
-            throw new Throwable("Times before " + "January 1, 1972 are not supported at present");
+            throw new IllegalArgumentException("Times before January 1, 1972 are not supported at present");
         }
 
         int i;
@@ -173,47 +175,41 @@ public class TimeUtil {
 
     /**
      * converts a Date to number of milliseconds since 1970 (corrected for
-     * leap seconds
+     * leap seconds.
      *
-     * @param d
+     * @param d the d
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the double
      */
-    public static double milliSecondSince1970(Date d) throws Throwable {
+    public static double milliSecondSince1970(final Date d) {
         return milliSecondSince1970(d.getTime());
     }
 
     /**
      * returns number of milliseconds since 1970 for given time ignoring
-     * leap seconds
+     * leap seconds.
      *
-     * @param time
+     * @param time the time
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the long
      */
-    public static long milliSecondSince1970(int[] time) throws Throwable {
+    public static long milliSecondSince1970(final int[] time) {
         return milliSecondSince1970(time, false);
     }
 
     /**
      * corrects (java Date returned) number of milliseconds since 1970 for
-     * leap seconds
+     * leap seconds.
      *
-     * @param javaMilliSecond
+     * @param javaMilliSecond the java milli second
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the double
      */
-    public static double milliSecondSince1970(long javaMilliSecond) throws Throwable {
+    public static double milliSecondSince1970(final long javaMilliSecond) {
         long l = javaMilliSecond;
 
         if (l < JANUARY_1_1972) {
-            throw new Throwable("Times before " + "January 1, 1972 are not supported at present");
+            throw new IllegalArgumentException("Times before January 1, 1972 are not supported at present");
         }
 
         int i = (jtimes.length - 1);
@@ -231,28 +227,24 @@ public class TimeUtil {
     }
 
     /**
-     * returns tt2000 for a Date
+     * returns tt2000 for a Date.
      *
-     * @param d
+     * @param d the d
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the long
      */
-    public static long tt2000(Date d) throws Throwable {
+    public static long tt2000(final Date d) {
         return TT_JANUARY_1_1970 + (1_000_000 * (long) milliSecondSince1970(d));
     }
 
     /**
-     * returns tt2000 for the given time
+     * returns tt2000 for the given time.
      *
-     * @param time
+     * @param time the time
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the long
      */
-    public static long tt2000(int[] time) throws Throwable {
+    public static long tt2000(final int[] time) {
         long msec = milliSecondSince1970(time, true);
 
         if (time.length < 6) {
@@ -274,15 +266,13 @@ public class TimeUtil {
 
     /**
      * returns tt2000 for
-     * (java Date returned) number of milliseconds since 1970
+     * (java Date returned) number of milliseconds since 1970.
      *
-     * @param l
+     * @param l the l
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the long
      */
-    public static long tt2000(long l) throws Throwable {
+    public static long tt2000(final long l) {
         return TT_JANUARY_1_1970 + (1_000_000 * (long) milliSecondSince1970(l));
     }
 
@@ -290,7 +280,7 @@ public class TimeUtil {
      * returns number of milliseconds since 1970 for given time, optionally
      * ignoring leap seconds
      */
-    static long milliSecondSince1970(int[] time, boolean tt) throws Throwable {
+    static long milliSecondSince1970(final int[] time, final boolean tt) {
         int[] t = new int[6];
         System.arraycopy(time, 0, t, 0, 3);
         t[1]--;
@@ -320,7 +310,7 @@ public class TimeUtil {
         if (t[5] == 60) {
 
             if (!tt) {
-                throw new Throwable("second value 60 is valid " + "for tt2000 only.");
+                throw new IllegalArgumentException("second value 60 is valid for tt2000 only.");
             }
 
             int id = -1;
@@ -340,7 +330,7 @@ public class TimeUtil {
             }
 
             if (id == -1) {
-                throw new Throwable("Invalid leap second time");
+                throw new IllegalArgumentException("Invalid leap second time");
             }
 
             for (int i = (leapSecondIds.length - 1); i >= 0; i--) {
@@ -354,7 +344,7 @@ public class TimeUtil {
             }
 
             if (adjust == 0) {
-                throw new Throwable("Invalid leap second time");
+                throw new IllegalArgumentException("Invalid leap second time");
             }
 
             t[5] = 59;
@@ -367,20 +357,23 @@ public class TimeUtil {
     }
 
     /**
-     *
+     * The Class Validator.
      */
-    public static class Validator {
+    public static final class Validator {
+
+        private Validator() {
+        }
 
         /**
+         * Corrected if necessary.
          *
-         * @param varTime
-         * @param leapId
+         * @param varTime the var time
+         * @param leapId  the leap id
          *
-         * @return
-         *
-         * @throws Throwable
+         * @return the long
+         * @
          */
-        public static long correctedIfNecessary(long varTime, int leapId) throws Throwable {
+        public static long correctedIfNecessary(final long varTime, final int leapId) {
 
             if (leapId == LAST_LEAP_SECOND_ID) {
                 return varTime;
@@ -399,7 +392,7 @@ public class TimeUtil {
                 }
 
                 if (id < 0) {
-                    throw new Throwable("Invalid leapId");
+                    throw new IllegalArgumentException("Invalid leapId");
                 }
 
                 // if (varTime < tt2000(jtimes[id + 1])) return varTime;
@@ -425,7 +418,7 @@ public class TimeUtil {
                 return varTime;
             }
 
-            throw new Throwable("Out of date Leap second table");
+            throw new IllegalArgumentException("Out of date Leap second table");
         }
     }
 }

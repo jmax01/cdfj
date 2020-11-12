@@ -6,52 +6,60 @@ package gov.nasa.gsfc.spdf.cdfj;
 public interface AttributeEntry {
 
     /**
+     * Gets the attribute name.
      *
-     * @return
+     * @return the attribute name
      */
     String getAttributeName();
 
     /**
+     * Gets the number of elements.
      *
-     * @return
+     * @return the number of elements
      */
     int getNumberOfElements();
 
     /**
+     * Gets the type.
      *
-     * @return
+     * @return the type
      */
     int getType();
 
     /**
+     * Gets the value.
      *
-     * @return
+     * @return the value
      */
     Object getValue();
 
     /**
+     * Gets the variable number.
      *
-     * @return
+     * @return the variable number
      */
     int getVariableNumber();
 
     /**
+     * Checks if is long type.
      *
-     * @return
+     * @return true, if is long type
      */
     boolean isLongType();
 
     /**
+     * Checks if is same as.
      *
-     * @param ae
+     * @param ae the ae
      *
-     * @return
+     * @return true, if is same as
      */
     boolean isSameAs(AttributeEntry ae);
 
     /**
+     * Checks if is string type.
      *
-     * @return
+     * @return true, if is string type
      */
     boolean isStringType();
 }

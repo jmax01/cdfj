@@ -4,90 +4,59 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 /**
+ * The Class FloatArray.
  *
  * @author nand
  */
 public class FloatArray extends AArray {
 
     /**
+     * Instantiates a new float array.
      *
-     * @param o
-     *
-     * @throws Throwable
+     * @param o the o
      */
-    public FloatArray(Object o) throws Throwable {
+    public FloatArray(final Object o) {
         super(o, true);
     }
 
     /**
+     * Instantiates a new float array.
      *
-     * @param o
-     * @param bln
-     *
-     * @throws Throwable
+     * @param o        the o
+     * @param majority the majority
      */
-    public FloatArray(Object o, boolean majority) throws Throwable {
+    public FloatArray(final Object o, final boolean majority) {
         super(o, majority);
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
-    public Object array() {
-
-        switch (this.dim) {
-            case 1:
-                return this.o;
-            case 2:
-                return this.o;
-            case 3:
-                return this.o;
-            case 4:
-                return this.o;
-        }
-
-        return null;
-    }
-
-    /**
-     *
-     * @param cl
-     * @param ignore
-     *
-     * @return
-     *
-     * @throws Throwable
-     */
-    @Override
-    public ByteBuffer buffer(Class<?> cl, int ignore) throws Throwable {
+    public ByteBuffer buffer(final Class<?> cl, final int ignore) {
 
         if (cl != Float.TYPE) {
-            throw new Throwable("Only float targets supported");
+            throw new IllegalArgumentException("Only float targets supported was " + cl);
         }
 
-        if (this.dim > 4) {
-            throw new Throwable("Rank > 4 not supported");
+        if (this.dimensions > 4) {
+            throw new IllegalArgumentException("Rank > 4 not supported");
         }
 
         ByteBuffer buf = allocate(4);
-        int[] _dim = this.aa.getDimensions();
+        int[] _dim = this.attributeArray.getDimensions();
         FloatBuffer _buf = buf.asFloatBuffer();
 
-        switch (this.dim) {
+        switch (this.dimensions) {
             case 1:
-                float[] data = (float[]) this.o;
-                _buf.put(data);
+                float[] data1 = (float[]) this.data;
+                _buf.put(data1);
                 return buf;
             case 2:
-                float[][] data2 = (float[][]) this.o;
+                float[][] data2 = (float[][]) this.data;
                 for (int i = 0; i < _dim[0]; i++) {
                     _buf.put(data2[i]);
                 }
                 return buf;
             case 3:
-                float[][][] data3 = (float[][][]) this.o;
+                float[][][] data3 = (float[][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -115,7 +84,7 @@ public class FloatArray extends AArray {
                 }
                 return buf;
             case 4:
-                float[][][][] data4 = (float[][][][]) this.o;
+                float[][][][] data4 = (float[][][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -150,8 +119,9 @@ public class FloatArray extends AArray {
 
                 }
                 return buf;
+            default:
+                throw new IllegalArgumentException("Rank > 4 not supported");
         }
 
-        return null;
     }
 }

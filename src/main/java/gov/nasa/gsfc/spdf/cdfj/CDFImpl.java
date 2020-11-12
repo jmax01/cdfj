@@ -1,47 +1,56 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
-/* public */ abstract class CDFImpl implements java.io.Serializable {
+abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = -7106016786475171626L;
 
-    /**
-     * CDF constants
-     */
+    /** CDF constants. */
     public static final int GDR_RECORD = 2;
 
+    /** The Constant FLAGS_MAJORITY_MASK. */
     public static final int FLAGS_MAJORITY_MASK = 0x01;
 
+    /** The Constant ROW_MAJOR. */
     public static final int ROW_MAJOR = 1;
 
+    /** The Constant VXR_RECORD_TYPE. */
     public static final int VXR_RECORD_TYPE = 6;
 
+    /** The Constant VVR_RECORD_TYPE. */
     public static final int VVR_RECORD_TYPE = 7;
 
+    /** The Constant CVVR_RECORD_TYPE. */
     public static final int CVVR_RECORD_TYPE = 13;
 
+    /** The Constant STRINGDELIMITER. */
     public static final String STRINGDELIMITER = "\\N ";
 
-    private static final Logger LOGGER = Logger.getLogger("cdfj.cdfimpl");
+    static final Logger LOGGER = CDFLogging.newLogger(CDFImpl.class);
+
+    transient volatile FileChannel fileChannel;
 
     /**
      * CDF offsets
@@ -119,8 +128,6 @@ import java.util.zip.GZIPInputStream;
 
     boolean bigEndian;
 
-    long GDROffset;
-
     /**
      * Extracted from GDR
      */
@@ -142,25 +149,59 @@ import java.util.zip.GZIPInputStream;
 
     transient ByteBuffer buf;
 
-    protected String[] varNames;
+    /** The variable names. */
+    protected String[] variableNames;
 
-    protected Hashtable variableTable;
+    /** The variable table. */
+    private Map<String, CDFVariable> cdfVariablesByName;
 
-    private HashMap<Integer, CDFVariable> ivariableTable;
+    private Map<Integer, CDFVariable> cdfVariablesByNumber;
 
-    Hashtable attributeTable;
+    private Map<String, CDFAttribute> cdfAttributesByName;
 
+    /** The this CDF. */
     protected CDFCore thisCDF;
 
+    /** The source. */
     protected CDFFactory.CDFSource source;
 
+    /** The processing option. */
     protected CDFFactory.ProcessingOption processingOption;
 
-    protected CDFImpl(ByteBuffer buf) {
+    /**
+     * Instantiates a new CDF impl.
+     *
+     * @param buf the buf
+     */
+    protected CDFImpl(final ByteBuffer buf) {
         this.buf = buf;
+
     }
 
-    public static Object getNumberAttribute(int type, int nelement, ByteBuffer vbuf, ByteOrder byteOrder) {
+    /**
+     * Instantiates a new CDF impl.
+     *
+     * @param buf         the buf
+     * @param fileChannel the file channel
+     */
+    protected CDFImpl(final ByteBuffer buf, final FileChannel fileChannel) {
+        this.buf = buf;
+        this.fileChannel = fileChannel;
+
+    }
+
+    /**
+     * Gets the number attribute.
+     *
+     * @param type      the type
+     * @param nelement  the nelement
+     * @param vbuf      the vbuf
+     * @param byteOrder the byte order
+     *
+     * @return the number attribute
+     */
+    public static Object getNumberAttribute(final int type, final int nelement, final ByteBuffer vbuf,
+            final ByteOrder byteOrder) {
         ByteBuffer vbufLocal = vbuf.duplicate();
         vbufLocal.order(byteOrder);
         int ne = nelement;
@@ -204,7 +245,7 @@ import java.util.zip.GZIPInputStream;
                 for (int i = 0; i < nelement; i++) {
                     Number num = (Number) DataTypes.method[type].invoke(vbufLocal);
                     int n = num.intValue();
-                    value[i] = (n >= 0 ? n : longInt + n);
+                    value[i] = ((n >= 0) ? n : (longInt + n));
                 }
 
             }
@@ -223,179 +264,361 @@ import java.util.zip.GZIPInputStream;
         return value;
     }
 
-    public static TargetAttribute targetAttributeInstance(boolean p, boolean c) {
+    /**
+     * Target attribute instance.
+     *
+     * @param p the p
+     * @param c the c
+     *
+     * @return the target attribute
+     */
+    public static TargetAttribute targetAttributeInstance(final boolean p, final boolean c) {
         return new TargetAttribute(p, c);
     }
 
-    public void extractBytes(int bufOffset, byte[] ba, int offset, int len) {
-        this.buf.duplicate().position(bufOffset).get(ba, offset, len);
-    }
+    @Override
+    public List<AttributeEntry> attributeEntries(final String attributeName) {
 
-    public Object get(String varName) throws Throwable {
-        Variable var = getVariable(varName);
-
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (this.cdfAttributesByName == null) {
+            throw new IllegalStateException("No attributes " + attributeName);
         }
 
-        if (DataTypes.isStringType(var.getType())) {
-            VDataContainer.CString container = var.getStringContainer(null);
+        final CDFAttribute a = this.cdfAttributesByName.get(attributeName);
+
+        if (a == null) {
+            throw new IllegalArgumentException("No attribute named " + attributeName);
+        }
+
+        if (!a.isGlobal()) {
+            throw new IllegalArgumentException("No global attribute named " + attributeName);
+        }
+
+        return a.gEntries;
+    }
+
+    @Override
+    public List<AttributeEntry> attributeEntries(final String variableName, final String attributeName) {
+
+        CDFVariable cdfVariable = this.cdfVariablesByName.get(variableName);
+
+        if (cdfVariable == null) {
+            return null;
+        }
+
+        return cdfVariable.getAttributes()
+                .stream()
+                .filter(ae -> ae.getAttributeName()
+                        .equals(attributeName))
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    @Override
+    public void close() throws IOException {
+
+        if ((this.fileChannel != null) && this.fileChannel.isOpen()) {
+
+            synchronized (this.fileChannel) {
+                this.fileChannel.close();
+            }
+
+        }
+
+    }
+
+    /**
+     * Extract bytes.
+     *
+     * @param bufOffset the buf offset
+     * @param ba        the ba
+     * @param offset    the offset
+     * @param len       the len
+     */
+    public void extractBytes(final int bufOffset, final byte[] ba, final int offset, final int len) {
+        this.buf.duplicate()
+                .position(bufOffset)
+                .get(ba, offset, len);
+    }
+
+    /**
+     * Find variable by name.
+     *
+     * @param name the name
+     *
+     * @return the optional
+     */
+    public Optional<Variable> findVariableByName(final String name) {
+        return Optional.ofNullable(this.cdfVariablesByName.get(name));
+    }
+
+    /**
+     * Gets the.
+     *
+     * @param variableName the variable name
+     *
+     * @return the object
+     */
+    public Object get(final String variableName) {
+        Variable variable = getVariable(variableName);
+
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
+        }
+
+        if (DataTypes.isStringType(variable.getType())) {
+            VDataContainer.CString container = variable.getStringContainer(null);
             container.run();
             StringArray sa = (StringArray) container.asArray();
             return sa.array();
         }
 
-        VDataContainer.CDouble container = var.getDoubleContainer(null, false);
+        VDataContainer.CDouble container = variable.getDoubleContainer(null, false);
         container.run();
         DoubleArray da = container.asArray();
         return da.array();
     }
 
-    public Object get(String varName, int element) throws Throwable {
-        return get(varName, new int[] { element });
+    /**
+     * Gets the.
+     *
+     * @param variableName the variable name
+     * @param element      the element
+     *
+     * @return the object
+     */
+    public Object get(final String variableName, final int element) {
+        return get(variableName, new int[] { element });
     }
 
-    public Object get(String varName, int index0, int index1) throws Throwable {
-        DoubleVarContainer dbuf;
-        Variable var = getVariable(varName);
+    /**
+     * Gets the.
+     *
+     * @param variableName the variable name
+     * @param index0       the index 0
+     * @param index1       the index 1
+     *
+     * @return the object
+     */
+    public Object get(final String variableName, final int index0, final int index1) {
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        Variable variable = getVariable(variableName);
+
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        if (DataTypes.isStringType(var.getType())) {
-            throw new Throwable("Function not supported for string variables");
+        if (DataTypes.isStringType(variable.getType())) {
+            throw new IllegalArgumentException(
+                    "Function not supported for string variables of type " + variable.getType());
         }
 
-        dbuf = new DoubleVarContainer(this, var, null, false, ByteOrder.nativeOrder());
+        DoubleVarContainer dbuf = new DoubleVarContainer(this, variable, null, false, ByteOrder.nativeOrder());
         dbuf.run();
         return dbuf.asArrayElement(index0, index1);
     }
 
-    public Object get(String varName, int first, int last, int element) throws Throwable {
-        return get(varName, first, last, new int[] { element });
+    /**
+     * Gets the.
+     *
+     * @param variableName the variable name
+     * @param first        the first
+     * @param last         the last
+     * @param element      the element
+     *
+     * @return the object
+     */
+    public Object get(final String variableName, final int first, final int last, final int element) {
+        return get(variableName, first, last, new int[] { element });
     }
 
-    public Object get(String varName, int first, int last, int[] elements) throws Throwable {
-        DoubleVarContainer dbuf = getRangeBuffer(varName, first, last);
+    /**
+     * Gets the.
+     *
+     * @param variableName the variable name
+     * @param first        the first
+     * @param last         the last
+     * @param elements     the elements
+     *
+     * @return the object
+     */
+    public Object get(final String variableName, final int first, final int last, final int[] elements) {
+        DoubleVarContainer dbuf = getRangeBuffer(variableName, first, last);
         return dbuf.asArrayElement(elements);
     }
 
-    public Object get(String varName, int[] elements) throws Throwable {
-        DoubleVarContainer dbuf;
-        Variable var = getVariable(varName);
+    /**
+     * Gets the.
+     *
+     * @param variableName the variable name
+     * @param elements     the elements
+     *
+     * @return the object
+     */
+    public Object get(final String variableName, final int[] elements) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        if (DataTypes.isStringType(var.getType())) {
-            throw new Throwable("Function not supported for string variables");
+        if (DataTypes.isStringType(variable.getType())) {
+            throw new IllegalArgumentException(
+                    "Function not supported for string variables of type " + variable.getType());
         }
 
-        dbuf = new DoubleVarContainer(this, var, null, false, ByteOrder.nativeOrder());
+        DoubleVarContainer dbuf = new DoubleVarContainer(this, variable, null, false, ByteOrder.nativeOrder());
         dbuf.run();
         return dbuf.asArrayElement(elements);
     }
 
-    public double[] get1D(String varName) throws Throwable {
-        Variable var = getVariable(varName);
+    /**
+     * Gets the 1d.
+     *
+     * @param variableName the variable name
+     *
+     * @return the 1d
+     */
+    @Override
+    public double[] get1D(final String variableName) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        if (!var.isCompatible(Double.TYPE)) {
-            throw new Throwable("Variable " + varName + " cannot be "
-                    + "converted to double, or the conversion may result in loss of " + "precision. Use get1D("
-                    + varName + ", Boolean.TRUE) for " + "string type. Otherwise use get1D(" + varName + ", false");
+        if (!variable.isCompatible(Double.TYPE)) {
+            throw new IllegalArgumentException("Variable " + variableName + " cannot be "
+                    + "converted to double, or the conversion may result in loss of precision. Use get1D("
+                    + variableName + ", Boolean.TRUE) for string type. Otherwise use get1D(" + variableName
+                    + ", false");
         }
 
-        return var.asDoubleArray();
+        return variable.asDoubleArray();
     }
 
-    public Object get1D(String varName, boolean preserve) throws Throwable {
-        Variable var = getVariable(varName);
+    /**
+     * Gets the 1d.
+     *
+     * @param variableName the variable name
+     * @param preserve     the preserve
+     *
+     * @return the 1d
+     */
+    @Override
+    public Object get1D(final String variableName, final boolean preserve) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        int type = var.getType();
+        int type = variable.getType();
 
         if (DataTypes.isStringType(type)) {
-            return var.asByteArray(null);
+            return variable.asByteArray(null);
         }
 
         if (preserve) {
 
             if (DataTypes.isLongType(type)) {
-                return var.asLongArray(null);
+                return variable.asLongArray(null);
             }
 
         }
 
-        return var.asDoubleArray();
-    }
-
-    public byte[] get1D(String varName, Boolean stringType) throws Throwable {
-        Variable var = getVariable(varName);
-
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
-        }
-
-        int type = var.getType();
-
-        if (!DataTypes.isStringType(type)) {
-            throw new Throwable("Variable " + varName + " is not a string variable");
-        }
-
-        return var.asByteArray(null);
-    }
-
-    public Object get1D(String varName, int point) throws Throwable {
-        return get1D(varName, point, -1);
-    }
-
-    /*
-     * public double[] get1D(String varName, int first, int last, int[] stride)
-     * throws Throwable {
-     * DoubleVarContainer dbuf = getRangeBuffer(varName, first, last);
-     * return dbuf.asSampledArray(stride);
-     * }
-     */
-    public Object get1D(String varName, int first, int last) throws Throwable {
-        Variable var = getVariable(varName);
-
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
-        }
-
-        int type = var.getType();
-        int[] range = (last >= 0) ? new int[] { first, last } : new int[] { first };
-
-        if (DataTypes.isLongType(type)) {
-            return var.asLongArray(range);
-        }
-
-        if (DataTypes.isStringType(type)) {
-            return var.asByteArray(range);
-        }
-
-        return var.asDoubleArray(range);
+        return variable.asDoubleArray();
     }
 
     /**
-     * returns value of the named global attribute
+     * Gets the 1d.
+     *
+     * @param variableName the variable name
+     * @param stringType   the string type
+     *
+     * @return the 1d
      */
-    public Object getAttribute(String atr) {
+    @Override
+    public byte[] get1D(final String variableName, final Boolean stringType) {
+        Variable variable = getVariable(variableName);
 
-        if (this.attributeTable == null) {
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
+        }
+
+        int type = variable.getType();
+
+        if (!DataTypes.isStringType(type)) {
+            throw new IllegalArgumentException("Variable " + variableName + " is not a string variable");
+        }
+
+        return variable.asByteArray(null);
+    }
+
+    /**
+     * Gets the 1d.
+     *
+     * @param variableName the variable name
+     * @param point        the point
+     *
+     * @return the 1d
+     */
+    @Override
+    public Object get1D(final String variableName, final int point) {
+        return get1D(variableName, point, -1);
+    }
+
+    /**
+     * Gets the 1d.
+     *
+     * @param variableName the variable name
+     * @param first        the first
+     * @param last         the last
+     *
+     * @return the 1d
+     */
+    /*
+     * public double[] get1D(String variableName, int first, int last, int[] stride)
+     * {
+     * DoubleVarContainer dbuf = getRangeBuffer(variableName, first, last);
+     * return dbuf.asSampledArray(stride);
+     * }
+     */
+    @Override
+    public Object get1D(final String variableName, final int first, final int last) {
+        Variable variable = getVariable(variableName);
+
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
+        }
+
+        int type = variable.getType();
+        int[] range = (last >= 0) ? new int[] { first, last } : new int[] { first };
+
+        if (DataTypes.isLongType(type)) {
+            return variable.asLongArray(range);
+        }
+
+        if (DataTypes.isStringType(type)) {
+            return variable.asByteArray(range);
+        }
+
+        return variable.asDoubleArray(range);
+    }
+
+    /**
+     * returns value of the named global attribute.
+     *
+     * @param atr the atr
+     *
+     * @return the attribute
+     */
+    @Override
+    public Object getAttribute(final String atr) {
+
+        if (this.cdfAttributesByName == null) {
             return null;
         }
 
-        CDFAttribute a = (CDFAttribute) this.attributeTable.get(atr);
+        CDFAttribute a = this.cdfAttributesByName.get(atr);
 
         if (a == null) {
             return null;
@@ -405,17 +628,20 @@ import java.util.zip.GZIPInputStream;
             return null;
         }
 
-        if (a.gEntries.size() == 0) {
+        if (a.gEntries.isEmpty()) {
             return null;
         }
 
-        AttributeEntry ae = (AttributeEntry) a.gEntries.elementAt(0);
+        AttributeEntry ae = a.gEntries.get(0);
 
         if (ae.isStringType()) {
+
             String[] sa = new String[a.gEntries.size()];
 
             for (int i = 0; i < a.gEntries.size(); i++) {
-                ae = (AttributeEntry) a.gEntries.elementAt(i);
+
+                ae = a.gEntries.get(i);
+
                 sa[i] = (String) ae.getValue();
             }
 
@@ -425,148 +651,174 @@ import java.util.zip.GZIPInputStream;
         return ae.getValue();
     }
 
-    /**
-     * returns value of the named attribute for the named variable
-     */
-    public Object getAttribute(String var, String atr) {
-        CDFVariable c = (CDFVariable) this.variableTable.get(var);
+    @Override
+    public Object getAttribute(final String variableName, final String atr) {
 
-        if (c == null) {
+        CDFVariable cdfVariable = this.cdfVariablesByName.get(variableName);
+
+        if (cdfVariable == null) {
             return null;
         }
 
-        Vector attrs = c.attributes;
-        List values = new Vector();
-
-        for (int i = 0; i < attrs.size(); i++) {
-            AttributeEntry ae = (AttributeEntry) attrs.elementAt(i);
-
-            if (ae.getAttributeName().equals(atr)) {
-                values.add(ae.getValue());
-            }
-
-        }
-
-        return values;
+        return cdfVariable.getAttributes()
+                .stream()
+                .filter(ae -> ae.getAttributeName()
+                        .equals(atr))
+                .collect(Collectors.toCollection(CopyOnWriteArrayList::new));
     }
 
-    /**
-     * returns list of AttributeEntry objects for the named global attribute.
-     */
-    public Vector getAttributeEntries(String atr) throws Throwable {
-
-        if (this.attributeTable == null) {
-            throw new Throwable("No attribute named " + atr);
-        }
-
-        final CDFAttribute a = (CDFAttribute) this.attributeTable.get(atr);
-
-        if (a == null) {
-            throw new Throwable("No attribute named " + atr);
-        }
-
-        if (!a.isGlobal()) {
-            throw new Throwable("No global attribute named " + atr);
-        }
-
-        return a.gEntries;
+    @Deprecated
+    @Override
+    public Vector getAttributeEntries(final String attributeName) {
+        return attributeEntries(attributeName).stream()
+                .collect(Collectors.toCollection(Vector::new));
     }
 
     /**
      * returns list of AttributeEntry objects for the named attribute
      * for the named variable.
+     *
+     * @param variableName the variable name
+     *
+     * @return the attribute entries or null
+     *
+     * @deprecated
      */
-    public Vector getAttributeEntries(String var, String atr) {
-        CDFVariable c = (CDFVariable) this.variableTable.get(var);
+    @Deprecated
+    @Override
+    public Vector<AttributeEntry> getAttributeEntries(final String variableName, final String attributeName) {
+        List<AttributeEntry> attributeEntries = attributeEntries(variableName, attributeName);
 
-        if (c == null) {
-            return null;
-        }
+        return (attributeEntries == null) ? null
+                : attributeEntries.stream()
+                        .collect(Collectors.toCollection(Vector::new));
 
-        Vector attrs = c.attributes;
-        Vector entries = new Vector();
-
-        for (int i = 0; i < attrs.size(); i++) {
-            AttributeEntry ae = (AttributeEntry) attrs.elementAt(i);
-
-            if (ae.getAttributeName().equals(atr)) {
-                entries.add(ae);
-            }
-
-        }
-
-        return entries;
-    }
-
-    public byte[] getByteArray(String varName, int[] pt) throws Throwable {
-        Variable var = getVariable(varName);
-
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
-        }
-
-        return var.asByteArray(pt);
     }
 
     /**
-     * returns byte order of source CDF
+     * Gets the byte array.
+     *
+     * @param variableName the variable name
+     * @param pt           the pt
+     *
+     * @return the byte array
      */
+    @Override
+    public byte[] getByteArray(final String variableName, final int[] pt) {
+        Variable variable = getVariable(variableName);
+
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
+        }
+
+        return variable.asByteArray(pt);
+    }
+
+    /**
+     * returns byte order of source CDF.
+     *
+     * @return the byte order
+     */
+    @Override
     public ByteOrder getByteOrder() {
         return this.byteOrder;
     }
 
-    public double[] getDoubleArray(String varName, int[] pt) throws Throwable {
-        return getDoubleArray(varName, pt, true);
+    /**
+     * Gets the double array.
+     *
+     * @param variableName the variable name
+     * @param pt           the pt
+     *
+     * @return the double array
+     */
+    @Override
+    public double[] getDoubleArray(final String variableName, final int[] pt) {
+        return getDoubleArray(variableName, pt, true);
     }
 
-    public double[] getDoubleArray(String varName, int[] pt, boolean preserve) throws Throwable {
-        Variable var = getVariable(varName);
+    /**
+     * Gets the double array.
+     *
+     * @param variableName the variable name
+     * @param pt           the pt
+     * @param preserve     the preserve
+     *
+     * @return the double array
+     */
+    @Override
+    public double[] getDoubleArray(final String variableName, final int[] pt, final boolean preserve) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        return var.asDoubleArray(preserve, pt);
+        return variable.asDoubleArray(preserve, pt);
     }
 
-    public float[] getFloatArray(String varName, int[] pt) throws Throwable {
-        return getFloatArray(varName, pt, true);
+    /**
+     * Gets the float array.
+     *
+     * @param variableName the variable name
+     * @param pt           the pt
+     *
+     * @return the float array
+     */
+    @Override
+    public float[] getFloatArray(final String variableName, final int[] pt) {
+        return getFloatArray(variableName, pt, true);
     }
 
-    public float[] getFloatArray(String varName, int[] pt, boolean preserve) throws Throwable {
-        Variable var = getVariable(varName);
+    /**
+     * Gets the float array.
+     *
+     * @param variableName the variable name
+     * @param pt           the pt
+     * @param preserve     the preserve
+     *
+     * @return the float array
+     */
+    @Override
+    public float[] getFloatArray(final String variableName, final int[] pt, final boolean preserve) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        return var.asFloatArray(preserve, pt);
+        return variable.asFloatArray(preserve, pt);
     }
 
     /**
      * returns value of the named global attribute as GlobalAttribute
      * object.
+     *
+     * @param atr the atr
+     *
+     * @return the global attribute
      */
-    public GlobalAttribute getGlobalAttribute(String atr) throws Throwable {
+    @Override
+    public GlobalAttribute getGlobalAttribute(final String atr) {
 
-        if (this.attributeTable == null) {
-            throw new Throwable("No attribute named " + atr);
+        if (this.cdfAttributesByName == null) {
+            throw new IllegalStateException("No attribute named " + atr);
         }
 
-        final CDFAttribute a = (CDFAttribute) this.attributeTable.get(atr);
+        final CDFAttribute a = this.cdfAttributesByName.get(atr);
 
         if (a == null) {
-            throw new Throwable("No attribute named " + atr);
+            throw new IllegalArgumentException("No attribute named " + atr);
         }
 
         if (!a.isGlobal()) {
-            throw new Throwable("No global attribute named " + atr);
+            throw new IllegalArgumentException("No global attribute named " + atr);
         }
 
         return new GlobalAttribute() {
 
             @Override
-            public Object getEntry(int n) {
+            public Object getEntry(final int n) {
 
                 if (n > a.gEntries.size()) {
                     return null;
@@ -576,7 +828,7 @@ import java.util.zip.GZIPInputStream;
                     return null;
                 }
 
-                AttributeEntry ae = (AttributeEntry) a.gEntries.elementAt(n);
+                AttributeEntry ae = a.gEntries.get(n);
                 return ae.getValue();
             }
 
@@ -601,188 +853,361 @@ import java.util.zip.GZIPInputStream;
             }
 
             @Override
-            public boolean isLongType(int n) throws Throwable {
+            public boolean isLongType(final int n) {
 
                 if ((n < 0) || (n > a.gEntries.size())) {
-                    throw new Throwable("Invalid attribute index");
+                    throw new IllegalArgumentException("Invalid attribute index " + n);
                 }
 
-                AttributeEntry ae = (AttributeEntry) a.gEntries.elementAt(n);
+                AttributeEntry ae = a.gEntries.get(n);
                 return ae.isLongType();
             }
 
             @Override
-            public boolean isStringType(int n) throws Throwable {
+            public boolean isStringType(final int n) {
 
                 if ((n < 0) || (n > a.gEntries.size())) {
-                    throw new Throwable("Invalid attribute index");
+                    throw new IllegalArgumentException("Invalid attribute index ");
                 }
 
-                AttributeEntry ae = (AttributeEntry) a.gEntries.elementAt(n);
+                AttributeEntry ae = a.gEntries.get(n);
                 return ae.isStringType();
             }
         };
     }
 
-    public int[] getIntArray(String varName, int[] pt) throws Throwable {
-        return getIntArray(varName, pt, true);
+    /**
+     * Gets the int array.
+     *
+     * @param variableName the variable name
+     * @param pt           the pt
+     *
+     * @return the int array
+     */
+    @Override
+    public int[] getIntArray(final String variableName, final int[] pt) {
+        return getIntArray(variableName, pt, true);
     }
 
-    public int[] getIntArray(String varName, int[] pt, boolean preserve) throws Throwable {
-        Variable var = getVariable(varName);
+    /**
+     * Gets the int array.
+     *
+     * @param variableName the variable name
+     * @param pt           the pt
+     * @param preserve     the preserve
+     *
+     * @return the int array
+     */
+    @Override
+    public int[] getIntArray(final String variableName, final int[] pt, final boolean preserve) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        return var.asIntArray(preserve, pt);
+        return variable.asIntArray(preserve, pt);
     }
 
-    public Object getLong(String varName) throws Throwable {
-        Variable var = getVariable(varName);
+    /**
+     * Gets the long.
+     *
+     * @param variableName the variable name
+     *
+     * @return the long
+     */
+    public Object getLong(final String variableName) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        if (!DataTypes.isLongType(var.getType())) {
-            throw new Throwable("getLong method appropriate for " + "TT2000 and INT8 types. ");
+        if (!DataTypes.isLongType(variable.getType())) {
+            throw new IllegalArgumentException("getLong method appropriate for TT2000 and INT8 types. ");
         }
 
-        VDataContainer.CLong container = var.getLongContainer(null);
+        VDataContainer.CLong container = variable.getLongContainer(null);
         container.run();
         LongArray la = container.asArray();
         return la.array();
     }
 
-    public long[] getLongArray(String varName, int[] pt) throws Throwable {
-        Variable var = getVariable(varName);
+    /**
+     * Gets the long array.
+     *
+     * @param variableName the variable name
+     * @param pt           the pt
+     *
+     * @return the long array
+     */
+    @Override
+    public long[] getLongArray(final String variableName, final int[] pt) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        return var.asLongArray(pt);
+        return variable.asLongArray(pt);
     }
 
-    public double[] getOneD(String varName, boolean columnMajor) throws Throwable {
-        CDFVariable var = (CDFVariable) getVariable(varName);
+    /**
+     * Gets the one D.
+     *
+     * @param variableName the variable name
+     * @param columnMajor  the column major
+     *
+     * @return the one D
+     */
+    @Override
+    public double[] getOneD(final String variableName, final boolean columnMajor) {
+        CDFVariable variable = (CDFVariable) getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        if (!var.isCompatible(Double.TYPE)) {
-            throw new Throwable("Variable " + varName + " cannot be "
-                    + "converted to double, or the conversion may result in loss of " + "precision. Use getOneD("
-                    + varName + ", Boolean.TRUE) for " + "string type. Otherwise use get1D(" + varName + ", false");
+        if (!variable.isCompatible(Double.TYPE)) {
+            throw new IllegalArgumentException("Variable " + variableName + " cannot be "
+                    + "converted to double, or the conversion may result in loss of precision. Use getOneD("
+                    + variableName + ", Boolean.TRUE) for string type. Otherwise use get1D(" + variableName
+                    + ", false");
         }
 
         TargetAttribute ta = new TargetAttribute(false, columnMajor);
-        return var.asDoubleArray(ta, null);
+        return variable.asDoubleArray(ta, null);
     }
 
-    public byte[] getOneD(String varName, Boolean stringType, boolean columnMajor) throws Throwable {
-        CDFVariable var = (CDFVariable) getVariable(varName);
+    /**
+     * Gets the one D.
+     *
+     * @param variableName the variable name
+     * @param stringType   the string type
+     * @param columnMajor  the column major
+     *
+     * @return the one D
+     */
+    public byte[] getOneD(final String variableName, final Boolean stringType, final boolean columnMajor) {
+        CDFVariable variable = (CDFVariable) getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        int type = var.getType();
+        int type = variable.getType();
 
         if (!DataTypes.isStringType(type)) {
-            throw new Throwable("Variable " + varName + " is not a string variable");
+            throw new IllegalArgumentException("Variable " + variableName + " is not a string variable");
         }
 
-        return var.asByteArray(null, columnMajor);
+        return variable.asByteArray(null, columnMajor);
     }
 
+    /**
+     * Gets the point.
+     *
+     * @param variableName the variable name
+     * @param point        the point
+     *
+     * @return the point
+     */
     // --- POINT
-    public Object getPoint(String varName, int point) throws Throwable {
-        Variable var = getVariable(varName);
+    public Object getPoint(final String variableName, final int point) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        if (DataTypes.isStringType(var.getType())) {
-            VDataContainer.CString container = var.getStringContainer(null);
+        if (DataTypes.isStringType(variable.getType())) {
+            VDataContainer.CString container = variable.getStringContainer(null);
             container.run();
             StringArray sa = (StringArray) container.asArray();
             return sa.array();
         }
 
-        VDataContainer.CDouble dbuf = new DoubleVarContainer(this, var, new int[] { point }, false,
+        VDataContainer dbuf = new DoubleVarContainer(this, variable, new int[] { point }, false,
                 ByteOrder.nativeOrder());
         dbuf.run();
-        return dbuf.asArray().array();
+        return dbuf.asArray()
+                .array();
     }
 
-    public Object getRange(String varName, int first, int last) throws Throwable {
-        return getRange(varName, first, last, false);
+    /**
+     * Gets the range.
+     *
+     * @param variableName the variable name
+     * @param first        the first
+     * @param last         the last
+     *
+     * @return the range
+     */
+    public Object getRange(final String variableName, final int first, final int last) {
+        return getRange(variableName, first, last, false);
     }
 
+    /**
+     * Gets the range.
+     *
+     * @param variableName the variable name
+     * @param first        the first
+     * @param last         the last
+     * @param oned         the oned
+     *
+     * @return the range
+     */
     // --- RANGE
-    public Object getRange(String varName, int first, int last, boolean oned) throws Throwable {
-        DoubleVarContainer dbuf = getRangeBuffer(varName, first, last);
+    public Object getRange(final String variableName, final int first, final int last, final boolean oned) {
+        DoubleVarContainer dbuf = getRangeBuffer(variableName, first, last);
 
         if (oned) {
             return dbuf.as1DArray();
         }
 
-        return dbuf.asArray().array();
+        return dbuf.asArray()
+                .array();
     }
 
-    public Object getRange(String varName, int first, int last, int element) throws Throwable {
-        return getRange(varName, first, last, new int[] { element });
+    /**
+     * Gets the range.
+     *
+     * @param variableName the variable name
+     * @param first        the first
+     * @param last         the last
+     * @param element      the element
+     *
+     * @return the range
+     */
+    public Object getRange(final String variableName, final int first, final int last, final int element) {
+        return getRange(variableName, first, last, new int[] { element });
     }
 
-    public Object getRange(String varName, int first, int last, int[] elements) throws Throwable {
-        Variable var = getVariable(varName);
+    /**
+     * Gets the range.
+     *
+     * @param variableName the variable name
+     * @param first        the first
+     * @param last         the last
+     * @param elements     the elements
+     *
+     * @return the range
+     */
+    public Object getRange(final String variableName, final int first, final int last, final int[] elements) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        if (DataTypes.isStringType(var.getType())) {
-            throw new Throwable("Function not supported for string variables");
+        if (DataTypes.isStringType(variable.getType())) {
+            throw new IllegalArgumentException("Function not supported for string variables");
         }
 
-        DoubleVarContainer dbuf = getRangeBuffer(varName, first, last);
+        DoubleVarContainer dbuf = getRangeBuffer(variableName, first, last);
         return dbuf.asArrayElement(elements);
     }
 
-    public Object getRangeOneD(String varName, int first, int last, boolean columnMajor) throws Throwable {
-        DoubleVarContainer dbuf = getRangeBuffer(varName, first, last);
+    /**
+     * Gets the range one D.
+     *
+     * @param variableName the variable name
+     * @param first        the first
+     * @param last         the last
+     * @param columnMajor  the column major
+     *
+     * @return the range one D
+     */
+    @Override
+    public Object getRangeOneD(final String variableName, final int first, final int last, final boolean columnMajor) {
+        DoubleVarContainer dbuf = getRangeBuffer(variableName, first, last);
         return dbuf.asOneDArray(columnMajor);
     }
 
-    public short[] getShortArray(String varName, int[] pt) throws Throwable {
-        return getShortArray(varName, pt, true);
+    /**
+     * Gets the short array.
+     *
+     * @param variableName the variable name
+     * @param pt           the pt
+     *
+     * @return the short array
+     */
+    @Override
+    public short[] getShortArray(final String variableName, final int[] pt) {
+        return getShortArray(variableName, pt, true);
     }
 
-    public short[] getShortArray(String varName, int[] pt, boolean preserve) throws Throwable {
-        Variable var = getVariable(varName);
+    /**
+     * Gets the short array.
+     *
+     * @param variableName the variable name
+     * @param pt           the pt
+     * @param preserve     the preserve
+     *
+     * @return the short array
+     */
+    @Override
+    public short[] getShortArray(final String variableName, final int[] pt, final boolean preserve) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        return var.asShortArray(preserve, pt);
+        return variable.asShortArray(preserve, pt);
     }
 
+    /**
+     * Gets the source.
+     *
+     * @return the source
+     */
+    @Override
     public CDFFactory.CDFSource getSource() {
         return this.source;
     }
 
-    public ByteBuffer getValueBuffer(long offset) {
+    /**
+     * Gets the string.
+     *
+     * @param offset the offset
+     *
+     * @return the string
+     */
+    public String getString(final long offset) {
+
+        if (this.fileChannel == null) {
+            return getString(offset, maxStringSize());
+        }
+
+        ByteBuffer _buf = getRecord(offset, maxStringSize());
+
+        return getString(_buf, maxStringSize());
+    }
+
+    /**
+     * Gets the value buffer.
+     *
+     * @param offset the offset
+     *
+     * @return the value buffer
+     */
+    public ByteBuffer getValueBuffer(final long offset) {
         ByteBuffer bv = getRecord(offset);
         bv.position(this.offset_RECORDS);
         return bv;
     }
 
-    public ByteBuffer getValueBuffer(long offset, int size, int number) {
+    /**
+     * Gets the value buffer.
+     *
+     * @param offset the offset
+     * @param size   the size
+     * @param number the number
+     *
+     * @return the value buffer
+     */
+    public ByteBuffer getValueBuffer(final long offset, final int size, final int number) {
         ByteBuffer bv = getRecord(offset);
 
         if (bv.getInt(this.offset_RECORD_TYPE) == VVR_RECORD_TYPE) {
@@ -818,7 +1243,7 @@ import java.util.zip.GZIPInputStream;
             }
 
         } catch (IOException ex) {
-            System.out.println(ex.toString() + " at offset " + offset);
+            System.out.println(ex + " at offset " + offset);
             System.out.println("Trying to get data as uncompressed");
             return getValueBuffer(offset);
         }
@@ -832,159 +1257,279 @@ import java.util.zip.GZIPInputStream;
 
     /**
      * returns the object that implements the Variable interface for
-     * the named variable
+     * the named variable.
+     *
+     * @param name the name
+     *
+     * @return the variable or null;
      */
-    public Variable getVariable(String name) {
-        return (Variable) this.variableTable.get(name);
+    @Override
+    public Variable getVariable(final String name) {
+        return this.cdfVariablesByName.get(name);
     }
 
     /**
-     * returns variable names in a String[]
+     * Gets the variable by name.
+     *
+     * @param name the name
+     * 
+     * @return the variable by name
      */
+    public Optional<Variable> getVariableByName(final String name) {
+        return Optional.ofNullable(this.cdfVariablesByName.get(name));
+    }
+
+    /**
+     * returns variable names in a String[].
+     *
+     * @return the variable names
+     */
+    @Override
     public String[] getVariableNames() {
-        String[] sa = new String[this.varNames.length];
-        System.arraycopy(this.varNames, 0, sa, 0, sa.length);
+        String[] sa = new String[this.variableNames.length];
+        System.arraycopy(this.variableNames, 0, sa, 0, sa.length);
         return sa;
     }
 
     /**
-     * returns variable names of a given VAR_TYPE in a String[]
+     * returns variable names of a given VAR_TYPE in a String[].
+     *
+     * @param type the type
+     *
+     * @return the variable names
      */
-    public String[] getVariableNames(String type) {
-        Vector vars = new Vector();
+    // FIXME: move to istp dedicated package or library
+    @Override
+    public String[] getVariableNames(final String type) {
 
-        for (String varName : this.varNames) {
-            Vector v = (Vector) getAttribute(varName, "VAR_TYPE");
+        Collection<String> vars = new ArrayList<>();
 
-            if (v == null) {
+        for (String variableName : this.variableNames) {
+
+            @SuppressWarnings("unchecked")
+            List<String> v = (List<String>) getAttribute(variableName, "VAR_TYPE");
+
+            if ((v == null) || v.isEmpty()) {
                 continue;
             }
 
-            if (v.size() == 0) {
-                continue;
-            }
-
-            String s = (String) v.elementAt(0);
+            String s = v.get(0);
 
             if (s.equals(type)) {
-                vars.add(varName);
+                vars.add(variableName);
             }
 
         }
 
-        String[] sa = new String[vars.size()];
-
-        for (int i = 0; i < sa.length; i++) {
-            sa[i] = (String) vars.elementAt(i);
-        }
-
-        return sa;
+        return vars.toArray(String[]::new);
     }
 
     /**
-     * returns names of global attributes in a String[]
+     * returns names of global attributes in a String[].
+     *
+     * @return the string[]
      */
-    public String[] globalAttributeNames() {
-        Vector vec = new Vector();
+    @Override
+    public String[] allAttributeNames() {
 
-        if (this.attributeTable == null) {
-            return new String[0];
-        }
+        return this.cdfAttributesByName.values()
+                .stream()
+                .map(CDFAttribute::getName)
+                .toArray(String[]::new);
 
-        Set set = this.attributeTable.keySet();
-        Iterator iter = set.iterator();
-
-        while (iter.hasNext()) {
-            CDFAttribute attr = (CDFAttribute) this.attributeTable.get(iter.next());
-
-            if (attr.isGlobal()) {
-                vec.add(attr.name);
-            }
-
-        }
-
-        String[] sa = new String[vec.size()];
-
-        for (int i = 0; i < vec.size(); i++) {
-            sa[i] = (String) vec.elementAt(i);
-        }
-
-        return sa;
     }
 
+    /**
+     * returns names of global attributes in a String[].
+     *
+     * @return the string[]
+     */
+    @Override
+    public String[] globalAttributeNames() {
+
+        return this.cdfAttributesByName.values()
+                .stream()
+                .filter(CDFAttribute::isGlobal)
+                .map(CDFAttribute::getName)
+                .toArray(String[]::new);
+
+    }
+
+    /**
+     * Checks if is big endian.
+     *
+     * @return true, if is big endian
+     */
     public boolean isBigEndian() {
         return this.bigEndian;
     }
 
-    public boolean isCompatible(String varName, Class cl) throws Throwable {
-        Variable var = getVariable(varName);
+    /**
+     * Checks if is compatible.
+     *
+     * @param variableName the variable name
+     * @param cl           the cl
+     *
+     * @return true, if is compatible
+     */
+    @Override
+    public boolean isCompatible(final String variableName, final Class<?> cl) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        return var.isCompatible(cl);
+        return variable.isCompatible(cl);
     }
 
     /**
-     * returns row majority of source CDF
+     * returns row majority of source CDF.
+     *
+     * @return true, if successful
      */
+    @Override
     public boolean rowMajority() {
         return ((this.flags & FLAGS_MAJORITY_MASK) == ROW_MAJOR);
     }
 
-    /**
-     * returns names of variable attributes in a String[]
-     */
-    public String[] variableAttributeNames(String name) {
-        CDFVariable var = (CDFVariable) this.variableTable.get(name);
+    @Override
+    public String[] variableAttributeNames(final String variableName) {
 
-        if (var == null) {
+        CDFVariable variable = this.cdfVariablesByName.get(variableName);
+
+        if (variable == null) {
             return null;
         }
 
-        String[] sa = new String[var.attributes.size()];
-
-        for (int i = 0; i < sa.length; i++) {
-            AttributeEntry ae = (AttributeEntry) var.attributes.elementAt(i);
-            sa[i] = ae.getAttributeName();
-        }
-
-        return sa;
+        return variable.getAttributes()
+                .stream()
+                .map(AttributeEntry::getAttributeName)
+                .toArray(String[]::new);
     }
 
     /**
      * returns dimensions of the named variable.
+     *
+     * @param name the name
+     *
+     * @return the int[]
      */
-    public int[] variableDimensions(String name) {
-        VariableMetaData var = (Variable) this.variableTable.get(name);
+    public int[] variableDimensions(final String name) {
+        VariableMetaData variable = this.cdfVariablesByName.get(name);
 
-        if (var == null) {
+        if (variable == null) {
             return null;
         }
 
-        int[] dims = var.getDimensions();
+        int[] dims = variable.getDimensions();
         int[] ia = new int[dims.length];
         System.arraycopy(ia, 0, dims, 0, dims.length);
         return ia;
     }
 
+    /**
+     * Gets the buffer.
+     *
+     * @return the buffer
+     */
     protected ByteBuffer getBuffer() {
         return this.buf;
     }
 
-    protected ByteBuffer getRecord(long offset) {
-        ByteBuffer _buf = this.buf.duplicate();
-        _buf.position((int) offset);
-        return _buf.slice();
+    /**
+     * Gets the record.
+     *
+     * @param offset the offset
+     *
+     * @return the record
+     */
+    protected ByteBuffer getRecord(final long offset) {
+
+        if (this.fileChannel == null) {
+            ByteBuffer _buf = this.buf.duplicate();
+            _buf.position((int) offset);
+            return _buf.slice();
+        }
+
+        ByteBuffer lenBuf = ByteBuffer.allocate(4);
+
+        synchronized (this.fileChannel) {
+
+            try {
+                this.fileChannel.position(offset + 4);
+                this.fileChannel.read(lenBuf);
+                int size = lenBuf.getInt(0);
+                return getRecord(offset, size);
+            } catch (IOException e) {
+                LOGGER.log(Level.SEVERE, "Failed to read from file channel", e);
+                return null;
+            }
+
+        }
+
     }
 
+    /**
+     * Gets the record.
+     *
+     * @param offset the offset
+     * @param size   the size
+     *
+     * @return the record
+     */
+    protected ByteBuffer getRecord(final long offset, final int size) {
+
+        ByteBuffer bb = ByteBuffer.allocate(size);
+
+        synchronized (this.fileChannel) {
+
+            try {
+                this.fileChannel.position(offset);
+
+                int got = this.fileChannel.read(bb);
+
+                if (got != size) {
+
+                    LOGGER.log(Level.SEVERE,
+                            () -> String.format("Failed to get record at offset %s, needed %s bytes, got %s bytes.",
+                                    offset, size, got));
+
+                    return null;
+                }
+
+                bb.position(0);
+                return bb;
+            } catch (IOException e) {
+                LOGGER.log(Level.SEVERE, "Failed to read from file channel", e);
+                return null;
+            }
+
+        }
+
+    }
+
+    /**
+     * Gets the record offset.
+     *
+     * @return the record offset
+     */
     protected int getRecordOffset() {
         return this.offset_RECORDS;
     }
 
-    protected String getString(ByteBuffer _buf, int max) {
+    /**
+     * Gets the string.
+     *
+     * @param _buf the buf
+     * @param max  the max
+     *
+     * @return the string
+     */
+    protected String getString(final ByteBuffer _buf, final int max) {
+
         byte[] ba = new byte[max];
+
         int i = 0;
 
         for (; i < max; i++) {
@@ -999,56 +1544,115 @@ import java.util.zip.GZIPInputStream;
         return new String(ba, 0, i);
     }
 
-    protected abstract String getString(long offset);
-
-    protected String getString(long offset, int max) {
+    /**
+     * Gets the string.
+     *
+     * @param offset the offset
+     * @param max    the max
+     *
+     * @return the string
+     */
+    protected String getString(final long offset, final int max) {
         return getString(getRecord(offset), max);
     }
 
-    protected abstract long longInt(ByteBuffer buf);
+    /**
+     * Long int.
+     *
+     * @param buf the buf
+     *
+     * @return the long
+     */
+    protected abstract long longInt(ByteBuffer byteBuffer);
 
-    protected abstract int lowOrderInt(ByteBuffer buf);
+    /**
+     * Low order int.
+     *
+     * @param buf the buf
+     *
+     * @return the int
+     */
+    protected abstract int lowOrderInt(ByteBuffer byteBuffer);
 
-    protected abstract int lowOrderInt(ByteBuffer buf, int offset);
+    /**
+     * Low order int.
+     *
+     * @param buf    the buf
+     * @param offset the offset
+     *
+     * @return the int
+     */
+    protected abstract int lowOrderInt(ByteBuffer byteBuffer, int offset);
 
-    protected void setBuffer(ByteBuffer b) {
+    /**
+     * Sets the buffer.
+     *
+     * @param b the new buffer
+     */
+    protected void setBuffer(final ByteBuffer b) {
         this.buf = b;
     }
 
-    protected void setByteOrder(boolean _bigEndian) {
+    /**
+     * Sets the byte order.
+     *
+     * @param _bigEndian the new byte order
+     */
+    protected void setByteOrder(final boolean _bigEndian) {
         this.byteOrder = (_bigEndian) ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
         setByteOrder(this.byteOrder);
     }
 
-    protected void setByteOrder(ByteOrder bo) {
+    /**
+     * Sets the byte order.
+     *
+     * @param bo the new byte order
+     */
+    protected void setByteOrder(final ByteOrder bo) {
         this.bigEndian = bo.equals(ByteOrder.BIG_ENDIAN);
     }
 
-    protected void setOption(CDFFactory.ProcessingOption option) {
+    /**
+     * Sets the option.
+     *
+     * @param option the new option
+     */
+    protected void setOption(final CDFFactory.ProcessingOption option) {
         this.processingOption = option;
     }
 
-    protected void setSource(CDFFactory.CDFSource source) {
+    /**
+     * Sets the source.
+     *
+     * @param source the new source
+     */
+    protected void setSource(final CDFFactory.CDFSource source) {
         this.source = source;
     }
 
     /**
-     * returns name to Variable map
+     * Variables.
+     *
+     * @return the map
      */
-    protected Hashtable variables() {
+    protected Map<String, CDFVariable> variables() {
 
-        if (this.variableTable != null) {
-            return this.variableTable;
+        if (this.cdfVariablesByName != null) {
+            return this.cdfVariablesByName;
         }
 
-        LOGGER.entering("CDFImpl", "variables");
-        int[] offsets = new int[] { (int) this.zVDRHead, (int) this.rVDRHead };
+        this.cdfVariablesByName = new HashMap<>();
+
+        this.cdfVariablesByNumber = new HashMap<>();
+
+        int[] offsets = { (int) this.zVDRHead, (int) this.rVDRHead };
+
         String[] vtypes = { "z", "r" };
-        Hashtable table = new Hashtable();
-        HashMap<Integer, CDFVariable> ivariableTable = new HashMap<>();
-        Vector v = new Vector();
+
+        Collection<String> variableNamesAsList = new CopyOnWriteArrayList<>();
 
         for (int vtype = 0; vtype < 2; vtype++) {
+
             long offset = offsets[vtype];
 
             if (offset == 0) {
@@ -1059,13 +1663,20 @@ import java.util.zip.GZIPInputStream;
 
             while (true) {
                 _buf.position(this.offset_NEXT_VDR);
+
                 // int next = lowOrderInt(_buf);
+
                 long next = longInt(_buf);
+
                 CDFVariable cdfv = new CDFVariable(offset, vtypes[vtype]);
-                String name = cdfv.getName();
-                v.add(name);
-                ivariableTable.put(cdfv.number, cdfv);
-                table.put(name, cdfv);
+
+                String variableName = cdfv.getName();
+
+                variableNamesAsList.add(variableName);
+
+                this.cdfVariablesByNumber.put(cdfv.getNumber(), cdfv);
+
+                this.cdfVariablesByName.put(variableName, cdfv);
 
                 if (next == 0) {
                     break;
@@ -1077,44 +1688,45 @@ import java.util.zip.GZIPInputStream;
 
         }
 
-        this.varNames = new String[v.size()];
+        this.variableNames = variableNamesAsList.toArray(String[]::new);
 
-        for (int i = 0; i < v.size(); i++) {
-            this.varNames[i] = (String) v.elementAt(i);
-        }
-
-        this.variableTable = table;
-        this.ivariableTable = ivariableTable;
         LOGGER.exiting("CDFImpl", "variables");
-        return table;
+        return this.cdfVariablesByName;
     }
 
     /**
      * returns name to Attribute object map
      */
-    Hashtable attributes() {
+    Map<String, CDFAttribute> attributes() {
 
-        if (this.attributeTable != null) {
-            return this.attributeTable;
+        if (this.cdfAttributesByName != null) {
+            return this.cdfAttributesByName;
         }
 
+        this.cdfAttributesByName = new HashMap<>();
+
         LOGGER.entering("CDFImpl", "attributes");
+
         long offset = this.ADRHead;
 
         if (offset == 0) {
             return null;
         }
 
-        Hashtable table = new Hashtable();
         ByteBuffer _buf = getRecord(offset);
 
         while (true) {
+
             _buf.position(this.offset_NEXT_ADR);
+
             long next = longInt(_buf);
+
             CDFAttribute cdfa = new CDFAttribute(offset);
 
-            if ((table.put(cdfa.getName(), cdfa)) != null) {
-                System.out.println("possibly duplicate attribute " + cdfa.getName());
+            String attributeName = cdfa.getName();
+
+            if ((this.cdfAttributesByName.put(attributeName, cdfa)) != null) {
+                LOGGER.log(Level.WARNING, "Duplicate attribute: {0}", attributeName);
             }
 
             if (next == 0) {
@@ -1125,31 +1737,37 @@ import java.util.zip.GZIPInputStream;
             _buf = getRecord(offset);
         }
 
-        this.attributeTable = table;
         LOGGER.exiting("CDFImpl", "attributes");
-        return table;
+        return this.cdfAttributesByName;
     }
 
     /**
      * returns Variable object associated with a given type at a given number
      */
-    Variable getCDFVariable(String vtype, int number) {
-        CDFVariable var = this.ivariableTable.get(number);
+    Variable getCDFVariable(final String vtype, final int number) {
 
-        if (vtype.equals(var.vtype)) {
-            return var;
+        CDFVariable variable = this.cdfVariablesByNumber.get(number);
+
+        if (vtype.equals(variable.getVariableType())) {
+            return variable;
         }
 
-        throw new IllegalArgumentException("unsupported case, file must contain only zvariables or rvariables");
+        throw new IllegalArgumentException(
+                "unsupported variable type, " + vtype + ", file must contain only zvariables or rvariables");
     }
 
-    Object getFillValue(VariableMetaData var) {
-        Vector fill = (Vector) getAttribute(var.getName(), "FILLVAL");
-        int type = var.getType();
+    Object getFillValue(final VariableMetaData variableMetaData) {
 
-        if (fill.size() != 0) {
+        @SuppressWarnings("unchecked")
+        List<Object> fill = (List<Object>) getAttribute(variableMetaData.getName(), "FILLVAL");
 
-            if (fill.get(0).getClass().getComponentType() == Double.TYPE) {
+        int type = variableMetaData.getType();
+
+        if (!fill.isEmpty()) {
+
+            if (fill.get(0)
+                    .getClass()
+                    .getComponentType() == Double.TYPE) {
                 double dfill = ((double[]) fill.get(0))[0];
 
                 if (DataTypes.typeCategory[type] == DataTypes.LONG) {
@@ -1175,39 +1793,38 @@ import java.util.zip.GZIPInputStream;
         return new double[] { Double.NEGATIVE_INFINITY, 0 };
     }
 
-    Object getPadValue(VariableMetaData var) {
-        return var.getPadValue(true);
+    Object getPadValue(final VariableMetaData variableMetaData) {
+        return variableMetaData.getPadValue(true);
     }
 
-    DoubleVarContainer getRangeBuffer(String varName, int first, int last) throws Throwable {
-        Variable var = getVariable(varName);
+    DoubleVarContainer getRangeBuffer(final String variableName, final int first, final int last) {
+        Variable variable = getVariable(variableName);
 
-        if (var == null) {
-            throw new Throwable("No such variable: " + varName);
+        if (variable == null) {
+            throw new IllegalArgumentException("No such variable: " + variableName);
         }
 
-        if (DataTypes.isStringType(var.getType())) {
-            throw new Throwable("Function not supported for string variables");
+        if (DataTypes.isStringType(variable.getType())) {
+            throw new IllegalArgumentException("Function not supported for string variables, " + variable.getType());
         }
 
-        int[] range = new int[] { first, last };
-        DoubleVarContainer dbuf;
-        dbuf = new DoubleVarContainer(this, var, range, false, ByteOrder.nativeOrder());
+        int[] range = { first, last };
+        DoubleVarContainer dbuf = new DoubleVarContainer(this, variable, range, false, ByteOrder.nativeOrder());
         dbuf.run();
         return dbuf;
     }
 
     /**
-     * returns ByteBuffer containing count values for variable var starting at
+     * returns ByteBuffer containing count values for variable variable starting at
      * CDF offset value offset.
      */
-    ByteBuffer positionBuffer(VariableMetaData var, long offset, int count) {
+    ByteBuffer positionBuffer(final VariableMetaData variableMetaData, final long offset, final int count) {
         ByteBuffer bv;
 
-        if (!var.isCompressed()) {
+        if (!variableMetaData.isCompressed()) {
             bv = getValueBuffer(offset);
         } else {
-            int size = var.getDataItemSize();
+            int size = variableMetaData.getDataItemSize();
             bv = getValueBuffer(offset, size, count);
         }
 
@@ -1216,32 +1833,35 @@ import java.util.zip.GZIPInputStream;
     }
 
     /**
-     * AttributeEntry class
+     * AttributeEntry class.
      */
     public class CDFAttributeEntry implements AttributeEntry, Serializable {
 
-        /**
-         *
-         */
         private static final long serialVersionUID = 3507692892215505019L;
 
         transient ByteBuffer _buf;
 
-        int variableNumber;
+        final int variableNumber;
 
-        int type;
+        final int type;
 
-        int nelement;
+        final int nelement;
 
-        String attribute;
+        final String attribute;
 
-        String stringValue;
+        final String stringValue;
 
-        String[] stringValues = null;
+        final String[] stringValues;
 
-        Object value;
+        final Object value;
 
-        public CDFAttributeEntry(ByteBuffer buf, String name) {
+        /**
+         * Instantiates a new CDF attribute entry.
+         *
+         * @param buf  the buf
+         * @param name the name
+         */
+        public CDFAttributeEntry(final ByteBuffer buf, final String name) {
             this.attribute = name;
             this._buf = buf.duplicate();
             this._buf.position(CDFImpl.this.offset_ENTRYNUM);
@@ -1272,7 +1892,8 @@ import java.util.zip.GZIPInputStream;
                 if (numStrings > 1) {
                     this.stringValues = new String[numStrings];
                     int lastIndex = 0;
-                    int begin = 0, count = 0;
+                    int begin = 0;
+                    int count = 0;
 
                     while ((lastIndex = this.stringValue.indexOf(STRINGDELIMITER, begin)) != -1) {
                         this.stringValues[count] = this.stringValue.substring(begin, lastIndex);
@@ -1285,7 +1906,11 @@ import java.util.zip.GZIPInputStream;
                     this.stringValues = null;
                 }
 
+                this.value = null;
+
             } else {
+                this.stringValues = null;
+                this.stringValue = null;
                 this.value = getNumberAttribute(this.type, this.nelement, this._buf, CDFImpl.this.byteOrder);
             }
 
@@ -1308,7 +1933,7 @@ import java.util.zip.GZIPInputStream;
 
         @Override
         public Object getValue() {
-            return (isStringType()) ? (this.stringValues != null ? this.stringValues : this.stringValue) : this.value;
+            return (isStringType()) ? ((this.stringValues != null) ? this.stringValues : this.stringValue) : this.value;
         }
 
         @Override
@@ -1322,7 +1947,7 @@ import java.util.zip.GZIPInputStream;
         }
 
         @Override
-        public boolean isSameAs(AttributeEntry ae) {
+        public boolean isSameAs(final AttributeEntry ae) {
 
             if (getType() != ae.getType()) {
                 return false;
@@ -1341,7 +1966,8 @@ import java.util.zip.GZIPInputStream;
                 if (this.stringValues != null) {
                     Object newValue = ae.getValue();
 
-                    if (!newValue.getClass().isArray()) {
+                    if (!newValue.getClass()
+                            .isArray()) {
                         return false;
                     }
 
@@ -1371,57 +1997,57 @@ import java.util.zip.GZIPInputStream;
     }
 
     /**
-     * CDFVariable class
+     * CDFVariable class.
      */
     public class CDFVariable implements java.io.Serializable, Variable {
 
-        /**
-         *
-         */
         private static final long serialVersionUID = 1512547111444704626L;
 
-        int DIMENSION_VARIES = -1;
+        private final int DIMENSION_VARIES = -1;
 
-        public Vector attributes = new Vector();
+        final List<AttributeEntry> attributes = new CopyOnWriteArrayList<>();
 
-        String name;
+        private final String name;
 
-        public int number;
+        private final int number;
 
-        String vtype;
+        private final String vtype;
 
-        final int flags;
+        private final int flags;
 
-        int sRecords;
+        private final int sRecords;
 
-        int type;
+        private final int type;
 
-        int numberOfElements;
+        private final int numberOfElements;
 
-        protected final int numberOfValues;
+        private final int numberOfValues;
 
-        public int[] dimensions;
+        private int[] dimensions;
 
-        public boolean[] varies;
+        private boolean[] varies;
 
-        public Object padValue;
+        private Object padValue;
 
-        long offset;
+        private boolean completed = false;
 
-        boolean completed = false;
+        private final transient ByteBuffer _buf;
 
-        transient ByteBuffer _buf;
+        private int dataItemSize;
 
-        int dataItemSize;
+        private final int blockingFactor;
 
-        int blockingFactor;
+        private DataLocator locator;
 
-        DataLocator locator;
+        private boolean recordGap = false;
 
-        boolean recordGap = false;
-
-        public CDFVariable(long offset, String vtype) {
-            this.offset = offset;
+        /**
+         * Instantiates a new CDF variable.
+         *
+         * @param offset the offset
+         * @param vtype  the vtype
+         */
+        public CDFVariable(final long offset, final String vtype) {
             this.vtype = vtype;
             this._buf = getRecord(offset);
             this.name = getString(offset + CDFImpl.this.offset_VAR_NAME);
@@ -1440,11 +2066,11 @@ import java.util.zip.GZIPInputStream;
             this.numberOfValues = this._buf.getInt() + 1;
             this._buf.position(CDFImpl.this.offset_zNumDims);
 
-            if (vtype.equals("r")) {
+            if ("r".equals(vtype)) {
                 this.dimensions = CDFImpl.this.rDimSizes;
             }
 
-            if (vtype.equals("z")) {
+            if ("z".equals(vtype)) {
                 this.dimensions = new int[this._buf.getInt()];
 
                 for (int i = 0; i < this.dimensions.length; i++) {
@@ -1550,32 +2176,43 @@ import java.util.zip.GZIPInputStream;
 
         /**
          * Returns this variable's values as byte[] if variable type is byte,
-         * unsigned byte or char. Otherwise, throws Throwable
+         * unsigned byte or char. Otherwise,
          */
         @Override
-        public byte[] asByteArray() throws Throwable {
+        public byte[] asByteArray() {
             return asByteArray(null);
         }
 
         /**
          * Returns this variable's values for a range of records as byte[] if
          * variable type is byte, unsigned byte or char. Otherwise, throws
-         * Throwable
+         *
+         * @param pt the pt
+         *
+         * @return the byte[]
          */
         @Override
-        public byte[] asByteArray(int[] pt) throws Throwable {
-            VDataContainer.CByte container;
+        public byte[] asByteArray(final int[] pt) {
 
             if (ByteVarContainer.isCompatible(this.type, true)) {
-                container = new ByteVarContainer(CDFImpl.this, this, pt);
+
+                VDataContainer.CByte container = new ByteVarContainer(CDFImpl.this, this, pt);
                 container.run();
                 return container.as1DArray();
             }
 
-            throw new Throwable("Variable " + getName() + " cannot return " + "byte[].");
+            throw new UnsupportedOperationException("Variable " + getName() + " cannot return a byte[].");
         }
 
-        public byte[] asByteArray(int[] pt, boolean columnMajor) throws Throwable {
+        /**
+         * As byte array.
+         *
+         * @param pt          the pt
+         * @param columnMajor the column major
+         *
+         * @return the byte[]
+         */
+        public byte[] asByteArray(final int[] pt, final boolean columnMajor) {
             VDataContainer.CByte container;
 
             if (ByteVarContainer.isCompatible(this.type, true)) {
@@ -1584,7 +2221,7 @@ import java.util.zip.GZIPInputStream;
                 return container.asOneDArray(columnMajor);
             }
 
-            throw new Throwable("Variable " + getName() + " cannot return " + "byte[].");
+            throw new UnsupportedOperationException("Variable " + getName() + " cannot return a byte[].");
         }
 
         /**
@@ -1592,7 +2229,7 @@ import java.util.zip.GZIPInputStream;
          * If variable type cannot be cast to double, a Throwable is thrown.
          */
         @Override
-        public double[] asDoubleArray() throws Throwable {
+        public double[] asDoubleArray() {
             return asDoubleArray(false, null);
         }
 
@@ -1604,7 +2241,7 @@ import java.util.zip.GZIPInputStream;
          * to signal possible loss of precision.
          */
         @Override
-        public double[] asDoubleArray(boolean preserve, int[] pt) throws Throwable {
+        public double[] asDoubleArray(final boolean preserve, final int[] pt) {
             TargetAttribute ta = new TargetAttribute(preserve, false);
             return asDoubleArray(ta, pt);
         }
@@ -1615,21 +2252,29 @@ import java.util.zip.GZIPInputStream;
          * If variable type cannot be cast to double, a Throwable is thrown.
          */
         @Override
-        public double[] asDoubleArray(int[] pt) throws Throwable {
+        public double[] asDoubleArray(final int[] pt) {
             return asDoubleArray(false, pt);
         }
 
-        public double[] asDoubleArray(TargetAttribute tattr, int[] pt) throws Throwable {
-            VDataContainer.CDouble container;
+        /**
+         * As double array.
+         *
+         * @param targetAttribute the target attribute
+         * @param pt              the pt
+         *
+         * @return the double[]
+         */
+        public double[] asDoubleArray(final TargetAttribute targetAttribute, final int[] pt) {
 
             try {
-                container = getDoubleContainer(pt, tattr.preserve, ByteOrder.nativeOrder());
-            } catch (Throwable th) {
-                throw new Throwable("Variable " + getName() + " cannot return " + "double[].");
+                VDataContainer.CDouble container = getDoubleContainer(pt, targetAttribute.preserve,
+                        ByteOrder.nativeOrder());
+                container.run();
+                return container.asOneDArray(targetAttribute.columnMajor);
+            } catch (RuntimeException e) {
+                throw new UnsupportedOperationException("Variable " + getName() + " cannot return a double[].", e);
             }
 
-            container.run();
-            return container.asOneDArray(tattr.columnMajor);
         }
 
         /**
@@ -1637,7 +2282,7 @@ import java.util.zip.GZIPInputStream;
          * If variable type cannot be cast to float, a Throwable is thrown.
          */
         @Override
-        public float[] asFloatArray() throws Throwable {
+        public float[] asFloatArray() {
             return asFloatArray(false, null);
         }
 
@@ -1647,19 +2292,19 @@ import java.util.zip.GZIPInputStream;
          * If variable type cannot be cast to float, a Throwable is thrown.
          * If preserve is true, a Throwable is thrown for variables of type
          * double, long or int to signal possible loss of precision.
+         *
+         * @param preserve the preserve
+         * @param pt       the pt
+         *
+         * @return the float[]
          */
         @Override
-        public float[] asFloatArray(boolean preserve, int[] pt) throws Throwable {
-            VDataContainer.CFloat container;
+        public float[] asFloatArray(final boolean preserve, final int[] pt) {
 
-            try {
-                container = getFloatContainer(pt, preserve, ByteOrder.nativeOrder());
-            } catch (Throwable th) {
-                throw new Throwable("Variable " + getName() + " cannot return " + "float[].");
-            }
-
+            VDataContainer.CFloat container = getFloatContainer(pt, preserve, ByteOrder.nativeOrder());
             container.run();
             return container.as1DArray();
+
         }
 
         /**
@@ -1668,17 +2313,17 @@ import java.util.zip.GZIPInputStream;
          * If variable type cannot be cast to float, a Throwable is thrown.
          */
         @Override
-        public float[] asFloatArray(int[] pt) throws Throwable {
+        public float[] asFloatArray(final int[] pt) {
             return asFloatArray(false, pt);
         }
 
         /**
          * Returns this variable's values as int[] for variables of type
          * int, short or unsigned short, byte or unsigned byte.
-         * throws Throwable for variables of other types.
+         * for variables of other types.
          */
         @Override
-        public int[] asIntArray() throws Throwable {
+        public int[] asIntArray() {
             return asIntArray(true, null);
         }
 
@@ -1686,18 +2331,11 @@ import java.util.zip.GZIPInputStream;
          * Returns this variable's values for the specified range of records as
          * int[] for variables of type int, short or unsigned short, byte or
          * unsigned byte, or unsigned int (only if preserve is false).
-         * throws Throwable for variables of other types.
+         * for variables of other types.
          */
         @Override
-        public int[] asIntArray(boolean preserve, int[] pt) throws Throwable {
-            VDataContainer.CInt container;
-
-            try {
-                container = getIntContainer(pt, preserve, ByteOrder.nativeOrder());
-            } catch (Throwable th) {
-                throw new Throwable("Variable " + getName() + " cannot return " + "int[].");
-            }
-
+        public int[] asIntArray(final boolean preserve, final int[] pt) {
+            VDataContainer.CInt container = getIntContainer(pt, preserve, ByteOrder.nativeOrder());
             container.run();
             return container.as1DArray();
         }
@@ -1706,38 +2344,28 @@ import java.util.zip.GZIPInputStream;
          * Returns this variable's values for the specified range of records as
          * int[] for variables of type int, short or unsigned short, byte or
          * unsigned byte.
-         * throws Throwable for variables of other types.
+         * for variables of other types.
          */
         @Override
-        public int[] asIntArray(int[] pt) throws Throwable {
+        public int[] asIntArray(final int[] pt) {
             return asIntArray(true, pt);
         }
 
         /**
          * Returns this variable's values as long[] for variables of type long.
-         * throws Throwable for variables of other types.
+         * for variables of other types.
          */
         @Override
-        public long[] asLongArray() throws Throwable {
-            return asLongArray(false, null);
-        }
-
-        /**
-         * Returns this variable's values for the specified range of records as
-         * long[] for variables of type long.
-         * throws Throwable for variables of other types.
-         */
-        @Override
-        public long[] asLongArray(int[] pt) throws Throwable {
-            return asLongArray(false, pt);
+        public long[] asLongArray() {
+            return asLongArray(null);
         }
 
         /**
          * Returns this variable's values as long[] for variables of type long.
-         * throws Throwable for variables of other types.
+         * for variables of other types.
          */
         @Override
-        public short[] asShortArray() throws Throwable {
+        public short[] asShortArray() {
             return asShortArray(true, null);
         }
 
@@ -1745,18 +2373,11 @@ import java.util.zip.GZIPInputStream;
          * Returns this variable's values for the specified range of records as
          * short[] for variables of type short, byte or unsigned byte, or
          * unsigned short (only if preserve is false).
-         * throws Throwable for variables of other types.
+         * for variables of other types.
          */
         @Override
-        public short[] asShortArray(boolean preserve, int[] pt) throws Throwable {
-            VDataContainer.CShort container;
-
-            try {
-                container = getShortContainer(pt, preserve, ByteOrder.nativeOrder());
-            } catch (Throwable th) {
-                throw new Throwable("Variable " + getName() + " cannot return " + "short[].");
-            }
-
+        public short[] asShortArray(final boolean preserve, final int[] pt) {
+            VDataContainer.CShort container = getShortContainer(pt, preserve, ByteOrder.nativeOrder());
             container.run();
             return container.as1DArray();
         }
@@ -1764,11 +2385,20 @@ import java.util.zip.GZIPInputStream;
         /**
          * Returns this variable's values for the specified range of records as
          * short[] for variables of type short, byte or unsigned byte.
-         * throws Throwable for variables of other types.
+         * for variables of other types.
          */
         @Override
-        public short[] asShortArray(int[] pt) throws Throwable {
+        public short[] asShortArray(final int[] pt) {
             return asShortArray(true, pt);
+        }
+
+        /**
+         * Gets the attributes.
+         *
+         * @return the attributes
+         */
+        public final List<AttributeEntry> getAttributes() {
+            return this.attributes;
         }
 
         /**
@@ -1779,7 +2409,12 @@ import java.util.zip.GZIPInputStream;
             return this.blockingFactor;
         }
 
-        public ByteBuffer getBuffer() throws Throwable {
+        /**
+         * Gets the buffer.
+         *
+         * @return the buffer
+         */
+        public ByteBuffer getBuffer() {
             return getBuffer(Double.TYPE, null, false, ByteOrder.nativeOrder());
         }
 
@@ -1795,24 +2430,23 @@ import java.util.zip.GZIPInputStream;
          * if it results in loss of precision.
          */
         @Override
-        public ByteBuffer getBuffer(Class cl, int[] recordRange, boolean preserve, ByteOrder bo) throws Throwable {
+        public ByteBuffer getBuffer(final Class<?> cl, final int[] recordRange, final boolean preserve,
+                final ByteOrder bo) {
 
             if (!this.completed) {
                 complete();
             }
 
             if (cl == Byte.TYPE) {
-                VDataContainer.CByte container;
-                container = new ByteVarContainer(CDFImpl.this, this, recordRange);
+                VDataContainer container = new ByteVarContainer(CDFImpl.this, this, recordRange);
                 container.run();
                 return container.getBuffer();
             }
 
             if (cl == Double.TYPE) {
-                VDataContainer.CDouble container;
 
                 if (DoubleVarContainer.isCompatible(this.type, preserve)) {
-                    container = new DoubleVarContainer(CDFImpl.this, this, recordRange, preserve, bo);
+                    VDataContainer container = new DoubleVarContainer(CDFImpl.this, this, recordRange, preserve, bo);
                     container.run();
                     return container.getBuffer();
                 }
@@ -1820,10 +2454,9 @@ import java.util.zip.GZIPInputStream;
             }
 
             if (cl == Float.TYPE) {
-                VDataContainer.CFloat container;
 
                 if (FloatVarContainer.isCompatible(this.type, preserve)) {
-                    container = new FloatVarContainer(CDFImpl.this, this, recordRange, preserve, bo);
+                    VDataContainer container = new FloatVarContainer(CDFImpl.this, this, recordRange, preserve, bo);
                     container.run();
                     return container.getBuffer();
                 }
@@ -1831,10 +2464,9 @@ import java.util.zip.GZIPInputStream;
             }
 
             if (cl == Integer.TYPE) {
-                VDataContainer.CInt container;
 
                 if (IntVarContainer.isCompatible(this.type, preserve)) {
-                    container = new IntVarContainer(CDFImpl.this, this, recordRange, preserve, bo);
+                    VDataContainer container = new IntVarContainer(CDFImpl.this, this, recordRange, preserve, bo);
                     container.run();
                     return container.getBuffer();
                 }
@@ -1842,10 +2474,9 @@ import java.util.zip.GZIPInputStream;
             }
 
             if (cl == Short.TYPE) {
-                VDataContainer.CShort container;
 
                 if (ShortVarContainer.isCompatible(this.type, preserve)) {
-                    container = new ShortVarContainer(CDFImpl.this, this, recordRange, preserve, bo);
+                    VDataContainer container = new ShortVarContainer(CDFImpl.this, this, recordRange, preserve, bo);
                     container.run();
                     return container.getBuffer();
                 }
@@ -1853,31 +2484,37 @@ import java.util.zip.GZIPInputStream;
             }
 
             if (cl == Long.TYPE) {
-                VDataContainer.CLong container;
 
                 if (LongVarContainer.isCompatible(this.type, preserve)) {
-                    container = new LongVarContainer(CDFImpl.this, this, recordRange, bo);
+                    VDataContainer container = new LongVarContainer(CDFImpl.this, this, recordRange, bo);
                     container.run();
                     return container.getBuffer();
                 }
 
             }
 
-            throw new Throwable("Inconsistent constraints for " + "this variable");
+            throw new IllegalStateException("Inconsistent constraints for this variable");
         }
 
-        public ByteBuffer getBuffer(int[] recordRange) throws Throwable {
+        /**
+         * Gets the buffer.
+         *
+         * @param recordRange the record range
+         *
+         * @return the buffer
+         */
+        public ByteBuffer getBuffer(final int[] recordRange) {
             return getBuffer(Double.TYPE, recordRange, false, ByteOrder.nativeOrder());
         }
 
         @Override
-        public VDataContainer.CByte getByteContainer(int[] pt) throws Throwable {
+        public VDataContainer.CByte getByteContainer(final int[] pt) {
 
             if (ByteVarContainer.isCompatible(this.type, true)) {
                 return new ByteVarContainer(CDFImpl.this, this, pt);
             }
 
-            throw new Throwable("Variable " + getName() + " cannot return " + "VDataContainer.CByte.");
+            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.CByte.");
         }
 
         @Override
@@ -1886,7 +2523,7 @@ import java.util.zip.GZIPInputStream;
         }
 
         @Override
-        public VariableDataBuffer[] getDataBuffers() throws Throwable {
+        public VariableDataBuffer[] getDataBuffers() {
             return getDataBuffers(false);
         }
 
@@ -1900,7 +2537,7 @@ import java.util.zip.GZIPInputStream;
          * range of records.
          */
         @Override
-        public VariableDataBuffer[] getDataBuffers(boolean raw) throws Throwable {
+        public VariableDataBuffer[] getDataBuffers(final boolean raw) {
 
             if (!this.completed) {
                 complete();
@@ -1909,13 +2546,13 @@ import java.util.zip.GZIPInputStream;
             if (!raw) {
 
                 if ((this.flags & 4) != 0) {
-                    throw new Throwable("Function not " + "supported for compressed variables ");
+                    throw new UnsupportedOperationException("Function not supported for compressed variables ");
                 }
 
             }
 
             long[][] locations = this.locator.getLocations();
-            List dbufs = new Vector();
+            Collection<VariableDataBuffer> variableDataBUffers = new ArrayList<>();
             int size = getDataItemSize();
 
             for (long[] location : locations) {
@@ -1938,12 +2575,10 @@ import java.util.zip.GZIPInputStream;
                 ByteBuffer bbuf = bv.slice();
                 bbuf.order(getByteOrder());
                 bbuf.limit(clen);
-                dbufs.add(new VariableDataBuffer(first, last, bbuf, compressed));
+                variableDataBUffers.add(new VariableDataBuffer(first, last, bbuf, compressed));
             }
 
-            VariableDataBuffer[] vdbuf = new VariableDataBuffer[dbufs.size()];
-            dbufs.toArray(vdbuf);
-            return vdbuf;
+            return variableDataBUffers.toArray(VariableDataBuffer[]::new);
         }
 
         /**
@@ -1964,9 +2599,6 @@ import java.util.zip.GZIPInputStream;
             return size;
         }
 
-        /**
-         * Gets the dimensions.
-         */
         @Override
         public int[] getDimensions() {
             int[] ia = new int[this.dimensions.length];
@@ -1975,18 +2607,18 @@ import java.util.zip.GZIPInputStream;
         }
 
         @Override
-        public VDataContainer.CDouble getDoubleContainer(int[] pt, boolean preserve) throws Throwable {
+        public VDataContainer.CDouble getDoubleContainer(final int[] pt, final boolean preserve) {
             return getDoubleContainer(pt, preserve, ByteOrder.nativeOrder());
         }
 
         @Override
-        public VDataContainer.CDouble getDoubleContainer(int[] pt, boolean preserve, ByteOrder bo) throws Throwable {
+        public VDataContainer.CDouble getDoubleContainer(final int[] pt, final boolean preserve, final ByteOrder bo) {
 
             if (DoubleVarContainer.isCompatible(this.type, preserve)) {
                 return new DoubleVarContainer(CDFImpl.this, this, pt, preserve, ByteOrder.nativeOrder());
             }
 
-            throw new Throwable("Variable " + getName() + " cannot return " + "VDataContainer.CDouble.");
+            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.CDouble.");
         }
 
         /**
@@ -2024,6 +2656,7 @@ import java.util.zip.GZIPInputStream;
          */
         @Override
         public int getEffectiveRank() {
+
             int rank = 0;
 
             for (int i = 0; i < this.dimensions.length; i++) {
@@ -2042,58 +2675,49 @@ import java.util.zip.GZIPInputStream;
             return rank;
         }
 
-        /**
-         * Return element count for this variable's dimensions.
-         */
+        @Deprecated
         @Override
-        public Vector getElementCount() {
-            int[] dimensions = getDimensions();
-            Vector ecount = new Vector();
+        public Vector<Integer> getElementCount() {
 
-            for (int i = 0; i < dimensions.length; i++) {
-
-                if (getVarys()[i]) {
-                    ecount.add(dimensions[i]);
-                }
-
-            }
-
-            return ecount;
+            return Arrays.stream(getDimensions())
+                    .mapToObj(Integer::valueOf)
+                    .collect(Collectors.toCollection(Vector::new));
         }
 
         @Override
-        public VDataContainer.CFloat getFloatContainer(int[] pt, boolean preserve) throws Throwable {
+        public VDataContainer.CFloat getFloatContainer(final int[] pt, final boolean preserve) {
             return getFloatContainer(pt, preserve, ByteOrder.nativeOrder());
         }
 
         @Override
-        public VDataContainer.CFloat getFloatContainer(int[] pt, boolean preserve, ByteOrder bo) throws Throwable {
+        public VDataContainer.CFloat getFloatContainer(final int[] pt, final boolean preserve, final ByteOrder bo) {
 
             if (FloatVarContainer.isCompatible(this.type, preserve)) {
                 return new FloatVarContainer(CDFImpl.this, this, pt, preserve, ByteOrder.nativeOrder());
             }
 
-            throw new Throwable("Variable " + getName() + " cannot return " + "VDataContainer.Float.");
+            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.Float.");
         }
 
         @Override
-        public VDataContainer.CInt getIntContainer(int[] pt, boolean preserve) throws Throwable {
+        public VDataContainer.CInt getIntContainer(final int[] pt, final boolean preserve) {
             return getIntContainer(pt, preserve, ByteOrder.nativeOrder());
         }
 
         @Override
-        public VDataContainer.CInt getIntContainer(int[] pt, boolean preserve, ByteOrder bo) throws Throwable {
+        public VDataContainer.CInt getIntContainer(final int[] pt, final boolean preserve, final ByteOrder bo) {
 
             if (IntVarContainer.isCompatible(this.type, preserve)) {
                 return new IntVarContainer(CDFImpl.this, this, pt, preserve, ByteOrder.nativeOrder());
             }
 
-            throw new Throwable("Variable " + getName() + " cannot return " + "VDataContainer.CInt.");
+            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.CInt.");
         }
 
         /**
          * Gets a list of regions that contain data for the variable.
-         * Each element of the vector describes a region as an int[3] array.
+         * Each element of the CopyOnWriteArrayList describes a region as an int[3]
+         * array.
          * Array elements are: record number of first point
          * in the region, record number of last point in the
          * region, and offset of the start of region.
@@ -2109,18 +2733,18 @@ import java.util.zip.GZIPInputStream;
         }
 
         @Override
-        public VDataContainer.CLong getLongContainer(int[] pt) throws Throwable {
+        public VDataContainer.CLong getLongContainer(final int[] pt) {
             return getLongContainer(pt, ByteOrder.nativeOrder());
         }
 
         @Override
-        public VDataContainer.CLong getLongContainer(int[] pt, ByteOrder bo) throws Throwable {
+        public VDataContainer.CLong getLongContainer(final int[] pt, final ByteOrder bo) {
 
             if (LongVarContainer.isCompatible(this.type, true)) {
                 return new LongVarContainer(CDFImpl.this, this, pt, ByteOrder.nativeOrder());
             }
 
-            throw new Throwable("Variable " + getName() + " cannot return " + "VDataContainer.CLong.");
+            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.CLong.");
         }
 
         /**
@@ -2179,7 +2803,7 @@ import java.util.zip.GZIPInputStream;
          * preservePrecision is set to true;
          */
         @Override
-        public Object getPadValue(boolean preservePrecision) {
+        public Object getPadValue(final boolean preservePrecision) {
 
             if (this.padValue == null) {
                 return null;
@@ -2189,7 +2813,8 @@ import java.util.zip.GZIPInputStream;
                 return this.padValue;
             }
 
-            if (this.padValue.getClass().getComponentType() == Long.TYPE) {
+            if (this.padValue.getClass()
+                    .getComponentType() == Long.TYPE) {
                 long[] ltemp = (long[]) this.padValue;
 
                 if (preservePrecision) {
@@ -2232,28 +2857,28 @@ import java.util.zip.GZIPInputStream;
         }
 
         @Override
-        public VDataContainer.CShort getShortContainer(int[] pt, boolean preserve) throws Throwable {
+        public VDataContainer.CShort getShortContainer(final int[] pt, final boolean preserve) {
             return getShortContainer(pt, preserve, ByteOrder.nativeOrder());
         }
 
         @Override
-        public VDataContainer.CShort getShortContainer(int[] pt, boolean preserve, ByteOrder bo) throws Throwable {
+        public VDataContainer.CShort getShortContainer(final int[] pt, final boolean preserve, final ByteOrder bo) {
 
             if (ShortVarContainer.isCompatible(this.type, preserve)) {
                 return new ShortVarContainer(CDFImpl.this, this, pt, preserve, ByteOrder.nativeOrder());
             }
 
-            throw new Throwable("Variable " + getName() + " cannot return " + "VDataContainer.CShort.");
+            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.CShort.");
         }
 
         @Override
-        public VDataContainer.CString getStringContainer(int[] pt) throws Throwable {
+        public VDataContainer.CString getStringContainer(final int[] pt) {
 
             if (StringVarContainer.isCompatible(this.type, true)) {
                 return new StringVarContainer(CDFImpl.this, this, pt);
             }
 
-            throw new Throwable("Variable " + getName() + " cannot return " + "VDataContainer.CString.");
+            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.CString.");
         }
 
         /**
@@ -2265,13 +2890,25 @@ import java.util.zip.GZIPInputStream;
         }
 
         /**
+         * Gets the variable type.
+         *
+         * @return the variable type
+         */
+        public final String getVariableType() {
+            return this.vtype;
+        }
+
+        /**
          * Gets the dimensional variance. This determines the effective
          * dimensionality of values of the variable.
          */
         @Override
         public boolean[] getVarys() {
+
             boolean[] ba = new boolean[this.varies.length];
+
             System.arraycopy(this.varies, 0, ba, 0, this.varies.length);
+
             return ba;
         }
 
@@ -2281,7 +2918,7 @@ import java.util.zip.GZIPInputStream;
          * equivalent to isCompatible(Class cl, true)
          */
         @Override
-        public boolean isCompatible(Class cl) {
+        public boolean isCompatible(final Class<?> cl) {
             return BaseVarContainer.isCompatible(getType(), true, cl);
         }
 
@@ -2290,7 +2927,7 @@ import java.util.zip.GZIPInputStream;
          * cl is supported under the given precision preserving constraint.
          */
         @Override
-        public boolean isCompatible(Class cl, boolean preserve) {
+        public boolean isCompatible(final Class<?> cl, final boolean preserve) {
             return BaseVarContainer.isCompatible(getType(), preserve, cl);
         }
 
@@ -2323,7 +2960,7 @@ import java.util.zip.GZIPInputStream;
 
         @Override
         public boolean isTypeR() {
-            return (this.vtype.equals("r"));
+            return ("r".equals(this.vtype));
         }
 
         /**
@@ -2345,7 +2982,9 @@ import java.util.zip.GZIPInputStream;
         }
 
         /**
-         * returns whether pad value is specified for this variable
+         * returns whether pad value is specified for this variable.
+         *
+         * @return true, if successful
          */
         public boolean padValueSpecified() {
             return ((this.flags & 2) != 0);
@@ -2367,16 +3006,17 @@ import java.util.zip.GZIPInputStream;
             return CDFImpl.this.rowMajority();
         }
 
-        long[] asLongArray(boolean preserve, int[] pt) throws Throwable {
-            VDataContainer.CLong container;
+        /**
+         * Returns this variable's values for the specified range of records as
+         * long[] for variables of type long.
+         * for variables of other types.
+         */
+        @Override
+        public long[] asLongArray(final int[] pt) {
 
-            try {
-                container = getLongContainer(pt, ByteOrder.nativeOrder());
-            } catch (Throwable th) {
-                throw new Throwable("Variable " + getName() + " cannot return " + "long[].");
-            }
-
+            VDataContainer.CLong container = getLongContainer(pt, ByteOrder.nativeOrder());
             container.run();
+
             return container.as1DArray();
         }
 
@@ -2430,7 +3070,7 @@ import java.util.zip.GZIPInputStream;
     }
 
     /**
-     * DataLocator
+     * DataLocator.
      */
     public class DataLocator implements VariableDataLocator, java.io.Serializable {
 
@@ -2439,20 +3079,28 @@ import java.util.zip.GZIPInputStream;
          */
         private static final long serialVersionUID = 713466264682521709L;
 
-        private int numberOfValues;
+        private final int numberOfValues;
 
-        private boolean compressed;
+        private final boolean compressed;
 
-        protected Vector locations = new Vector();
+        /** The locations. */
+        protected CopyOnWriteArrayList<long[]> locations = new CopyOnWriteArrayList<>();
 
-        protected DataLocator(ByteBuffer b, int n, boolean compr) {
+        /**
+         * Instantiates a new data locator.
+         *
+         * @param b     the b
+         * @param n     the n
+         * @param compr the compr
+         */
+        protected DataLocator(final ByteBuffer b, final int n, final boolean compr) {
             this.numberOfValues = n;
             this.compressed = compr;
             b.position(CDFImpl.this.offset_FIRST_VXR);
             long offset = longInt(b);
             ByteBuffer bx = getRecord(offset);
-            Vector v = _getLocations(bx);
-            registerNodes(bx, v);
+            List<long[]> locs = _getLocations(bx);
+            registerNodes(locs);
         }
 
         @Override
@@ -2460,7 +3108,7 @@ import java.util.zip.GZIPInputStream;
             long[][] loc = new long[this.locations.size()][3];
 
             for (int i = 0; i < this.locations.size(); i++) {
-                long[] ia = (long[]) this.locations.elementAt(i);
+                long[] ia = this.locations.get(i);
                 loc[i][0] = ia[0];
                 loc[i][1] = ia[1];
                 loc[i][2] = ia[2];
@@ -2469,8 +3117,28 @@ import java.util.zip.GZIPInputStream;
             return loc;
         }
 
-        public Vector getLocationsAsVector() {
-            Vector _locations = new Vector();
+        /**
+         * Gets the locations as list.
+         *
+         * @return the locations as as unmodifiable list
+         */
+        public List<long[]> getLocationsAsList() {
+
+            return Arrays.stream(getLocations())
+                    .collect(Collectors.toUnmodifiableList());
+
+        }
+
+        /**
+         * Gets the locations as vector.
+         *
+         * @return the locations as vector
+         *
+         * @deprecated use {@link #getLocationsAsList()}
+         */
+        @Deprecated
+        public Vector<long[]> getLocationsAsVector() {
+            Vector<long[]> _locations = new Vector<>();
             long[][] loc = getLocations();
 
             for (int i = 0; i < this.locations.size(); i++) {
@@ -2480,12 +3148,18 @@ import java.util.zip.GZIPInputStream;
             return _locations;
         }
 
+        /**
+         * Checks if is really compressed.
+         *
+         * @return true, if is really compressed
+         */
         public boolean isReallyCompressed() {
             return this.compressed;
         }
 
-        Vector _getLocations(ByteBuffer bx) {
-            Vector locations = new Vector();
+        List<long[]> _getLocations(ByteBuffer bx) {
+
+            List<long[]> locs = new CopyOnWriteArrayList<>();
 
             while (true) {
                 bx.position(CDFImpl.this.offset_NEXT_VXR);
@@ -2510,7 +3184,7 @@ import java.util.zip.GZIPInputStream;
                     }
 
                     long off = longInt(bo);
-                    locations.add(new long[] { first, last, off });
+                    locs.add(new long[] { first, last, off });
                 }
 
                 if (next == 0) {
@@ -2520,21 +3194,21 @@ import java.util.zip.GZIPInputStream;
                 bx = getRecord(next);
             }
 
-            return locations;
+            return locs;
         }
 
-        void registerNodes(ByteBuffer bx, Vector v) {
+        void registerNodes(final Iterable<long[]> locs) {
 
-            if (this.compressed) {
-            }
+            for (long[] loc : locs) {
 
-            for (int i = 0; i < v.size(); i++) {
-                long[] loc = (long[]) v.elementAt(i);
                 ByteBuffer bb = getRecord(loc[2]);
 
                 if (bb.getInt(CDFImpl.this.offset_RECORD_TYPE) == VXR_RECORD_TYPE) {
-                    Vector vin = _getLocations(bb);
-                    registerNodes(bb, vin);
+
+                    List<long[]> locs2 = _getLocations(bb);
+
+                    registerNodes(locs2);
+
                 } else {
                     this.locations.add(loc);
                 }
@@ -2547,35 +3221,40 @@ import java.util.zip.GZIPInputStream;
     /**
      * CDFAttribute class
      */
-    /* public */ class CDFAttribute implements java.io.Serializable, Attribute {
+    class CDFAttribute implements java.io.Serializable, Attribute {
 
-        /**
-         *
-         */
         private static final long serialVersionUID = -2085580948842565139L;
 
-        String name;
+        final String name;
 
-        int scope;
+        final int scope;
 
-        int num;
+        final int num;
 
-        Vector zEntries = new Vector();
+        final List<AttributeEntry> zEntries;
 
-        Vector gEntries = new Vector();
+        final List<AttributeEntry> gEntries;
 
-        public CDFAttribute(long offset) {
+        CDFAttribute(final long offset) {
+
             this.name = getString(offset + CDFImpl.this.offset_ATTR_NAME);
+
             LOGGER.log(Level.FINER, "new attribute {0} at {1}", new Object[] { this.name, offset });
+
             ByteBuffer _buf = getRecord(offset);
+
             _buf.position(CDFImpl.this.offset_SCOPE);
+
             this.scope = _buf.getInt();
+
             this.num = _buf.getInt();
+
             _buf.position(CDFImpl.this.offset_AgrEDRHead);
+
             long n = longInt(_buf);
 
             if (n > 0) {
-                this.gEntries = getAttributeEntries(n);
+                this.gEntries = attributeEntries(n);
                 LOGGER.log(Level.FINEST, "link attr {0} to {1} gEntries",
                         new Object[] { this.name, this.gEntries.size() });
 
@@ -2583,37 +3262,51 @@ import java.util.zip.GZIPInputStream;
                     linkToVariables(this.gEntries, "r");
                 }
 
+            } else {
+                this.gEntries = Collections.emptyList();
             }
 
             _buf.position(CDFImpl.this.offset_AzEDRHead);
             n = longInt(_buf);
 
             if (n > 0) {
-                this.zEntries = getAttributeEntries(n);
+                this.zEntries = attributeEntries(n);
                 LOGGER.log(Level.FINEST, "link attr {0} to {1} zEntries",
                         new Object[] { this.name, this.zEntries.size() });
                 linkToVariables(this.zEntries, "z");
+            } else {
+                this.zEntries = Collections.emptyList();
             }
 
         }
 
         /**
-         * returns attribute entries
+         * Attribute entries.
+         *
+         * @param offset the offset
+         *
+         * @return an unmodifiable list of entries or null if offset==0
          */
-        public Vector getAttributeEntries(long offset) {
+        public List<AttributeEntry> attributeEntries(final long offset) {
 
             if (offset == 0) {
                 return null;
             }
 
-            Vector list = new Vector();
+            List<AttributeEntry> list = new ArrayList<>();
+
             ByteBuffer _buf = getRecord(offset);
 
             while (true) {
+
                 _buf.position(CDFImpl.this.offset_NEXT_AEDR);
+
                 long next = longInt(_buf);
+
                 _buf.position(0);
+
                 AttributeEntry ae = new CDFAttributeEntry(_buf, this.name);
+
                 list.add(ae);
 
                 if (next == 0) {
@@ -2623,7 +3316,22 @@ import java.util.zip.GZIPInputStream;
                 _buf = getRecord(next);
             }
 
-            return list;
+            return Collections.unmodifiableList(list);
+        }
+
+        /**
+         * returns attribute entries
+         *
+         * @deprecated use {@link #attributeEntries(long)}
+         */
+        @SuppressWarnings("rawtypes")
+        @Deprecated
+        public Vector getAttributeEntries(final long offset) {
+            List<AttributeEntry> attributeEntries = attributeEntries(offset);
+
+            return (attributeEntries == null) ? null
+                    : attributeEntries.stream()
+                            .collect(Collectors.toCollection(Vector::new));
         }
 
         /**
@@ -2645,18 +3353,22 @@ import java.util.zip.GZIPInputStream;
         /**
          * link variable attribute entries to the appropriate variable
          */
-        public void linkToVariables(Vector entries, String type) {
+        public void linkToVariables(final Iterable<? extends AttributeEntry> attributeEntries, final String type) {
 
-            for (int e = 0; e < entries.size(); e++) {
-                AttributeEntry ae = (AttributeEntry) entries.elementAt(e);
-                CDFVariable var = (CDFVariable) getCDFVariable(type, ae.getVariableNumber());
+            for (AttributeEntry attributeEntry : attributeEntries) {
 
-                if (var == null) {
-                    System.out.println("An attribute entry for " + ae.getAttributeName() + " of type " + type
-                            + " links to variable number " + ae.getVariableNumber() + ".");
-                    System.out.println("Variable whose number is " + ae.getVariableNumber() + " was not found.");
+                CDFVariable variable = (CDFVariable) getCDFVariable(type, attributeEntry.getVariableNumber());
+
+                if (variable == null) {
+
+                    Object[] params = { attributeEntry.getAttributeName(), type, attributeEntry.getVariableNumber() };
+
+                    LOGGER.log(Level.WARNING,
+                            "An attribute entry for {0} of type, {1}, links to variable number {2} that was not found",
+                            params);
+
                 } else {
-                    var.attributes.add(ae);
+                    variable.attributes.add(attributeEntry);
                 }
 
             }
@@ -2670,9 +3382,10 @@ import java.util.zip.GZIPInputStream;
 
         public final boolean columnMajor;
 
-        TargetAttribute(boolean p, boolean c) {
+        TargetAttribute(final boolean p, final boolean c) {
             this.preserve = p;
             this.columnMajor = c;
         }
     }
+
 }

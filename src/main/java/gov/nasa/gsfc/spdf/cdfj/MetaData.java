@@ -1,7 +1,13 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
 import java.nio.ByteOrder;
+import java.util.List;
+import java.util.OptionalInt;
 import java.util.Vector;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
 
 /**
  * Abstract base class for GenericReader.
@@ -10,17 +16,45 @@ import java.util.Vector;
  */
 public abstract class MetaData {
 
+    private static final Logger LOGGER = CDFLogging.newLogger(MetaData.class);
+
     CDFImpl thisCDF;
+
+    /**
+     * Returns list of {@link AttributeEntry AttributeEntry} objects for
+     * the named attribute for the named variable.
+     *
+     *
+     * @param attributeName the attribute name
+     *
+     * @return the list attribute entries
+     */
+    public final List<AttributeEntry> attributeEntries(final String attributeName) {
+        return this.thisCDF.attributeEntries(attributeName);
+    }
+
+    /**
+     * Returns list of {@link AttributeEntry AttributeEntry} objects for
+     * the named attribute for the named variable.
+     *
+     * @param variableName  the variable name
+     * @param attributeName the attribute name
+     *
+     * @return the list or null
+     */
+    public final List<AttributeEntry> attributeEntries(final String variableName, final String attributeName) {
+        return this.thisCDF.attributeEntries(variableName, attributeName);
+    }
 
     /**
      * Returns whether there is a variable with the given name.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return true, if successful
      */
-    public final boolean existsVariable(String varName) {
-        return (varName != null) && (this.thisCDF.getVariable(varName) != null);
+    public final boolean existsVariable(final String variableName) {
+        return (variableName != null) && (this.thisCDF.getVariable(variableName) != null);
     }
 
     /**
@@ -33,48 +67,58 @@ public abstract class MetaData {
      * This method is deprecated. Use {@link #getGlobalAttribute(String atr)
      * getGlobalAttribute(String atr)} method to extract all entries.
      *
-     * @param atr
+     * @param atr the atr
      *
-     * @return
+     * @return the attribute
      */
-    public final Object getAttribute(String atr) {
+    public final Object getAttribute(final String atr) {
         return this.thisCDF.getAttribute(atr);
     }
 
     /**
-     * Returns value of the named attribute for specified variable.For a character
-     * string attribute, a Vector of String is returned.For a numeric attribute, a
-     * Vector of size 1 is returned.The
-     * single element of the Vector is a long[] if attribute's type is long;
+     * Returns value of the named attribute for specified variable.
+     * <p>
+     * For a character string attribute, a Vector of String is
+     * returned.
+     * <p>
+     * For a numeric attribute, a Vector of size 1 is returned.
+     * <p>
+     * The single element of the Vector is a long[] if attribute's
+     * type is long;
+     * <p>
      * For all other numeric types, the element is a double[].
      *
-     * @param varName
-     * @param aname
+     * @param variableName the var name
+     * @param aname        the aname
      *
-     * @return
-     *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @return the attribute
      */
-    public final Object getAttribute(String varName, String aname) throws CDFException.ReaderError {
-        return this.thisCDF.getAttribute(varName, aname);
+    public final Object getAttribute(final String variableName, final String aname) {
+        return this.thisCDF.getAttribute(variableName, aname);
     }
 
     /**
      * Returns list of {@link AttributeEntry AttributeEntry} objects for the
      * named global attribute.
      *
-     * @param aname
+     * @param attributeName the attribute name
      *
-     * @return
+     * @return the attribute entries
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
+     *
+     * @deprecated use {@link #attributeEntries(String)}
      */
-    public final Vector<AttributeEntry> getAttributeEntries(String aname) throws CDFException.ReaderError {
+    @Deprecated
+    public final Vector<AttributeEntry> getAttributeEntries(final String attributeName)
+            throws CDFException.ReaderError {
 
         try {
-            return this.thisCDF.getAttributeEntries(aname);
-        } catch (Throwable th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            return this.attributeEntries(attributeName)
+                    .stream()
+                    .collect(Collectors.toCollection(Vector::new));
+        } catch (Exception ex) {
+            throw new CDFException.ReaderError("Failed to retrieve attribute entries for " + attributeName, ex);
         }
 
     }
@@ -83,42 +127,48 @@ public abstract class MetaData {
      * Returns list of {@link AttributeEntry AttributeEntry} objects for
      * the named attribute for the named variable.
      *
-     * @param varName
-     * @param aname
+     * @param variableName  the variable name
+     * @param attributeName the attribute name
      *
-     * @return
+     * @return the attribute entries or null
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @deprecated Use {@link #attributeEntries(String, String)}
      */
-    public final Vector<AttributeEntry> getAttributeEntries(String varName, String aname)
-            throws CDFException.ReaderError {
-        return this.thisCDF.getAttributeEntries(varName, aname);
+    @Deprecated
+    public final Vector<AttributeEntry> getAttributeEntries(final String variableName, final String attributeName) {
+
+        List<AttributeEntry> attributeEntries = this.attributeEntries(variableName, attributeName);
+
+        return (attributeEntries == null) ? null
+                : attributeEntries.stream()
+                        .collect(Collectors.toCollection(Vector::new));
     }
 
     /**
      * Returns the blocking factor used to compress this variable.See the CDF User's
      * Guide for details.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the blocking factor
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public final int getBlockingFactor(String varName) throws CDFException.ReaderError {
+    public final int getBlockingFactor(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).getBlockingFactor();
+        return this.thisCDF.getVariable(variableName)
+                .getBlockingFactor();
     }
 
     /**
      * Returns ByteOrder.LITTLE_ENDIAN, or ByteOrder.BIG_ENDIAN depending
      * the CDF encoding
      *
-     * @return
+     * @return the byte order
      */
     public final ByteOrder getByteOrder() {
         return this.thisCDF.getByteOrder();
@@ -127,56 +177,70 @@ public abstract class MetaData {
     /**
      * Returns size of a data item for the given variable.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the data item size
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final int getDataItemSize(String varName) throws CDFException.ReaderError {
+    public final int getDataItemSize(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).getDataItemSize();
+        return this.thisCDF.getVariable(variableName)
+                .getDataItemSize();
+    }
+
+    /**
+     * Gets the dimension element counts.
+     *
+     * @param variableName the variable name
+     *
+     * @return the dimension element counts
+     */
+    public final List<Integer> getDimensionElementCounts(final String variableName) {
+        return this.thisCDF.getVariable(variableName)
+                .getDimensionElementCounts();
     }
 
     /**
      * Returns dimensions the given variable.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the dimensions
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final int[] getDimensions(String varName) throws CDFException.ReaderError {
+    public final int[] getDimensions(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).getDimensions();
+        return this.thisCDF.getVariable(variableName)
+                .getDimensions();
     }
 
     /**
      * Returns effective dimensions of the given variable.Dimensions for which
      * dimVarys is false are ignored.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the effective dimensions
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final int[] getEffectiveDimensions(String varName) throws CDFException.ReaderError {
+    public final int[] getEffectiveDimensions(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        Variable var = this.thisCDF.getVariable(varName);
+        Variable var = this.thisCDF.getVariable(variableName);
         return var.getEffectiveDimensions();
     }
 
@@ -184,54 +248,77 @@ public abstract class MetaData {
      * Returns effective rank of this variable.Dimensions for which dimVarys is
      * false do not count.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the effective rank
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final int getEffectiveRank(String varName) throws CDFException.ReaderError {
+    public final int getEffectiveRank(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).getEffectiveRank();
+        return this.thisCDF.getVariable(variableName)
+                .getEffectiveRank();
+    }
+
+    /**
+     * Returns effective rank of this variable.Dimensions for which dimVarys is
+     * false do not count.
+     *
+     * @param variableName the var name
+     *
+     * @return the effective rank
+     *
+     * @throws ReaderError the reader error
+     */
+    public final OptionalInt getVariableEffectiveRank(final String variableName) {
+
+        return this.thisCDF.getVariableByName(variableName)
+                .map(Variable::getEffectiveRank)
+                .map(OptionalInt::of)
+                .orElse(OptionalInt.empty());
     }
 
     /**
      * Return element count for this variable's dimensions.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the element count
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
+     *
+     * @deprecated
      */
-    public final Vector<Integer> getElementCount(String varName) throws CDFException.ReaderError {
+    @Deprecated
+    public final Vector<Integer> getElementCount(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).getElementCount();
+        return getDimensionElementCounts(variableName).stream()
+                .collect(Collectors.toCollection(Vector::new));
     }
 
     /**
      * Returns {@link GlobalAttribute GlobalAttribute} object for
      * the named global attribute.
      *
-     * @param atr
+     * @param atr the atr
      *
-     * @return
+     * @return the global attribute
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public final GlobalAttribute getGlobalAttribute(String atr) throws CDFException.ReaderError {
+    public final GlobalAttribute getGlobalAttribute(final String atr) throws CDFException.ReaderError {
 
         try {
             return this.thisCDF.getGlobalAttribute(atr);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
         }
 
@@ -245,7 +332,7 @@ public abstract class MetaData {
      * 2015, leap second has been added at the end of December, or June. Thus
      * leapSecondId is either (10000*year + 101), or (10000*year + 701).
      *
-     * @return
+     * @return the last leap second id
      */
     public final int getLastLeapSecondId() {
         return this.thisCDF.lastLeapSecondId;
@@ -254,158 +341,171 @@ public abstract class MetaData {
     /**
      * Returns given variable's number property.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the number
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final int getNumber(String varName) throws CDFException.ReaderError {
+    public final int getNumber(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).getNumber();
+        return this.thisCDF.getVariable(variableName)
+                .getNumber();
     }
 
     /**
      * Returns given variable's 'number of elements' property.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the number of elements
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final int getNumberOfElements(String varName) throws CDFException.ReaderError {
+    public final int getNumberOfElements(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).getNumberOfElements();
+        return this.thisCDF.getVariable(variableName)
+                .getNumberOfElements();
     }
 
     /**
      * Returns 'number of values' property of the given variable.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the number of values
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final int getNumberOfValues(String varName) throws CDFException.ReaderError {
+    public final int getNumberOfValues(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).getNumberOfValues();
+        return this.thisCDF.getVariable(variableName)
+                .getNumberOfValues();
     }
 
     /**
      * Returns 'pad value' property of the given variable.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the pad value
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final Object getPadValue(String varName) throws CDFException.ReaderError {
+    public final Object getPadValue(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).getPadValue();
+        return this.thisCDF.getVariable(variableName)
+                .getPadValue();
     }
 
     /**
      * Returns 'pad value' property of the given variable subject to the given
      * precision preservation constraint.
      *
-     * @param varName
-     * @param preservePrecision
+     * @param variableName      the var name
+     * @param preservePrecision the preserve precision
      *
-     * @return
+     * @return the pad value
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final Object getPadValue(String varName, boolean preservePrecision) throws CDFException.ReaderError {
+    public final Object getPadValue(final String variableName, final boolean preservePrecision)
+            throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        Variable var = this.thisCDF.getVariable(varName);
+        Variable var = this.thisCDF.getVariable(variableName);
         return var.getPadValue(preservePrecision);
     }
 
     /**
-     * Returns record range for this variable
+     * Returns record range for this variable.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the record range
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final int[] getRecordRange(String varName) throws CDFException.ReaderError {
+    public final int[] getRecordRange(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).getRecordRange();
+        return this.thisCDF.getVariable(variableName)
+                .getRecordRange();
     }
 
     /**
      * Returns the name of the time variable for the given variable.
      *
-     * @param varName variable name
+     * @param variableName variable name
      *
      * @return String
-     *
-     * @throws CDFException.ReaderError if variable does not exist
      */
-    public final String getTimeVariableName(String varName) throws Throwable {
+    // FIXME: This method relies on userTimeVariableName which is broken
+    public final String getTimeVariableName(final String variableName) {
 
-        if (!existsVariable(varName)) {
-            throw new Throwable("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new IllegalArgumentException("CDF does not hava a variable named " + variableName);
         }
 
-        String tname = userTimeVariableName(varName);
+        try {
+            String tname = userTimeVariableName(variableName);
 
-        if (tname != null) {
-            return tname;
+            if (tname != null) {
+                return tname;
+            }
+
+        } catch (ReaderError e) {
+            throw new IllegalArgumentException("CDF does not hava a variable named " + variableName, e);
         }
 
         // assume istp convention
-        Variable var = this.thisCDF.getVariable(varName);
+        Variable var = this.thisCDF.getVariable(variableName);
         String vname = var.getName();
-        Vector v = (Vector) this.thisCDF.getAttribute(vname, "DEPEND_0");
 
-        if (v.size() > 0) {
-            tname = (String) v.elementAt(0);
+        List<String> v = (List<String>) this.thisCDF.getAttribute(vname, "DEPEND_0");
+
+        String tname = null;
+
+        if (!v.isEmpty()) {
+            tname = v.get(0);
         }
 
         if (tname == null) {
 
-            if (!vname.equals("Epoch")) {
+            if (!"Epoch".equals(vname)) {
 
                 if (this.thisCDF.getVariable("Epoch") != null) {
                     tname = "Epoch";
-                    System.out.println("Variable " + vname + " has no DEPEND_0" + " attribute. Variable named Epoch "
+                    LOGGER.fine("Variable " + vname + " has no DEPEND_0 attribute. Variable named Epoch "
                             + "assumed to be the right time variable");
                 } else {
-                    throw new Throwable("Time variable not found for " + vname);
+                    throw new IllegalArgumentException("Time variable not found for " + vname);
                 }
 
             } else {
-                throw new Throwable("Variable named Epoch has no DEPEND_0 " + "attribute.");
+                throw new IllegalArgumentException("Variable named Epoch has no DEPEND_0 attribute.");
             }
 
         }
@@ -416,101 +516,113 @@ public abstract class MetaData {
     /**
      * Returns CDF type of the variable.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the type
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final int getType(String varName) throws CDFException.ReaderError {
+    public final int getType(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).getType();
+        return this.thisCDF.getVariable(variableName)
+                .getType();
     }
 
     /**
-     * Returns names of variables in the CDF
+     * Returns names of variables in the CDF.
      *
-     * @return
+     * @return the variable names
      */
     public final String[] getVariableNames() {
         return this.thisCDF.getVariableNames();
     }
 
     /**
-     * returns variable names of a given VAR_TYPE in a String[]
+     * returns variable names of a given VAR_TYPE in a String[].
      *
-     * @param type
+     * @param type the type
      *
-     * @return
+     * @return the variable names
      */
-    public final String[] getVariableNames(String type) {
+    public final String[] getVariableNames(final String type) {
         return this.thisCDF.getVariableNames(type);
     }
 
     /**
      * Returns 'varys' property of the given variable.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the varys
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final boolean[] getVarys(String varName) throws CDFException.ReaderError {
+    public final boolean[] getVarys(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).getVarys();
+        return this.thisCDF.getVariable(variableName)
+                .getVarys();
     }
 
     /**
      * Returns number of entries for the named global attribute.
      *
-     * @param atr
+     * @param atr the atr
      *
-     * @return
+     * @return the int
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public final int globalAttributeEntryCount(String atr) throws CDFException.ReaderError {
+    public final int globalAttributeEntryCount(final String atr) throws CDFException.ReaderError {
         return getGlobalAttribute(atr).getEntryCount();
     }
 
     /**
      * Returns names of global attributes.
      *
-     * @return
+     * @return the string[]
      */
     public final String[] globalAttributeNames() {
         return this.thisCDF.globalAttributeNames();
     }
 
     /**
+     * Returns names of global attributes.
+     *
+     * @return the string[]
+     */
+    public final String[] allAttributeNames() {
+        return this.thisCDF.allAttributeNames();
+    }
+
+    /**
      * returns whether conversion of this variable to type specified by
      * cl is supported while preserving precision.
      *
-     * @param varName
-     * @param cl
+     * @param variableName the var name
+     * @param cl           the cl
      *
-     * @return
+     * @return true, if is compatible
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final boolean isCompatible(String varName, Class cl) throws CDFException.ReaderError {
+    public final boolean isCompatible(final String variableName, final Class<?> cl) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
         try {
-            return this.thisCDF.getVariable(varName).isCompatible(cl);
-        } catch (Throwable th) {
+            return this.thisCDF.getVariable(variableName)
+                    .isCompatible(cl);
+        } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
         }
 
@@ -520,21 +632,22 @@ public abstract class MetaData {
      * Returns whether conversion of this variable to type specified by
      * cl is supported under the given precision preserving constraint.
      *
-     * @param varName
-     * @param preserve
-     * @param cl
+     * @param variableName the var name
+     * @param cl           the cl
+     * @param preserve     the preserve
      *
-     * @return
+     * @return true, if is compatible
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final boolean isCompatible(String varName, Class cl, boolean preserve) throws CDFException.ReaderError {
+    public final boolean isCompatible(final String variableName, final Class<?> cl, final boolean preserve)
+            throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        Variable var = this.thisCDF.getVariable(varName);
+        Variable var = this.thisCDF.getVariable(variableName);
         return var.isCompatible(cl, preserve);
     }
 
@@ -545,99 +658,102 @@ public abstract class MetaData {
      * the values to be stored in uncompressed form if the latter results in
      * a smaller size.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return true, if is compressed
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final boolean isCompressed(String varName) throws CDFException.ReaderError {
+    public final boolean isCompressed(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).isCompressed();
+        return this.thisCDF.getVariable(variableName)
+                .isCompressed();
     }
 
     /**
      * Shows whether one or more records (in the range returned by
      * getRecordRange()) are missing.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return true, if is missing records
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final boolean isMissingRecords(String varName) throws CDFException.ReaderError {
+    public final boolean isMissingRecords(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).isMissingRecords();
+        return this.thisCDF.getVariable(variableName)
+                .isMissingRecords();
     }
 
     /**
      * Returns whether the given variable represents time.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return true, if is time type
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final boolean isTimeType(String varName) throws CDFException.ReaderError {
+    public final boolean isTimeType(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
-        }
+        return this.thisCDF.findVariableByName(variableName)
+                .map(variable -> {
 
-        Variable var = this.thisCDF.getVariable(varName);
-        int type = var.getType();
-        boolean isTimeType = (CDFTimeType.EPOCH.getValue() == type);
-        isTimeType |= (CDFTimeType.EPOCH16.getValue() == type);
-        isTimeType |= (CDFTimeType.TT2000.getValue() == type);
-        return isTimeType;
+                    int type = variable.getType();
+
+                    return (CDFTimeType.EPOCH.getValue() == type) || (CDFTimeType.EPOCH16.getValue() == type)
+                        || (CDFTimeType.TT2000.getValue() == type);
+                })
+                .orElseThrow(() -> new CDFException.ReaderError("CDF does not hava a variable named " + variableName));
+
     }
 
     /**
      * Returns whether a variable of type r-variable..See the CDF User's Guide for
      * details.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return true, if is type R
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public final boolean isTypeR(String varName) throws CDFException.ReaderError {
+    public final boolean isTypeR(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).isTypeR();
+        return this.thisCDF.getVariable(variableName)
+                .isTypeR();
     }
 
     /**
      * Return whether the missing record should be assigned the pad
      * value.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return true, if successful
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final boolean missingRecordValueIsPad(String varName) throws CDFException.ReaderError {
+    public final boolean missingRecordValueIsPad(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        Variable var = this.thisCDF.getVariable(varName);
+        Variable var = this.thisCDF.getVariable(variableName);
         return var.missingRecordValueIsPad();
     }
 
@@ -645,67 +761,69 @@ public abstract class MetaData {
      * Return whether the missing record should be assigned the last
      * seen value.If none has been seen, pad value is assigned.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return true, if successful
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final boolean missingRecordValueIsPrevious(String varName) throws CDFException.ReaderError {
+    public final boolean missingRecordValueIsPrevious(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        Variable var = this.thisCDF.getVariable(varName);
+        Variable var = this.thisCDF.getVariable(variableName);
         return var.missingRecordValueIsPrevious();
     }
 
     /**
      * Returns an indication of the record varying property of a variable.
      *
-     * @param varName
+     * @param variableName the var name
      *
      * @return false if variable has a constant value for this CDF.
      *
-     * @throws CDFException.ReaderError if variable does not exist
+     * @throws ReaderError the reader error
      */
-    public final boolean recordVariance(String varName) throws CDFException.ReaderError {
+    public final boolean recordVariance(final String variableName) throws CDFException.ReaderError {
 
-        if (!existsVariable(varName)) {
-            throw new CDFException.ReaderError("CDF does not hava a variable named " + varName);
+        if (!existsVariable(variableName)) {
+            throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        return this.thisCDF.getVariable(varName).recordVariance();
+        return this.thisCDF.getVariable(variableName)
+                .recordVariance();
     }
 
     /**
-     * Returns whether the arrays are stored in row major order in the source
+     * Returns whether the arrays are stored in row major order in the source.
      *
-     * @return
+     * @return true, if successful
      */
     public final boolean rowMajority() {
         return this.thisCDF.rowMajority();
     }
 
     /**
+     * User time variable name.
      *
-     * @param varName
+     * @param variableName the var name
      *
-     * @return
+     * @return the string
      *
-     * @throws CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public abstract String userTimeVariableName(String varName) throws CDFException.ReaderError;
+    public abstract String userTimeVariableName(String variableName) throws CDFException.ReaderError;
 
     /**
-     * Returns names of variable attributes.
+     * Returns names of attributes of the given variable.
      *
-     * @param name
+     * @param variableName the variable name
      *
-     * @return
+     * @return the string[] or null
      */
-    public final String[] variableAttributeNames(String name) {
-        return this.thisCDF.variableAttributeNames(name);
+    public final String[] variableAttributeNames(final String variableName) {
+        return this.thisCDF.variableAttributeNames(variableName);
     }
 }

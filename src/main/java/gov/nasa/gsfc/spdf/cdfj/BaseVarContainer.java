@@ -1,6 +1,7 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.lang.reflect.InvocationTargetException;
+import static gov.nasa.gsfc.spdf.cdfj.CDFDataTypes.*;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
@@ -8,9 +9,11 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
-import java.util.Vector;
+import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * The Class BaseVarContainer.
  *
  * @author nand
  */
@@ -34,7 +37,7 @@ public abstract class BaseVarContainer implements Runnable {
 
     final ByteOrder order;
 
-    final Class _class;
+    final Class<?> clazz;
 
     final int recordsPerChunk;
 
@@ -42,7 +45,7 @@ public abstract class BaseVarContainer implements Runnable {
 
     final boolean chunking;
 
-    final Vector buffers = new Vector();
+    final CopyOnWriteArrayList<ContentDescriptor> buffers = new CopyOnWriteArrayList<>();
 
     final int fillCount;
 
@@ -53,37 +56,35 @@ public abstract class BaseVarContainer implements Runnable {
     ByteBuffer userBuffer;
 
     /**
+     * Instantiates a new base var container.
      *
-     * @param cdfi
-     * @param vrbl
-     * @param ints
-     * @param bln
-     * @param bo
-     * @param type
-     *
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws Throwable
+     * @param thisCDF  the this CDF
+     * @param var      the var
+     * @param pt       the pt
+     * @param preserve the preserve
+     * @param bo       the bo
+     * @param cl       the cl
      */
-    protected BaseVarContainer(CDFImpl thisCDF, Variable var, int[] pt, boolean preserve, ByteOrder bo, Class cl)
-            throws IllegalAccessException, InvocationTargetException, Throwable {
+    protected BaseVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt, final boolean preserve,
+            final ByteOrder bo, final Class<?> cl) {
+
         this.type = var.getType();
 
         if (!isCompatible(this.type, preserve, cl)) {
-            throw new Throwable("Variable " + var.getName() + " may result in loss of precision");
+            throw new IllegalArgumentException("Variable " + var.getName() + " may result in loss of precision");
         }
 
         this.thisCDF = thisCDF;
         this.var = var;
         this.order = bo;
-        this._class = cl;
+        this.clazz = cl;
         this.itemSize = var.getDataItemSize();
         this.elements = this.itemSize / DataTypes.size[this.type];
         int[] range = var.getRecordRange();
 
         if (range == null) {
             // if (pt == null) {
-            throw new Throwable("Variable " + var.getName() + " has no " + "records.");
+            throw new IllegalArgumentException("Variable " + var.getName() + " has no records.");
             // }
         }
 
@@ -103,13 +104,13 @@ public abstract class BaseVarContainer implements Runnable {
             if (var.recordVariance()) {
 
                 if (pt[0] < 0) {
-                    throw new Throwable("Negative start of Record Range ");
+                    throw new IllegalArgumentException("Negative start of Record Range ");
                 }
 
                 if (pt.length > 1) {
 
                     if (pt[0] > pt[1]) {
-                        throw new Throwable("Invalid record Range " + "first " + pt[0] + ", last " + pt[1]);
+                        throw new IllegalArgumentException("Invalid record Range first " + pt[0] + ", last " + pt[1]);
                     }
 
                 }
@@ -117,14 +118,14 @@ public abstract class BaseVarContainer implements Runnable {
                 if ((!var.missingRecordValueIsPad() && !var.missingRecordValueIsPrevious())) {
 
                     if ((range[0] > pt[0]) || (range[1] < pt[0])) {
-                        throw new Throwable("Invalid start of Record " + "Range " + pt[0]
+                        throw new IllegalArgumentException("Invalid start of Record Range " + pt[0]
                                 + ". Available record range is " + range[0] + " - " + range[1]);
                     }
 
                     if (pt.length > 1) {
 
                         if (range[1] < pt[1]) {
-                            throw new Throwable(
+                            throw new IllegalArgumentException(
                                     "Invalid end of Record Range " + pt[1] + ". Last available record is " + range[1]);
                         }
 
@@ -173,7 +174,7 @@ public abstract class BaseVarContainer implements Runnable {
         this.fillCount = _fillCount;
         this.overlap = _overlap;
 
-        if ((DataTypes.size[this.type] > 1) || (this._class != Byte.TYPE)) {
+        if ((DataTypes.size[this.type] > 1) || (this.clazz != Byte.TYPE)) {
             int _recordsPerChunk = (CHUNK_SIZE / this.elements);
             this.recordsPerChunk = (_recordsPerChunk == 0) ? 1 : _recordsPerChunk;
             this.csize = this.recordsPerChunk * this.elements;
@@ -187,76 +188,83 @@ public abstract class BaseVarContainer implements Runnable {
     }
 
     /**
+     * Checks if is compatible.
      *
-     * @param type
-     * @param preserve
-     * @param cl
+     * @param dataTypeInternalValue the type
+     * @param strict                the strict
+     * @param cl                    the cl
      *
-     * @return
+     * @return true, if is compatible
      */
-
-    public static boolean isCompatible(int type, boolean preserve, Class cl) {
+    public static boolean isCompatible(final int dataTypeInternalValue, final boolean strict, final Class<?> cl) {
 
         if (cl == Long.TYPE) {
-            return (DataTypes.typeCategory[type] == DataTypes.SIGNED_INTEGER)
-                    || (DataTypes.typeCategory[type] == DataTypes.UNSIGNED_INTEGER)
-                    || (DataTypes.typeCategory[type] == DataTypes.LONG);
+            return (DataTypes.typeCategory[dataTypeInternalValue] == DataTypes.SIGNED_INTEGER)
+                || (DataTypes.typeCategory[dataTypeInternalValue] == DataTypes.UNSIGNED_INTEGER)
+                || (DataTypes.typeCategory[dataTypeInternalValue] == DataTypes.LONG);
         }
 
         if (cl == Double.TYPE) {
 
-            if (type > 50) {
+            if (dataTypeInternalValue > 50) {
                 return false;
             }
 
-            return (DataTypes.typeCategory[type] != DataTypes.LONG) || !preserve;
+            return (DataTypes.typeCategory[dataTypeInternalValue] != DataTypes.LONG) || !strict;
         }
 
         if (cl == Float.TYPE) {
 
-            if (type > 50) {
+            if (dataTypeInternalValue > 50) {
                 return false;
             }
 
-            if (DataTypes.typeCategory[type] == DataTypes.FLOAT) {
+            if (DataTypes.typeCategory[dataTypeInternalValue] == DataTypes.FLOAT) {
                 return true;
             }
 
-            if ((DataTypes.typeCategory[type] == DataTypes.LONG)
-                    || (DataTypes.typeCategory[type] == DataTypes.DOUBLE)) {
-                return !preserve;
+            if ((DataTypes.typeCategory[dataTypeInternalValue] == DataTypes.LONG)
+                || (DataTypes.typeCategory[dataTypeInternalValue] == DataTypes.DOUBLE)) {
+                return !strict;
             }
 
-            return !preserve || ((type != 4) && (type != 14));
+            return !strict || ((dataTypeInternalValue != CDF_INT4_INTERNAL_VALUE)
+                && (dataTypeInternalValue != CDF_UINT4_INTERNAL_VALUE));
         }
 
         if (cl == Integer.TYPE) {
 
-            if (type > 50) {
+            if (dataTypeInternalValue > 50) {
                 return false;
             }
 
-            return ((DataTypes.typeCategory[type] == DataTypes.SIGNED_INTEGER)
-                    || (DataTypes.typeCategory[type] == DataTypes.UNSIGNED_INTEGER)) && (!preserve || (type != 14));
+            return ((DataTypes.typeCategory[dataTypeInternalValue] == DataTypes.SIGNED_INTEGER)
+                || (DataTypes.typeCategory[dataTypeInternalValue] == DataTypes.UNSIGNED_INTEGER))
+                && (!strict || (dataTypeInternalValue != CDF_UINT4_INTERNAL_VALUE));
         }
 
         if (cl == Short.TYPE) {
 
-            if (type > 50) {
+            if (dataTypeInternalValue > 50) {
                 return false;
             }
 
-            if ((type == 1) || (type == 41) || (type == 2)) {
+            if ((dataTypeInternalValue == CDF_INT1_INTERNAL_VALUE) || (dataTypeInternalValue == CDF_BYTE_INTERNAL_VALUE)
+                || (dataTypeInternalValue == CDF_INT2_INTERNAL_VALUE)) {
                 return true;
             }
 
-            return (type == 11) || ((type == 12) && !preserve);
+            return (dataTypeInternalValue == CDF_UINT1_INTERNAL_VALUE)
+                || ((dataTypeInternalValue == CDF_UINT2_INTERNAL_VALUE) && !strict);
         }
 
         if (cl == Byte.TYPE) {
 
-            if (preserve) {
-                return (type == 1) || (type == 41) || (type == 11) || (type > 50);
+            if (strict) {
+                return (dataTypeInternalValue == CDF_INT1_INTERNAL_VALUE)
+                    || (dataTypeInternalValue == CDF_BYTE_INTERNAL_VALUE)
+                    || (dataTypeInternalValue == CDF_UINT1_INTERNAL_VALUE)
+                    || (dataTypeInternalValue > 50);
             }
 
             return true;
@@ -265,8 +273,9 @@ public abstract class BaseVarContainer implements Runnable {
         return false;
     }
 
-    static boolean validElement(VariableMetaData var, int[] idx) {
-        int elements = (((Integer) var.getElementCount().elementAt(0)));
+    static boolean validElement(final VariableMetaData var, final int[] idx) {
+        int elements = var.getDimensionElementCounts()
+                .get(0);
 
         for (int j : idx) {
 
@@ -281,44 +290,51 @@ public abstract class BaseVarContainer implements Runnable {
     }
 
     /**
+     * As 1 D array.
      *
-     * @return
+     * @return the object
      */
 
     public Object as1DArray() {
+
         ByteBuffer b = getBuffer();
 
         if (b == null) {
             return null;
         }
 
-        if (this._class == Long.TYPE) {
+        if (this.clazz == Long.TYPE) {
             long[] la = new long[(b.remaining()) / 8];
-            b.asLongBuffer().get(la);
+            b.asLongBuffer()
+                    .get(la);
             return la;
         }
 
-        if (this._class == Double.TYPE) {
+        if (this.clazz == Double.TYPE) {
             double[] da = new double[(b.remaining()) / 8];
-            b.asDoubleBuffer().get(da);
+            b.asDoubleBuffer()
+                    .get(da);
             return da;
         }
 
-        if (this._class == Float.TYPE) {
+        if (this.clazz == Float.TYPE) {
             float[] fa = new float[(b.remaining()) / 4];
-            b.asFloatBuffer().get(fa);
+            b.asFloatBuffer()
+                    .get(fa);
             return fa;
         }
 
-        if (this._class == Integer.TYPE) {
+        if (this.clazz == Integer.TYPE) {
             int[] ia = new int[(b.remaining()) / 4];
-            b.asIntBuffer().get(ia);
+            b.asIntBuffer()
+                    .get(ia);
             return ia;
         }
 
-        if (this._class == Short.TYPE) {
+        if (this.clazz == Short.TYPE) {
             short[] sa = new short[(b.remaining()) / 2];
-            b.asShortBuffer().get(sa);
+            b.asShortBuffer()
+                    .get(sa);
             return sa;
         }
 
@@ -328,26 +344,29 @@ public abstract class BaseVarContainer implements Runnable {
     }
 
     /**
+     * As one D array.
      *
-     * @param cmtarget
+     * @param cmtarget the cmtarget
      *
-     * @return
+     * @return the object
      */
-    public Object asOneDArray(boolean cmtarget) {
+    public Object asOneDArray(final boolean cmtarget) {
         return asOneDArray(cmtarget, null);
     }
 
     /**
+     * As one D array.
      *
-     * @param cmtarget
-     * @param stride
+     * @param cmtarget the cmtarget
+     * @param stride   the stride
      *
-     * @return
+     * @return the object
      */
-    public Object asOneDArray(boolean cmtarget, Stride stride) {
+    public Object asOneDArray(final boolean cmtarget, final Stride stride) {
         int[] dim = this.var.getEffectiveDimensions();
 
-        if ((dim.length <= 1) || (!cmtarget && this.var.rowMajority()) || (cmtarget && !this.var.rowMajority())) {
+        if ((dim.length <= 1) || (!cmtarget && this.var.rowMajority())
+            || (cmtarget && !this.var.rowMajority())) {
 
             if (stride == null) {
                 return as1DArray();
@@ -371,12 +390,13 @@ public abstract class BaseVarContainer implements Runnable {
     }
 
     /**
+     * As sampled array.
      *
-     * @param stride
+     * @param stride the stride
      *
-     * @return
+     * @return the object
      */
-    public Object asSampledArray(Stride stride) {
+    public Object asSampledArray(final Stride stride) {
         int[] range = getRecordRange();
         int numberOfValues = (range[1] - range[0]) + 1;
         int _stride = stride.getStride(numberOfValues);
@@ -402,7 +422,7 @@ public abstract class BaseVarContainer implements Runnable {
         int pos = 0;
         int off = 0;
 
-        if (this._class == Float.TYPE) {
+        if (this.clazz == Float.TYPE) {
             FloatBuffer _buf = buf.asFloatBuffer();
             float[] sampled = new float[words];
 
@@ -416,7 +436,7 @@ public abstract class BaseVarContainer implements Runnable {
             return sampled;
         }
 
-        if (this._class == Double.TYPE) {
+        if (this.clazz == Double.TYPE) {
             DoubleBuffer _buf = buf.asDoubleBuffer();
             double[] sampled = new double[words];
 
@@ -430,7 +450,7 @@ public abstract class BaseVarContainer implements Runnable {
             return sampled;
         }
 
-        if (this._class == Integer.TYPE) {
+        if (this.clazz == Integer.TYPE) {
             IntBuffer _buf = buf.asIntBuffer();
             int[] sampled = new int[words];
 
@@ -444,7 +464,7 @@ public abstract class BaseVarContainer implements Runnable {
             return sampled;
         }
 
-        if (this._class == Short.TYPE) {
+        if (this.clazz == Short.TYPE) {
             ShortBuffer _buf = buf.asShortBuffer();
             short[] sampled = new short[words];
 
@@ -458,7 +478,7 @@ public abstract class BaseVarContainer implements Runnable {
             return sampled;
         }
 
-        if (this._class == Byte.TYPE) {
+        if (this.clazz == Byte.TYPE) {
             ByteBuffer _buf = buf.duplicate();
             byte[] sampled = new byte[words];
 
@@ -472,7 +492,7 @@ public abstract class BaseVarContainer implements Runnable {
             return sampled;
         }
 
-        if (this._class == Long.TYPE) {
+        if (this.clazz == Long.TYPE) {
             LongBuffer _buf = buf.asLongBuffer();
             long[] sampled = new long[words];
 
@@ -490,22 +510,31 @@ public abstract class BaseVarContainer implements Runnable {
     }
 
     /**
+     * Byte buffer.
      *
-     * @return
+     * @return the optional
      */
-    public ByteBuffer getBuffer() {
-
-        if (this.buffers.size() == 0) {
-            return null;
-        }
-
-        ContentDescriptor cd = (ContentDescriptor) this.buffers.get(0);
-        return cd.getBuffer();
+    public Optional<ByteBuffer> byteBuffer() {
+        return this.buffers.isEmpty() ? Optional.empty()
+                : Optional.ofNullable(this.buffers.get(0))
+                        .map(ContentDescriptor::getBuffer);
     }
 
     /**
+     * Gets the buffer.
      *
-     * @return
+     * @return the buffer
+     */
+    public ByteBuffer getBuffer() {
+
+        return byteBuffer().orElse(null);
+
+    }
+
+    /**
+     * Gets the capacity.
+     *
+     * @return the capacity
      */
     public int getCapacity() {
         int numberOfValues = (this.pt[1] - this.pt[0]) + 1;
@@ -514,22 +543,24 @@ public abstract class BaseVarContainer implements Runnable {
     }
 
     /**
+     * Gets the record range.
      *
-     * @return
+     * @return the record range
      */
     public int[] getRecordRange() {
 
-        if (this.buffers.size() == 0) {
+        if (this.buffers.isEmpty()) {
             return null;
         }
 
-        ContentDescriptor cd = (ContentDescriptor) this.buffers.get(0);
+        ContentDescriptor cd = this.buffers.get(0);
         return new int[] { cd.getFirstRecord(), cd.getLastRecord() };
     }
 
     /**
+     * Gets the variable.
      *
-     * @return
+     * @return the variable
      */
     public Variable getVariable() {
         return this.var;
@@ -538,7 +569,7 @@ public abstract class BaseVarContainer implements Runnable {
     @Override
     public void run() {
 
-        if (this.buffers.size() > 0) {
+        if (!this.buffers.isEmpty()) {
             return;
         }
 
@@ -572,7 +603,7 @@ public abstract class BaseVarContainer implements Runnable {
             data = allocateDataArray(words);
             doMissing(this.fillCount, _buf, data, -1);
 
-            if (this.buffers.size() == 0) {
+            if (this.buffers.isEmpty()) {
                 this.buffers.add(new ContentDescriptor(_buf, this.pt[0], this.pt[1]));
             }
 
@@ -590,7 +621,7 @@ public abstract class BaseVarContainer implements Runnable {
             doMissing(this.fillCount, _buf, data, -1);
         }
 
-        Vector locations = ((CDFImpl.DataLocator) this.var.getLocator()).locations;
+        CopyOnWriteArrayList<long[]> locations = ((CDFImpl.DataLocator) this.var.getLocator()).locations;
         ByteBuffer bv;
         int blk = 0;
         int next = begin;
@@ -600,7 +631,7 @@ public abstract class BaseVarContainer implements Runnable {
             int prev = -1;
 
             for (; blk < locations.size(); blk++) {
-                long[] loc = (long[]) locations.elementAt(blk);
+                long[] loc = locations.get(blk);
                 _first = (int) loc[0];
 
                 if (loc[1] >= next) {
@@ -644,7 +675,7 @@ public abstract class BaseVarContainer implements Runnable {
 
                 if (next > end) {
 
-                    if (this.buffers.size() == 0) {
+                    if (this.buffers.isEmpty()) {
                         this.buffers.add(new ContentDescriptor(_buf, begin, end));
                     }
 
@@ -660,7 +691,7 @@ public abstract class BaseVarContainer implements Runnable {
         boolean firstBlock = true;
 
         for (; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+            long[] loc = locations.get(blk);
             int first = (int) loc[0];
             int last = (int) loc[1];
 
@@ -684,7 +715,7 @@ public abstract class BaseVarContainer implements Runnable {
                             ex.printStackTrace();
                         }
 
-                        if (this.buffers.size() == 0) {
+                        if (this.buffers.isEmpty()) {
                             this.buffers.add(new ContentDescriptor(_buf, begin, end));
                         }
 
@@ -698,11 +729,11 @@ public abstract class BaseVarContainer implements Runnable {
 
                 // pad if necessary
                 if (next < first) { // next cannot exceed first
-                    int target = (end >= first) ? first : end + 1;
+                    int target = (end >= first) ? first : (end + 1);
                     int n = target - next;
 
                     if (this.var.missingRecordValueIsPrevious()) {
-                        int rec = (int) ((long[]) locations.elementAt(blk - 1))[1];
+                        int rec = (int) locations.get(blk - 1)[1];
                         doMissing(n, _buf, data, rec);
                     } else {
                         doMissing(n, _buf, data, -1);
@@ -766,17 +797,18 @@ public abstract class BaseVarContainer implements Runnable {
 
         }
 
-        if (this.buffers.size() == 0) {
+        if (this.buffers.isEmpty()) {
             this.buffers.add(new ContentDescriptor(_buf, begin, end));
         }
 
     }
 
     /**
+     * Sets the direct.
      *
-     * @param direct
+     * @param direct the new direct
      */
-    public void setDirect(boolean direct) {
+    public void setDirect(final boolean direct) {
 
         if (this.allocationMode == null) {
             this.allocationMode = direct;
@@ -785,12 +817,13 @@ public abstract class BaseVarContainer implements Runnable {
     }
 
     /**
+     * Sets the user buffer.
      *
-     * @param buf
+     * @param buf the buf
      *
-     * @return
+     * @return true, if successful
      */
-    public boolean setUserBuffer(ByteBuffer buf) {
+    public boolean setUserBuffer(final ByteBuffer buf) {
 
         if (this.allocationMode != null) {
             return false;
@@ -807,7 +840,7 @@ public abstract class BaseVarContainer implements Runnable {
     /*
      * public static ArrayStore getArrayStore() {return new ArrayStore();}
      * public static ArrayStore getArrayStore(Object o, int offset,
-     * int first, int last) throws Throwable {
+     * int first, int last) {
      * return new ArrayStore(o, offset, first, last);
      * }
      * static class ArrayStore {
@@ -819,9 +852,9 @@ public abstract class BaseVarContainer implements Runnable {
      * }
      * ArrayStore(Object o, int offset, int first, int last) throws
      * Throwable {
-     * Class c = componentType(o);
+     * Class<?> c = componentType(o);
      * if (c == null) throw new Throwable("not an array");
-     * if (!c.equals(_class)) throw new Throwable("incompatible type");
+     * if (!c.equals(clazz)) throw new Throwable("incompatible type");
      * length = elements*(last - first + 1);
      * array = o;
      * offset = off;
@@ -832,13 +865,14 @@ public abstract class BaseVarContainer implements Runnable {
      * }
      */
 
-    Class componentType(Object o) {
+    Class<?> componentType(final Object o) {
 
-        if (!o.getClass().isArray()) {
+        if (!o.getClass()
+                .isArray()) {
             return null;
         }
 
-        Class _cl = o.getClass();
+        Class<?> _cl = o.getClass();
 
         while (_cl.isArray()) {
             _cl = _cl.getComponentType();
@@ -847,41 +881,40 @@ public abstract class BaseVarContainer implements Runnable {
         return _cl;
     }
 
-    abstract void doData(ByteBuffer bv, int type, int elements, int toprocess, ByteBuffer buf, Object data)
-            throws Throwable;
+    abstract void doData(ByteBuffer bv, int _type, int _elements, int toprocess, ByteBuffer buf, Object data);
 
     abstract void doMissing(int records, ByteBuffer buf, Object data, int rec);
 
     int getLength() {
 
-        if (this._class == Long.TYPE) {
+        if (this.clazz == Long.TYPE) {
             return 8;
         }
 
-        if (this._class == Double.TYPE) {
+        if (this.clazz == Double.TYPE) {
             return 8;
         }
 
-        if (this._class == Float.TYPE) {
+        if (this.clazz == Float.TYPE) {
             return 4;
         }
 
-        if (this._class == Integer.TYPE) {
+        if (this.clazz == Integer.TYPE) {
             return 4;
         }
 
-        if (this._class == Short.TYPE) {
+        if (this.clazz == Short.TYPE) {
             return 2;
         }
 
-        if (this._class == Byte.TYPE) {
+        if (this.clazz == Byte.TYPE) {
             return 1;
         }
 
         return -1;
     }
 
-    Object makeArray(int[] _dim, Stride stride) {
+    Object makeArray(final int[] _dim, final Stride stride) {
         ByteBuffer b = getBuffer();
 
         if (b == null) {
@@ -922,7 +955,7 @@ public abstract class BaseVarContainer implements Runnable {
         int offset = 0;
         int n = 0;
 
-        if (this._class == Long.TYPE) {
+        if (this.clazz == Long.TYPE) {
             long[] la = new long[words];
             // pts = la.length/pt_size;
             LongBuffer lbuf = b.asLongBuffer();
@@ -968,7 +1001,7 @@ public abstract class BaseVarContainer implements Runnable {
             return la;
         }
 
-        if (this._class == Double.TYPE) {
+        if (this.clazz == Double.TYPE) {
             double[] da = new double[words];
             // pts = da.length/pt_size;
             DoubleBuffer dbuf = b.asDoubleBuffer();
@@ -1014,7 +1047,7 @@ public abstract class BaseVarContainer implements Runnable {
             return da;
         }
 
-        if (this._class == Float.TYPE) {
+        if (this.clazz == Float.TYPE) {
             float[] fa = new float[words];
             // pts = fa.length/pt_size;
             FloatBuffer fbuf = b.asFloatBuffer();
@@ -1060,7 +1093,7 @@ public abstract class BaseVarContainer implements Runnable {
             return fa;
         }
 
-        if (this._class == Integer.TYPE) {
+        if (this.clazz == Integer.TYPE) {
             int[] ia = new int[words];
             // pts = ia.length/pt_size;
             IntBuffer ibuf = b.asIntBuffer();
@@ -1106,7 +1139,7 @@ public abstract class BaseVarContainer implements Runnable {
             return ia;
         }
 
-        if (this._class == Short.TYPE) {
+        if (this.clazz == Short.TYPE) {
             short[] sa = new short[words];
             // pts = sa.length/pt_size;
             ShortBuffer sbuf = b.asShortBuffer();
@@ -1197,7 +1230,7 @@ public abstract class BaseVarContainer implements Runnable {
         return ba;
     }
 
-    class ContentDescriptor {
+    static class ContentDescriptor {
 
         final ByteBuffer buf;
 

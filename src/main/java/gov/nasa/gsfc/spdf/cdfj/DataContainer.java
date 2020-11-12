@@ -6,12 +6,14 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.GZIPOutputStream;
 
 /**
+ * The Class DataContainer.
  *
  * @author nand
  */
@@ -25,17 +27,15 @@ public class DataContainer {
 
     VXR vxr;
 
-    Vector<Integer> firstRecords = new Vector<>();
+    CopyOnWriteArrayList<Integer> firstRecords = new CopyOnWriteArrayList<>();
 
-    Vector<Integer> lastRecords = new Vector<>();
+    CopyOnWriteArrayList<Integer> lastRecords = new CopyOnWriteArrayList<>();
 
-    Vector<ByteBuffer> bufs = new Vector<>();
+    CopyOnWriteArrayList<ByteBuffer> bufs = new CopyOnWriteArrayList<>();
 
-    List<Integer> points = new Vector<>();
+    List<Integer> points = new CopyOnWriteArrayList<>();
 
-    /**
-     *
-     */
+    /** The position. */
     protected long position;
 
     final boolean rowMajority;
@@ -46,11 +46,11 @@ public class DataContainer {
 
     DataContainer timeContainer;
 
-    Vector<Integer> _firstRecords;
+    CopyOnWriteArrayList<Integer> _firstRecords;
 
-    Vector<Integer> _lastRecords;
+    CopyOnWriteArrayList<Integer> _lastRecords;
 
-    Vector<ByteBuffer> _bufs;
+    CopyOnWriteArrayList<ByteBuffer> _bufs;
 
     Boolean phantom = null;
 
@@ -63,53 +63,56 @@ public class DataContainer {
     VXR[] vxrs;
 
     /**
+     * Instantiates a new data container.
      *
-     * @param vdr
+     * @param vdr the vdr
      */
-    public DataContainer(VDR vdr) {
+    public DataContainer(final VDR vdr) {
         this(vdr, true);
     }
 
     /**
+     * Instantiates a new data container.
      *
-     * @param vdr
-     * @param bln
+     * @param vdr         the vdr
+     * @param rowMajority the row majority
      */
-    public DataContainer(VDR vdr, boolean rowMajority) {
+    public DataContainer(final VDR vdr, final boolean rowMajority) {
         this.vdr = vdr;
         this.vxr = new VXR();
         this.rowMajority = rowMajority;
     }
 
     /**
+     * Adds the data.
      *
-     * @param data
-     * @param recordRange
-     * @param oned
-     *
-     * @throws Throwable
+     * @param data        the data
+     * @param recordRange the record range
+     * @param oned        the oned
      */
-    public void addData(Object data, int[] recordRange, boolean oned) throws Throwable {
+    public void addData(final Object data, final int[] recordRange, final boolean oned) {
         addData(data, recordRange, oned, false);
     }
 
     /**
+     * Adds the java array.
      *
-     * @param data
-     * @param dataType
-     * @param relax
+     * @param data     the data
+     * @param dataType the data type
+     * @param relax    the relax
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the byte buffer
      */
-    public ByteBuffer addJavaArray(Object data, int dataType, boolean relax) throws Throwable {
+    public ByteBuffer addJavaArray(final Object data, final int dataType, final boolean relax) {
+
         ArrayAttribute aa = new ArrayAttribute(data);
+
         Class<?> cl = aa.getType();
+
         CDFDataType ctype = SupportedTypes.cdfType(dataType);
 
         if (ctype == null) {
-            throw new Throwable("Internal error.");
+            throw new IllegalArgumentException("datatype, " + dataType + " , is not supported.");
         }
 
         if (cl == Long.TYPE) {
@@ -129,7 +132,7 @@ public class DataContainer {
         if (cl == Double.TYPE) {
             DoubleArray da = new DoubleArray(data, this.rowMajority);
             boolean ok = (ctype == CDFDataType.DOUBLE) || (ctype == CDFDataType.EPOCH)
-                    || (ctype == CDFDataType.EPOCH16);
+                || (ctype == CDFDataType.EPOCH16);
 
             if (ok) {
                 return da.buffer();
@@ -210,8 +213,9 @@ public class DataContainer {
     }
 
     /**
+     * Gets the size.
      *
-     * @return
+     * @return the size
      */
     public int getSize() {
         // update vdr
@@ -224,7 +228,7 @@ public class DataContainer {
             size += this.cpr.getSize();
         }
 
-        if (this.bufs.size() > 0) {
+        if (!this.bufs.isEmpty()) {
             int last = -1;
             int nbuf = this.bufs.size() - 1;
 
@@ -249,9 +253,9 @@ public class DataContainer {
 
         this.vdr.setVXRHead(this.position + size);
 
-        this._firstRecords = new Vector<>();
-        this._lastRecords = new Vector<>();
-        this._bufs = new Vector<>();
+        this._firstRecords = new CopyOnWriteArrayList<>();
+        this._lastRecords = new CopyOnWriteArrayList<>();
+        this._bufs = new CopyOnWriteArrayList<>();
 
         if (this.timeContainer == null) {
             int nbuf = 0;
@@ -319,7 +323,8 @@ public class DataContainer {
 
                 for (int e = 0; e < entries; e++) {
                     this.locs[nbuf] = this.position + size;
-                    int len = VVR_PREAMBLE + this._bufs.get(nbuf).limit();
+                    int len = VVR_PREAMBLE + this._bufs.get(nbuf)
+                            .limit();
                     size += len;
                     nbuf++;
                 }
@@ -331,7 +336,8 @@ public class DataContainer {
 
                     for (int e = 0; e < entries; e++) {
                         this.locs[nbuf] = this.position + size;
-                        int len = CVVR_PREAMBLE + this._bufs.get(nbuf).limit();
+                        int len = CVVR_PREAMBLE + this._bufs.get(nbuf)
+                                .limit();
                         size += len;
                         nbuf++;
                     }
@@ -349,11 +355,10 @@ public class DataContainer {
                     } else {
                         uncompressed = new byte[b.remaining()];
                         b.get(uncompressed);
-                        this._bufs.setElementAt(null, nbuf);
+                        this._bufs.set(nbuf, null);
                     }
 
-                    ByteArrayOutputStream baos;
-                    baos = new ByteArrayOutputStream(uncompressed.length);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream(uncompressed.length);
 
                     try {
                         GZIPOutputStream gzos = new GZIPOutputStream(baos);
@@ -361,7 +366,7 @@ public class DataContainer {
                         gzos.finish();
                         baos.flush();
                         b = ByteBuffer.wrap(baos.toByteArray());
-                        this._bufs.setElementAt(b, nbuf);
+                        this._bufs.set(nbuf, b);
                         int len = CVVR_PREAMBLE + b.limit();
                         size += len;
                     } catch (IOException ex) {
@@ -387,28 +392,31 @@ public class DataContainer {
     }
 
     /**
+     * Gets the vdr.
      *
-     * @return
+     * @return the vdr
      */
     public VDR getVDR() {
         return this.vdr;
     }
 
     /**
+     * Gets the vxr.
      *
-     * @return
+     * @return the vxr
      */
     public VXR getVXR() {
         return this.vxr;
     }
 
     /**
+     * Update.
      *
-     * @param buf
+     * @param buf the buf
      *
-     * @return
+     * @return the byte buffer
      */
-    public ByteBuffer update(ByteBuffer buf) {
+    public ByteBuffer update(final ByteBuffer buf) {
         buf.position((int) this.position);
         buf.put(this.vdr.get());
 
@@ -422,7 +430,7 @@ public class DataContainer {
 
         int nbuf = 0;
 
-        if (this._bufs.size() > 0) {
+        if (!this._bufs.isEmpty()) {
 
             for (VXR vxr1 : this.vxrs) {
                 buf.put(vxr1.get());
@@ -444,7 +452,8 @@ public class DataContainer {
                 if (!this.vdr.isCompressed()) {
 
                     for (int e = 0; e < vxr1.numEntries; e++) {
-                        buf.putLong(VVR_PREAMBLE + this._bufs.get(nbuf + e).limit());
+                        buf.putLong(VVR_PREAMBLE + this._bufs.get(nbuf + e)
+                                .limit());
                         buf.putInt(7);
                         buf.put(this._bufs.get(nbuf + e));
                     }
@@ -471,12 +480,13 @@ public class DataContainer {
     }
 
     /**
+     * Update.
      *
-     * @param channel
+     * @param channel the channel
      *
-     * @throws IOException
+     * @throws IOException Signals that an I/O exception has occurred.
      */
-    public void update(FileChannel channel) throws IOException {
+    public void update(final FileChannel channel) throws IOException {
         channel.position(this.position);
         channel.write(this.vdr.get());
 
@@ -492,7 +502,7 @@ public class DataContainer {
         ByteBuffer longbuf = ByteBuffer.allocate(8);
         ByteBuffer intbuf = ByteBuffer.allocate(4);
 
-        if (this._bufs.size() > 0) {
+        if (!this._bufs.isEmpty()) {
 
             for (VXR vxr1 : this.vxrs) {
                 channel.write(vxr1.get());
@@ -514,7 +524,8 @@ public class DataContainer {
                 if (!this.vdr.isCompressed()) {
 
                     for (int e = 0; e < vxr1.numEntries; e++) {
-                        writeLong(channel, longbuf, VVR_PREAMBLE + this._bufs.get(nbuf + e).limit());
+                        writeLong(channel, longbuf, VVR_PREAMBLE + this._bufs.get(nbuf + e)
+                                .limit());
                         writeInt(channel, intbuf, 7);
                         channel.write(this._bufs.get(nbuf + e));
                     }
@@ -539,7 +550,8 @@ public class DataContainer {
 
     }
 
-    void addData(Object data, int[] recordRange, boolean oned, boolean relax) throws Throwable {
+    void addData(final Object data, final int[] recordRange, final boolean oned, final boolean relax) {
+
         ByteBuffer buf = null;
 
         if (ByteBuffer.class.isAssignableFrom(data.getClass())) {
@@ -548,8 +560,8 @@ public class DataContainer {
             if (DataTypes.size[this.vdr.dataType] > 1) {
 
                 if (buf.order() != ByteOrder.LITTLE_ENDIAN) {
-                    throw new Throwable(
-                            "For data types of size > 1, " + "supplied buffer must be in LITTLE_ENDIAN order");
+                    throw new IllegalArgumentException(
+                            "For data types of size > 1, supplied buffer must be in LITTLE_ENDIAN order");
                 }
 
             }
@@ -557,7 +569,7 @@ public class DataContainer {
             if (this.vdr.isCompressed()) {
 
                 if (recordRange == null) {
-                    throw new Throwable("Record range must be specified " + "since " + this.vdr.getName()
+                    throw new IllegalArgumentException("Record range must be specified since " + this.vdr.getName()
                             + "is to be stored as compressed.");
                 }
 
@@ -566,14 +578,14 @@ public class DataContainer {
                     this._doNotCompress = this.doNotCompress;
                 } else {
 
-                    if (this.doNotCompress ? recordRange.length > 2 : recordRange.length == 2) {
+                    if (this.doNotCompress ? (recordRange.length > 2) : (recordRange.length == 2)) {
                         String t = "compressed";
 
                         if (!this.doNotCompress) {
                             t = "uncompressed";
                         }
 
-                        throw new Throwable("Changing compression mode of" + " input. Previous = " + t + ".");
+                        throw new IllegalArgumentException("Changing compression mode of input. Previous = " + t + ".");
                     }
 
                 }
@@ -582,15 +594,16 @@ public class DataContainer {
 
         } else {
 
-            if (!(data.getClass().isArray())) {
-                throw new Throwable("supplied object not an array");
+            if (!(data.getClass()
+                    .isArray())) {
+                throw new IllegalArgumentException("supplied object not an array or a ByteBuffer");
             }
 
         }
 
         int first = (recordRange == null) ? 0 : recordRange[0];
 
-        if (this.lastRecords.size() > 0) {
+        if (!this.lastRecords.isEmpty()) {
             int _last = -1;
 
             if (this.timeContainer != null) {
@@ -607,7 +620,7 @@ public class DataContainer {
 
                     if (this.vdr.sRecords == 0) {
                         System.out.println("Gap: " + expected + " - " + first + " for " + this.vdr.getName());
-                        throw new Throwable(" SparseRecordOption must be set. There are "
+                        throw new IllegalArgumentException(" SparseRecordOption must be set. There are "
                                 + " missing records between files for " + this.vdr.getName());
                     }
 
@@ -616,16 +629,16 @@ public class DataContainer {
             } else {
 
                 if (recordRange[0] <= _last) {
-                    throw new Throwable(
+                    throw new IllegalArgumentException(
                             "first record " + recordRange[0] + " must follow the last seen record " + _last);
                 }
 
                 if (recordRange[0] > (_last + 1)) {
 
                     if (this.vdr.sRecords == 0) {
-                        throw new Throwable("Specified start of the range " + recordRange[0] + " does not follow "
-                                + "last record " + _last + " immediately."
-                                + " SparseRecordOption must be set if the CDF is missing" + " records");
+                        throw new IllegalArgumentException("Specified start of the range " + recordRange[0]
+                                + " does not follow last record " + _last + " immediately."
+                                + " SparseRecordOption must be set if the CDF is missing records");
                     }
 
                 }
@@ -637,7 +650,7 @@ public class DataContainer {
             if (first != 0) {
 
                 if (this.vdr.sRecords == 0) {
-                    throw new Throwable("SparseRecordOption " + "must be set if the CDF is missing records");
+                    throw new IllegalArgumentException("SparseRecordOption must be set if the CDF is missing records");
                 }
 
             }
@@ -679,21 +692,21 @@ public class DataContainer {
             if (recordRange != null) {
 
                 if (npt != ((recordRange[1] - recordRange[0]) + 1)) {
-                    throw new Throwable("array size not consistent with given record" + " range");
+                    throw new IllegalStateException("array size not consistent with given record range");
                 }
 
             }
 
-            Vector<Integer> vdim = null;
+            List<Integer> vdim = null;
 
             if (this.vdr.dataType == 32) {
-                vdim = new Vector<>();
+                vdim = new ArrayList<>();
                 vdim.add(2);
             } else {
                 vdim = this.vdr.efdim;
             }
 
-            if (vdim.size() > 0) {
+            if (!vdim.isEmpty()) {
                 int[] dcheck = new int[1 + vdim.size()];
                 dcheck[0] = npt;
 
@@ -706,17 +719,19 @@ public class DataContainer {
                     StringBuilder sbe = new StringBuilder();
 
                     for (int k : dcheck) {
-                        sbe.append(",").append(k);
+                        sbe.append(",")
+                                .append(k);
                     }
 
                     StringBuilder sbf = new StringBuilder();
                     int[] fdim = aa.getDimensions();
 
                     for (int j : fdim) {
-                        sbf.append(",").append(j);
+                        sbf.append(",")
+                                .append(j);
                     }
 
-                    throw new Throwable("Dimension mismatch, expected: " + sbe + " found " + sbf + ".");
+                    throw new IllegalStateException("Dimension mismatch, expected: " + sbe + " found " + sbf + ".");
                 }
 
             }
@@ -731,14 +746,14 @@ public class DataContainer {
         }
 
         if (!done && ((this.vdr.dataType == 1) || (relax && (this.vdr.dataType == 11))
-                || ((this.vdr.dataType > 50) && (aa.getType() == Byte.TYPE)))) {
+            || ((this.vdr.dataType > 50) && (aa.getType() == Byte.TYPE)))) {
             byte[] values = (byte[]) data;
             npt = (values.length / this.vdr.itemsPerPoint);
 
             if (recordRange != null) {
 
                 if (npt != ((recordRange[1] - recordRange[0]) + 1)) {
-                    throw new Throwable("array size not consistent with given record range");
+                    throw new IllegalStateException("array size not consistent with given record range");
                 }
 
             }
@@ -755,7 +770,7 @@ public class DataContainer {
             if (recordRange != null) {
 
                 if (npt != ((recordRange[1] - recordRange[0]) + 1)) {
-                    throw new Throwable("array size not consistent with given record range");
+                    throw new IllegalStateException("array size not consistent with given record range");
                 }
 
             }
@@ -765,7 +780,8 @@ public class DataContainer {
             buf.order(ByteOrder.LITTLE_ENDIAN);
 
             if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-                buf.asShortBuffer().put(values);
+                buf.asShortBuffer()
+                        .put(values);
             } else {
 
                 for (short value : values) {
@@ -785,7 +801,7 @@ public class DataContainer {
             if (recordRange != null) {
 
                 if (npt != ((recordRange[1] - recordRange[0]) + 1)) {
-                    throw new Throwable("array size not consistent with given record range");
+                    throw new IllegalStateException("array size not consistent with given record range");
                 }
 
             }
@@ -795,7 +811,8 @@ public class DataContainer {
             buf.order(ByteOrder.LITTLE_ENDIAN);
 
             if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-                buf.asIntBuffer().put(values);
+                buf.asIntBuffer()
+                        .put(values);
             } else {
 
                 for (int value : values) {
@@ -815,7 +832,7 @@ public class DataContainer {
             if (recordRange != null) {
 
                 if (npt != ((recordRange[1] - recordRange[0]) + 1)) {
-                    throw new Throwable("array size not consistent with given record range");
+                    throw new IllegalStateException("array size not consistent with given record range");
                 }
 
             }
@@ -825,7 +842,8 @@ public class DataContainer {
             buf.order(ByteOrder.LITTLE_ENDIAN);
 
             if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-                buf.asFloatBuffer().put(values);
+                buf.asFloatBuffer()
+                        .put(values);
             } else {
 
                 for (float value : values) {
@@ -838,15 +856,16 @@ public class DataContainer {
             done = true;
         }
 
-        if (!done && ((this.vdr.dataType == 22) || (this.vdr.dataType == 45) || (this.vdr.dataType == 31)
-                || (this.vdr.dataType == 32))) {
+        if (!done && ((this.vdr.dataType == 22) || (this.vdr.dataType == 45)
+            || (this.vdr.dataType == 31)
+            || (this.vdr.dataType == 32))) {
             double[] values = (double[]) data;
             npt = (values.length / this.vdr.itemsPerPoint);
 
             if (recordRange != null) {
 
                 if (npt != ((recordRange[1] - recordRange[0]) + 1)) {
-                    throw new Throwable("array size not consistent with given record range");
+                    throw new IllegalStateException("array size not consistent with given record range");
                 }
 
             }
@@ -856,7 +875,8 @@ public class DataContainer {
             buf.order(ByteOrder.LITTLE_ENDIAN);
 
             if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-                buf.asDoubleBuffer().put(values);
+                buf.asDoubleBuffer()
+                        .put(values);
             } else {
 
                 for (double value : values) {
@@ -876,7 +896,7 @@ public class DataContainer {
             if (recordRange != null) {
 
                 if (npt != ((recordRange[1] - recordRange[0]) + 1)) {
-                    throw new Throwable("array size not consistent with given record range");
+                    throw new IllegalStateException("array size not consistent with given record range");
                 }
 
             }
@@ -886,7 +906,8 @@ public class DataContainer {
             buf.order(ByteOrder.LITTLE_ENDIAN);
 
             if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-                buf.asLongBuffer().put(values);
+                buf.asLongBuffer()
+                        .put(values);
             } else {
 
                 for (long value : values) {
@@ -909,7 +930,7 @@ public class DataContainer {
             if (recordRange != null) {
 
                 if (npt != ((recordRange[1] - recordRange[0]) + 1)) {
-                    throw new Throwable("array size not consistent with given record range");
+                    throw new IllegalStateException("array size not consistent with given record range");
                 }
 
             }
@@ -921,7 +942,7 @@ public class DataContainer {
                 int len = value.length();
 
                 if (len > this.vdr.numElems) {
-                    throw new Throwable("String " + value + " is longer than the length of variable.");
+                    throw new IllegalStateException("String " + value + " is longer than the length of variable.");
                 }
 
                 byte[] _bar = value.getBytes();
@@ -940,11 +961,12 @@ public class DataContainer {
         if (!done) {
 
             if (relax) {
-                throw new Throwable("Unsupported data type.");
+                throw new IllegalStateException("Unsupported data type.");
             }
 
             if ((this.vdr.dataType > 10) && (this.vdr.dataType < 20)) {
-                throw new Throwable("Possible incompatibility for unsigned." + " Use relax = true to force acceptance");
+                throw new IllegalStateException(
+                        "Possible incompatibility for unsigned. Use relax = true to force acceptance");
             }
 
         }
@@ -992,7 +1014,7 @@ public class DataContainer {
         return getLastRecord(this.lastRecords.size() - 1);
     }
 
-    int getLastRecord(int start) {
+    int getLastRecord(final int start) {
         int n = start;
 
         if (n < 0) {
@@ -1012,11 +1034,11 @@ public class DataContainer {
         return -1;
     }
 
-    void setTimeContainer(DataContainer dc) {
+    void setTimeContainer(final DataContainer dc) {
         this.timeContainer = dc;
     }
 
-    boolean timeOrderOK(Object nextTime) {
+    boolean timeOrderOK(final Object nextTime) {
         int last = this.bufs.size() - 1;
 
         if (last < 0) {
@@ -1059,14 +1081,14 @@ public class DataContainer {
         return (next[0] > buf.getDouble(buf.limit() - 8));
     }
 
-    void writeInt(WritableByteChannel ch, ByteBuffer buf, int value) throws IOException {
+    void writeInt(final WritableByteChannel ch, final ByteBuffer buf, final int value) throws IOException {
         buf.position(0);
         buf.putInt(value);
         buf.position(0);
         ch.write(buf);
     }
 
-    void writeLong(WritableByteChannel ch, ByteBuffer buf, long value) throws IOException {
+    void writeLong(final WritableByteChannel ch, final ByteBuffer buf, final long value) throws IOException {
         buf.position(0);
         buf.putLong(value);
         buf.position(0);

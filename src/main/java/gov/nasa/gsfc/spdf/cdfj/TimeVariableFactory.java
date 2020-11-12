@@ -3,18 +3,20 @@ package gov.nasa.gsfc.spdf.cdfj;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.LongBuffer;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.Vector;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
+ * A factory for creating TimeVariable objects.
  *
  * @author nand
  */
-public class TimeVariableFactory {
+public final class TimeVariableFactory {
 
-    /**
-     *
-     */
+    /** The Constant JANUARY_1_1970. */
     public static final double JANUARY_1_1970;
 
     static final long LONG_FILL = -9_223_372_036_854_775_807L;
@@ -46,100 +48,104 @@ public class TimeVariableFactory {
         JANUARY_1_1970 = offset * 8.64e7;
     }
 
-    private static TimeInstantModel defaultTimeInstantModel = new DefaultTimeInstantModelImpl();
+    static final TimeInstantModel defaultTimeInstantModel = new DefaultTimeInstantModelImpl();
 
-    /**
-     *
-     */
+    /** The Constant JANUARY_1_1970_LONG. */
     public static final long JANUARY_1_1970_LONG = (long) JANUARY_1_1970;
 
-    /**
-     *
-     */
+    /** The Constant TT2000_DATE. */
     public static final long TT2000_DATE = (JANUARY_1_1970_LONG + Date.UTC(100, 0, 1, 12, 0, 0)) - 42_184;
 
-    private TimeVariableFactory() {
-    }
+    private TimeVariableFactory() {}
 
     /**
+     * Gets the default time instant model.
      *
-     * @return
+     * @return the default time instant model
      */
     public static TimeInstantModel getDefaultTimeInstantModel() {
-        return (TimeInstantModel) defaultTimeInstantModel.clone();
+
+        return defaultTimeInstantModel.clone();
+
     }
 
     /**
+     * Gets the default time instant model.
      *
-     * @param msec
+     * @param msec the msec
      *
-     * @return
+     * @return the default time instant model
      */
-    public static TimeInstantModel getDefaultTimeInstantModel(double msec) {
-        TimeInstantModel tspec = (TimeInstantModel) defaultTimeInstantModel.clone();
+    public static TimeInstantModel getDefaultTimeInstantModel(final double msec) {
+        TimeInstantModel tspec = getDefaultTimeInstantModel();
         ((DefaultTimeInstantModelImpl) tspec).setBaseTime(msec);
         return tspec;
     }
 
     /**
+     * Gets the time variable.
      *
-     * @param rdr
-     * @param vname
+     * @param rdr   the rdr
+     * @param vname the vname
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the time variable
      */
-    public static CDFTimeVariable getTimeVariable(MetaData rdr, String vname) throws Throwable {
+    public static CDFTimeVariable getTimeVariable(final MetaData rdr, final String vname) {
         CDFImpl cdf = rdr.thisCDF;
         Variable var = cdf.getVariable(vname);
-        String tname = null;
         int recordCount = var.getNumberOfValues();
         CDFTimeVariable tv;
 
-        tname = rdr.getTimeVariableName(vname);
-        /*
-         * Vector v = (Vector)cdf.getAttribute(var.getName(), "DEPEND_0");
-         * if (v.size() > 0) tname = (String)v.elementAt(0);
-         * if (tname == null) {
-         * if (!vname.equals("Epoch")) {
-         * if (cdf.getVariable("Epoch") != null) {
-         * tname = "Epoch";
-         * System.out.println("Variable " + vname + " has no DEPEND_0"+
-         * " attribute. Variable named Epoch " +
-         * "assumed to be the right time variable");
-         * } else {
-         * throw new Throwable("Time variable not found for " + vname);
-         * }
-         * } else {
-         * throw new Throwable("Variable named Epoch has no DEPEND_0 " +
-         * "attribute.");
-         * }
-         * }
-         */
+        String tname = rdr.getTimeVariableName(vname);
+
+        List<String> depend0VariableNames = (List<String>) cdf.getAttribute(var.getName(), "DEPEND_0");
+
+        if (!depend0VariableNames.isEmpty()) {
+            tname = depend0VariableNames.get(0);
+        }
+
+        if (tname == null) {
+
+            if (!"Epoch".equals(vname)) {
+
+                if (cdf.getVariable("Epoch") != null) {
+                    tname = "Epoch";
+                    System.out.println("Variable " + vname + " has no DEPEND_0 attribute. Variable named Epoch "
+                            + "assumed to be the right time variable");
+                } else {
+                    throw new IllegalArgumentException("Time variable not found for " + vname);
+                }
+
+            } else {
+                throw new IllegalStateException("Variable named Epoch has no DEPEND_0 attribute.");
+            }
+
+        }
+
         Variable tvar = cdf.getVariable(tname);
 
         if (tvar == null) {
-            throw new Throwable("Time variable not found for " + vname);
+            throw new IllegalArgumentException("Time variable not found for " + vname);
         }
 
         boolean themisLike = false;
 
         if (tvar.getNumberOfValues() == 0) { // themis like
-            Vector v = (Vector) cdf.getAttribute(var.getName(), "DEPEND_TIME");
 
-            if (v.size() > 0) {
-                tname = (String) v.elementAt(0);
+            List<String> dependTimeVariableNames = (List<String>) cdf.getAttribute(var.getName(), "DEPEND_TIME");
+
+            if (!dependTimeVariableNames.isEmpty()) {
+                tname = dependTimeVariableNames.get(0);
                 tvar = cdf.getVariable(tname);
                 themisLike = true;
             } else {
-                throw new Throwable("Expected unix time variable " + "not found " + "for " + var.getName());
+                throw new IllegalArgumentException("Expected unix time variable not found for " + var.getName());
             }
 
         }
 
         if (tvar.getNumberOfValues() == 0) {
-            throw new Throwable("Empty time variable for " + var.getName());
+            throw new IllegalArgumentException("Empty time variable for " + var.getName());
         }
 
         ByteBuffer buf = null;
@@ -177,35 +183,25 @@ public class TimeVariableFactory {
     }
 
     /**
-     *
+     * The Class CDFEpoch16Variable.
      */
     public static class CDFEpoch16Variable extends CDFTimeVariable {
 
         DoubleBuffer _dbuf;
 
-        CDFEpoch16Variable(CDFImpl cdf, String name, ByteBuffer obuf) {
+        CDFEpoch16Variable(final CDFImpl cdf, final String name, final ByteBuffer obuf) {
             super(cdf, name, obuf);
             this.precision = TimePrecision.PICOSECOND;
             this._dbuf = this.tbuf.asDoubleBuffer();
         }
 
         @Override
-        public boolean canSupportPrecision(TimePrecision tp) {
+        public boolean canSupportPrecision(final TimePrecision tp) {
             return true;
         }
 
-        /**
-         *
-         * @param first
-         * @param last
-         * @param ts
-         *
-         * @return
-         *
-         * @throws Throwable
-         */
         @Override
-        public double[] getTimes(int first, int last, TimeInstantModel ts) throws Throwable {
+        public double[] getTimes(final int first, final int last, final TimeInstantModel ts) {
             TimePrecision offsetUnits = TimePrecision.MILLISECOND;
             long base = JANUARY_1_1970_LONG;
 
@@ -309,7 +305,7 @@ public class TimeVariableFactory {
     }
 
     /**
-     *
+     * The Class CDFEpochVariable.
      */
     public static class CDFEpochVariable extends CDFTimeVariable {
 
@@ -317,14 +313,14 @@ public class TimeVariableFactory {
 
         DoubleBuffer _dbuf;
 
-        CDFEpochVariable(CDFImpl cdf, String name, ByteBuffer obuf) {
+        CDFEpochVariable(final CDFImpl cdf, final String name, final ByteBuffer obuf) {
             super(cdf, name, obuf);
             this.precision = TimePrecision.MILLISECOND;
             this._dbuf = this.tbuf.asDoubleBuffer();
         }
 
         @Override
-        public boolean canSupportPrecision(TimePrecision tp) {
+        public boolean canSupportPrecision(final TimePrecision tp) {
             return tp == TimePrecision.MILLISECOND;
         }
 
@@ -336,17 +332,17 @@ public class TimeVariableFactory {
          *
          * @return
          *
-         * @throws Throwable
+         * @
          */
         @Override
-        public double[] getTimes(int first, int last, TimeInstantModel ts) throws Throwable {
+        public double[] getTimes(final int first, final int last, final TimeInstantModel ts) {
             double base = JANUARY_1_1970_LONG;
 
             if (ts != null) {
 
                 if (ts.getOffsetUnits() != TimePrecision.MILLISECOND) {
-                    throw new Throwable("Unsupported offset units: "
-                            + "Only millisecond offset units are supported for this " + "variable.");
+                    throw new IllegalArgumentException("Unsupported offset units: "
+                            + "Only millisecond offset units are supported for this variable.");
                 }
 
                 base = ts.getBaseTime();
@@ -386,9 +382,11 @@ public class TimeVariableFactory {
     }
 
     /**
-     *
+     * The Class CDFTimeVariable.
      */
-    public static abstract class CDFTimeVariable implements TimeVariableX {
+    public abstract static class CDFTimeVariable implements TimeVariableX {
+
+        static final Logger LOGGER = CDFLogging.newLogger(CDFTimeVariable.class);
 
         CDFImpl cdf;
 
@@ -402,7 +400,7 @@ public class TimeVariableFactory {
 
         int recordCount;
 
-        CDFTimeVariable(CDFImpl cdf, String name, ByteBuffer obuf) {
+        CDFTimeVariable(final CDFImpl cdf, final String name, final ByteBuffer obuf) {
             this.name = name;
             this.cdf = cdf;
             this.tbuf = obuf;
@@ -446,38 +444,26 @@ public class TimeVariableFactory {
             return this.precision;
         }
 
-        /**
-         *
-         * @return
-         */
         @Override
         public ByteBuffer getRawBuffer() {
             return this.tbuf;
         }
 
-        /**
-         *
-         * @param timeRange
-         *
-         * @return
-         *
-         * @throws Throwable
-         */
         @Override
-        public int[] getRecordRange(double[] timeRange) throws Throwable {
+        public int[] getRecordRange(final double[] timeRange) {
             return getRecordRange(timeRange, null);
         }
 
         /**
+         * Gets the record range.
          *
-         * @param timeRange
-         * @param ts
+         * @param timeRange the time range
+         * @param ts        the ts
          *
-         * @return
+         * @return the record range
          *
-         * @throws Throwable
          */
-        public int[] getRecordRange(double[] timeRange, TimeInstantModel ts) throws Throwable {
+        public int[] getRecordRange(final double[] timeRange, final TimeInstantModel ts) {
             double[] temp = getTimes(0, this.recordCount - 1, ts);
             double start = timeRange[0]; // offset in millis since 1970
             double stop = timeRange[1];
@@ -545,29 +531,30 @@ public class TimeVariableFactory {
         }
 
         @Override
-        public int[] getRecordRange(int[] startTime, int[] stopTime) throws Throwable {
+        public int[] getRecordRange(final int[] startTime, final int[] stopTime) {
             return getRecordRange(startTime, stopTime, null);
         }
 
         /**
+         * Gets the record range.
          *
-         * @param startTime
-         * @param stopTime
-         * @param ts
+         * @param startTime the start time
+         * @param stopTime  the stop time
+         * @param ts        the ts
          *
-         * @return
-         *
-         * @throws Throwable
+         * @return the record range
          */
         @Override
-        public int[] getRecordRange(int[] startTime, int[] stopTime, TimeInstantModel ts) throws Throwable {
+        public int[] getRecordRange(final int[] startTime, final int[] stopTime, final TimeInstantModel ts) {
 
             if (startTime.length < 3) {
-                throw new Throwable("incomplete start time " + "definition.");
+                throw new IllegalArgumentException(
+                        "incomplete start time definition," + startTime.length + " less than 3");
             }
 
             if (stopTime.length < 3) {
-                throw new Throwable("incomplete stop time " + "definition.");
+                throw new IllegalArgumentException(
+                        "incomplete stop time definition," + stopTime.length + " less than 3");
             }
 
             long start = TSExtractor.getTime(startTime);
@@ -586,32 +573,34 @@ public class TimeVariableFactory {
 
             try {
                 return getTimes(0, this.recordCount - 1, null);
-            } catch (Throwable t) {
-                t.printStackTrace();
+            } catch (RuntimeException e) {
+                LOGGER.log(Level.SEVERE, "getTimes failed, returning null", e);
                 return null;
             }
 
         }
 
         /**
+         * Gets the times.
          *
-         * @param timeRange
+         * @param timeRange the time range
          *
-         * @return
+         * @return the times
          */
-        public double[] getTimes(double[] timeRange) {
+        public double[] getTimes(final double[] timeRange) {
 
             try {
                 return getTimes(timeRange, null);
-            } catch (Throwable t) {
-                t.printStackTrace();
+            } catch (RuntimeException e) {
+                LOGGER.log(Level.SEVERE,
+                        "getTimes failed for timeRange," + Arrays.toString(timeRange) + ", returning null", e);
                 return null;
             }
 
         }
 
         @Override
-        public double[] getTimes(double[] timeRange, TimeInstantModel ts) throws Throwable {
+        public double[] getTimes(final double[] timeRange, final TimeInstantModel ts) {
 
             if (timeRange == null) {
                 return getTimes(0, this.recordCount - 1, ts);
@@ -627,47 +616,45 @@ public class TimeVariableFactory {
         }
 
         @Override
-        public double[] getTimes(int[] recordRange) throws Throwable {
+        public double[] getTimes(final int[] recordRange) {
 
             try {
                 return getTimes(recordRange, defaultTimeInstantModel);
-            } catch (Throwable t) {
-                t.printStackTrace();
+            } catch (RuntimeException e) {
+                LOGGER.log(Level.SEVERE,
+                        "getTimes failed for recordRange," + Arrays.toString(recordRange) + ", returning null", e);
                 return null;
             }
 
         }
 
         @Override
-        public double[] getTimes(int[] startTime, int[] stopTime) throws Throwable {
+        public double[] getTimes(final int[] startTime, final int[] stopTime) {
             return getTimes(startTime, stopTime, null);
         }
 
         @Override
-        public double[] getTimes(int[] startTime, int[] stopTime, TimeInstantModel ts) throws Throwable {
+        public double[] getTimes(final int[] startTime, final int[] stopTime, final TimeInstantModel ts) {
 
             if (startTime == null) {
-                throw new Throwable("start time is required");
+                throw new IllegalArgumentException("start time is required");
             }
 
             if (stopTime == null) {
-                throw new Throwable("stop time is required");
+                throw new IllegalArgumentException("stop time is required");
             }
-
-            long start;
-            long stop;
 
             if (startTime.length < 3) {
-                throw new Throwable("incomplete start time " + "definition.");
+                throw new IllegalArgumentException("incomplete start time definition.");
             }
 
-            start = TSExtractor.getTime(startTime);
+            long start = TSExtractor.getTime(startTime);
 
             if (stopTime.length < 3) {
-                throw new Throwable("incomplete stop time " + "definition.");
+                throw new IllegalArgumentException("incomplete stop time definition.");
             }
 
-            stop = TSExtractor.getTime(stopTime);
+            long stop = TSExtractor.getTime(stopTime);
 
             if (isTT2000()) {
                 start = (long) TimeUtil.milliSecondSince1970(start);
@@ -678,12 +665,12 @@ public class TimeVariableFactory {
         }
 
         @Override
-        public double[] getTimes(int[] recordRange, TimeInstantModel ts) throws Throwable {
+        public double[] getTimes(final int[] recordRange, final TimeInstantModel ts) {
             return getTimes(recordRange[0], recordRange[1], ts);
         }
 
         @Override
-        public double[] getTimes(TimeInstantModel ts) throws Throwable {
+        public double[] getTimes(final TimeInstantModel ts) {
             return getTimes(0, this.recordCount - 1, ts);
         }
 
@@ -691,33 +678,34 @@ public class TimeVariableFactory {
         public abstract boolean isTT2000();
 
         /**
+         * Sets the record count.
          *
-         * @param count
+         * @param count the new record count
          */
-        protected void setRecordCount(int count) {
+        protected void setRecordCount(final int count) {
             this.recordCount = count;
         }
 
-        abstract double[] getTimes(int first, int last, TimeInstantModel ts) throws Throwable;
+        abstract double[] getTimes(int first, int last, TimeInstantModel ts);
 
         abstract void reset();
     }
 
     /**
-     *
+     * The Class CDFTT2000Variable.
      */
     public static class CDFTT2000Variable extends CDFTimeVariable {
 
         LongBuffer _lbuf;
 
-        CDFTT2000Variable(CDFImpl cdf, String name, ByteBuffer obuf) {
+        CDFTT2000Variable(final CDFImpl cdf, final String name, final ByteBuffer obuf) {
             super(cdf, name, obuf);
             this.precision = TimePrecision.NANOSECOND;
             this._lbuf = this.tbuf.asLongBuffer();
         }
 
         @Override
-        public boolean canSupportPrecision(TimePrecision tp) {
+        public boolean canSupportPrecision(final TimePrecision tp) {
             return tp != TimePrecision.PICOSECOND;
         }
 
@@ -729,10 +717,10 @@ public class TimeVariableFactory {
          *
          * @return
          *
-         * @throws Throwable
+         * @
          */
         @Override
-        public double[] getTimes(int first, int last, TimeInstantModel ts) throws Throwable {
+        public double[] getTimes(final int first, final int last, final TimeInstantModel ts) {
             TimePrecision offsetUnits = TimePrecision.MILLISECOND;
             long base = JANUARY_1_1970_LONG;
 
@@ -784,8 +772,9 @@ public class TimeVariableFactory {
                 } else {
 
                     if (offsetUnits != TimePrecision.NANOSECOND) {
-                        throw new Throwable("You may request only " + "millisecond, microsecond or nanosecond offset "
-                                + "for a variable whose time variable is TT2000 type.");
+                        throw new IllegalArgumentException(
+                                "You may request only millisecond, microsecond or nanosecond offset "
+                                        + "for a variable whose time variable is TT2000 type.");
                     }
 
                     this.offset = 1_000_000 * (base - TT2000_DATE);
@@ -820,20 +809,20 @@ public class TimeVariableFactory {
     }
 
     /**
-     *
+     * The Class UnixTimeVariable.
      */
     public static class UnixTimeVariable extends CDFTimeVariable {
 
         DoubleBuffer _dbuf;
 
-        UnixTimeVariable(CDFImpl cdf, String name, ByteBuffer obuf) {
+        UnixTimeVariable(final CDFImpl cdf, final String name, final ByteBuffer obuf) {
             super(cdf, name, obuf);
             this.precision = TimePrecision.MICROSECOND;
             this._dbuf = this.tbuf.asDoubleBuffer();
         }
 
         @Override
-        public boolean canSupportPrecision(TimePrecision tp) {
+        public boolean canSupportPrecision(final TimePrecision tp) {
             return (tp == TimePrecision.MICROSECOND) || (tp == TimePrecision.MILLISECOND);
         }
 
@@ -845,10 +834,10 @@ public class TimeVariableFactory {
          *
          * @return
          *
-         * @throws Throwable
+         * @
          */
         @Override
-        public double[] getTimes(int first, int last, TimeInstantModel ts) throws Throwable {
+        public double[] getTimes(final int first, final int last, final TimeInstantModel ts) {
             TimePrecision offsetUnits = TimePrecision.MILLISECOND;
             long base = JANUARY_1_1970_LONG;
 
@@ -898,7 +887,8 @@ public class TimeVariableFactory {
             } else { // it must be micro second
 
                 if (offsetUnits != TimePrecision.MICROSECOND) {
-                    throw new Throwable("Desired precision exceeds " + "highest available precision -- microsecond");
+                    throw new IllegalArgumentException(
+                            "Desired precision exceeds highest available precision -- microsecond");
                 }
 
                 if (base == JANUARY_1_1970) {
@@ -953,16 +943,21 @@ public class TimeVariableFactory {
 
         TimePrecision offsetUnits = TimePrecision.MILLISECOND;
 
+        DefaultTimeInstantModelImpl(final double baseTime, final TimePrecision baseTimeUnits,
+                final TimePrecision offsetUnits) {
+            this.baseTime = baseTime;
+            this.baseTimeUnits = baseTimeUnits;
+            this.offsetUnits = offsetUnits;
+        }
+
+        DefaultTimeInstantModelImpl() {
+            this(JANUARY_1_1970, TimePrecision.MILLISECOND, TimePrecision.MILLISECOND);
+        }
+
         @Override
-        public Object clone() {
+        public DefaultTimeInstantModelImpl clone() {
 
-            try {
-                return super.clone();
-            } catch (java.lang.CloneNotSupportedException ex) {
-                ex.printStackTrace();
-            }
-
-            return null;
+            return new DefaultTimeInstantModelImpl(this.baseTime, getBaseTimeUnits(), getOffsetUnits());
         }
 
         @Override
@@ -981,11 +976,11 @@ public class TimeVariableFactory {
         }
 
         @Override
-        public void setOffsetUnits(TimePrecision offsetUnits) {
+        public void setOffsetUnits(final TimePrecision offsetUnits) {
             this.offsetUnits = offsetUnits;
         }
 
-        void setBaseTime(double msec) {
+        void setBaseTime(final double msec) {
             this.baseTime = msec;
         }
     }

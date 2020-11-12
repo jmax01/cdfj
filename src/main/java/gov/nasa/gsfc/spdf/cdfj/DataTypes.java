@@ -5,17 +5,15 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- *
- * @author nand
+ * The Class DataTypes.
  */
 public final class DataTypes {
 
-    /**
-     *
-     */
+    /** The Constant ENCODING_COUNT. */
     public static final int ENCODING_COUNT = 17;
 
     static final ByteOrder[] endian_ness = new ByteOrder[ENCODING_COUNT];
+
     static {
 
         for (int i = 0; i < ENCODING_COUNT; i++) {
@@ -34,49 +32,31 @@ public final class DataTypes {
         endian_ness[16] = ByteOrder.LITTLE_ENDIAN;
     }
 
-    /**
-     *
-     */
+    /** The Constant EPOCH16. */
     public static final int EPOCH16 = 32;
 
-    /**
-     *
-     */
+    /** The Constant CDF_TIME_TT2000. */
     public static final int CDF_TIME_TT2000 = 33;
 
-    /**
-     *
-     */
+    /** The Constant FLOAT. */
     public static final int FLOAT = 0;
 
-    /**
-     *
-     */
+    /** The Constant DOUBLE. */
     public static final int DOUBLE = 1;
 
-    /**
-     *
-     */
+    /** The Constant SIGNED_INTEGER. */
     public static final int SIGNED_INTEGER = 2;
 
-    /**
-     *
-     */
+    /** The Constant UNSIGNED_INTEGER. */
     public static final int UNSIGNED_INTEGER = 3;
 
-    /**
-     *
-     */
+    /** The Constant STRING. */
     public static final int STRING = 4;
 
-    /**
-     *
-     */
+    /** The Constant LONG. */
     public static final int LONG = 5;
 
-    /**
-     *
-     */
+    /** The Constant LAST_TYPE. */
     public static final int LAST_TYPE = 53;
 
     static final Method[] method = new Method[LAST_TYPE];
@@ -86,6 +66,7 @@ public final class DataTypes {
     static final int[] size = new int[LAST_TYPE];
 
     static final long[] longInt = new long[LAST_TYPE];
+
     static {
 
         for (int i = 0; i < LAST_TYPE; i++) {
@@ -95,7 +76,7 @@ public final class DataTypes {
         }
 
         // byte
-        Class bb = ByteBuffer.class;
+        Class<ByteBuffer> bb = ByteBuffer.class;
 
         try {
             Method meth = bb.getMethod("get");
@@ -149,8 +130,7 @@ public final class DataTypes {
             typeCategory[41] = SIGNED_INTEGER;
             typeCategory[51] = STRING;
             typeCategory[52] = STRING;
-        } catch (NoSuchMethodException | SecurityException ex) {
-        }
+        } catch (NoSuchMethodException | SecurityException ex) {}
 
         for (int i = 0; i < LAST_TYPE; i++) {
 
@@ -163,27 +143,27 @@ public final class DataTypes {
     }
 
     /**
-     *
+     * Instantiates a new data types.
      */
-    public DataTypes() {
-        Class tc = getClass();
+    private DataTypes() {
+        Class<?> tc = getClass();
 
         try {
             Method meth = tc.getMethod("getString", ByteBuffer.class, Integer.class);
             method[51] = meth;
             method[52] = meth;
-        } catch (NoSuchMethodException | SecurityException ex) {
-        }
+        } catch (NoSuchMethodException | SecurityException ex) {}
 
     }
 
     /**
+     * Default pad.
      *
-     * @param type
+     * @param type the type
      *
-     * @return
+     * @return the object
      */
-    public static Object defaultPad(int type) {
+    public static Object defaultPad(final int type) {
 
         if (isLongType(type)) {
             return -9_223_372_036_854_775_807L;
@@ -193,34 +173,35 @@ public final class DataTypes {
             return " ".getBytes()[0];
         }
 
-        return new Double(0);
+        return Double.valueOf(0);
     }
 
     /**
+     * Gets the byte order.
      *
-     * @param encoding
+     * @param encoding the encoding
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the byte order
+     * @
      */
-    public static ByteOrder getByteOrder(int encoding) throws Throwable {
+    public static ByteOrder getByteOrder(final int encoding) {
 
         if (endian_ness[encoding] != null) {
             return endian_ness[encoding];
         }
 
-        throw new Throwable("Unsupported encoding " + encoding);
+        throw new IllegalArgumentException("Unsupported encoding " + encoding);
     }
 
     /**
+     * Gets the string.
      *
-     * @param buf
-     * @param nc
+     * @param buf the buf
+     * @param nc  the nc
      *
-     * @return
+     * @return the string
      */
-    public static String getString(ByteBuffer buf, Integer nc) {
+    public static String getString(final ByteBuffer buf, final Integer nc) {
         ByteBuffer slice = buf.slice();
         byte[] ba = new byte[nc];
         int i = 0;
@@ -238,22 +219,24 @@ public final class DataTypes {
     }
 
     /**
+     * Checks if is long type.
      *
-     * @param type
+     * @param type the type
      *
-     * @return
+     * @return true, if is long type
      */
-    public static boolean isLongType(int type) {
+    public static boolean isLongType(final int type) {
         return (typeCategory[type] == LONG);
     }
 
     /**
+     * Checks if is string type.
      *
-     * @param type
+     * @param type the type
      *
-     * @return
+     * @return true, if is string type
      */
-    public static boolean isStringType(int type) {
+    public static boolean isStringType(final int type) {
         return (typeCategory[type] == STRING);
     }
 }

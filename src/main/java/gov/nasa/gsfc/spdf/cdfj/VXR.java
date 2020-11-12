@@ -1,9 +1,10 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
 import java.nio.ByteBuffer;
-import java.util.Vector;
+import java.util.List;
 
 /**
+ * The Class VXR.
  *
  * @author nand
  */
@@ -13,14 +14,10 @@ public class VXR {
 
     long vXRNext = 0L;
 
-    /**
-     *
-     */
+    /** The position. */
     protected int position;
 
-    /**
-     *
-     */
+    /** The num entries. */
     protected int numEntries;
 
     ByteBuffer firstbuf;
@@ -30,8 +27,9 @@ public class VXR {
     ByteBuffer locbuf;
 
     /**
+     * Gets the.
      *
-     * @return
+     * @return the byte buffer
      */
     public ByteBuffer get() {
         int capacity = this.record.capacity() + (16 * this.numEntries);
@@ -54,8 +52,9 @@ public class VXR {
     }
 
     /**
+     * Gets the size.
      *
-     * @return
+     * @return the size
      */
     public int getSize() {
         int size = this.record.capacity() + (16 * this.numEntries);
@@ -63,10 +62,11 @@ public class VXR {
     }
 
     /**
+     * Sets the locations.
      *
-     * @param locs
+     * @param locs the new locations
      */
-    public void setLocations(Vector<int[]> locs) {
+    public void setLocations(final List<int[]> locs) {
         this.numEntries = locs.size();
         this.firstbuf = ByteBuffer.allocate(4 * this.numEntries);
         this.lastbuf = ByteBuffer.allocate(4 * this.numEntries);
@@ -85,10 +85,11 @@ public class VXR {
     }
 
     /**
+     * Sets the VXR next.
      *
-     * @param l
+     * @param l the new VXR next
      */
-    public void setVXRNext(long l) {
+    public void setVXRNext(final long l) {
         this.vXRNext = l;
     }
 }

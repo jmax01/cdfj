@@ -3,8 +3,10 @@ package gov.nasa.gsfc.spdf.cdfj;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
@@ -12,10 +14,10 @@ import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -24,35 +26,85 @@ import java.util.zip.GZIPInputStream;
  */
 public final class CDFFactory {
 
-    /**
-     *
-     */
+    static final Logger LOGGER = CDFLogging.newLogger(CDFFactory.class);
+
+    /** The Constant CDF_V3_MAGIC_NUMBER_1. */
+    public static final int CDF_V3_MAGIC_NUMBER_1 = 0xCDF3_0001;
+
+    public static final String CDF_V3_MAGIC_NUMBER_1_AS_STRING = Integer.toHexString(CDF_V3_MAGIC_NUMBER_1);
+
+    /** The Constant CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2. */
+    public static final int CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2 = 0x0000_ffff;
+
+    public static final String CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2_AS_STRING = Integer
+            .toHexString(CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2);
+
+    /** The Constant CDF_V3_COMPRESSED_MAGIC_NUMBER_2. */
+    public static final int CDF_V3_COMPRESSED_MAGIC_NUMBER_2 = 0xCCCC_0001;
+
+    public static final String CDF_V3_COMPRESSED_MAGIC_NUMBER_2_AS_STRING = Integer
+            .toHexString(CDF_V3_COMPRESSED_MAGIC_NUMBER_2);
+
+    /** The Constant CDF_V3_MAGIC_NUMBER_UNCOMPRESSED. */
+    public static final long CDF_V3_MAGIC_NUMBER_UNCOMPRESSED = (((long) CDF_V3_MAGIC_NUMBER_1) << 32)
+            + CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2;
+
+    public static final String CDF_V3_MAGIC_NUMBER_UNCOMPRESSED_AS_STRING = Long
+            .toHexString(CDF_V3_MAGIC_NUMBER_UNCOMPRESSED);
+
+    /** The Constant CDF_V3_MAGIC_NUMBER_COMPRESSED. */
+    public static final long CDF_V3_MAGIC_NUMBER_COMPRESSED = (((long) CDF_V3_MAGIC_NUMBER_1) << 32)
+            + CDF_V3_COMPRESSED_MAGIC_NUMBER_2;
+
+    public static final String CDF_V3_MAGIC_NUMBER_COMPRESSED_AS_STRING = Long
+            .toHexString(CDF_V3_MAGIC_NUMBER_COMPRESSED);
+
+    /** The Constant CDF_V2_6_V2_7_MAGIC_NUMBER_1. */
+    public static final int CDF_V2_6_V2_7_MAGIC_NUMBER_1 = 0xCDF26002;
+
+    /** The Constant CDF_V2_6_V2_7_UNCOMPRESSED_MAGIC_NUMBER_2. */
+    public static final int CDF_V2_6_V2_7_UNCOMPRESSED_MAGIC_NUMBER_2 = 0x0000_ffff;
+
+    /** The Constant CDF_V2_6_V2_7_COMPRESSED_MAGIC_NUMBER_2. */
+    public static final int CDF_V2_6_V2_7_COMPRESSED_MAGIC_NUMBER_2 = 0xCCCC_0001;
+
+    /** The Constant CDF_V2_6_V2_7_MAGIC_NUMBER_UNCOMPRESSED. */
+    public static final long CDF_V2_6_V2_7_MAGIC_NUMBER_UNCOMPRESSED = (((long) CDF_V2_6_V2_7_MAGIC_NUMBER_1) << 32)
+            + CDF_V2_6_V2_7_UNCOMPRESSED_MAGIC_NUMBER_2;
+
+    /** The Constant CDF_V2_6_V2_7_MAGIC_NUMBER_COMPRESSED. */
+    public static final long CDF_V2_6_V2_7_MAGIC_NUMBER_COMPRESSED = (((long) CDF_V2_6_V2_7_MAGIC_NUMBER_1) << 32)
+            + CDF_V2_6_V2_7_COMPRESSED_MAGIC_NUMBER_2;
+
+    /** The Constant CDF_v2_5_MAGIC_NUMBER_1. */
+    public static final int CDF_v2_5_MAGIC_NUMBER_1 = 0x0000_ffff;
+
+    /** The Constant CDF_v2_5_MAGIC_NUMBER_2. */
+    public static final int CDF_v2_5_MAGIC_NUMBER_2 = 0x0000_ffff;
+
+    /** The Constant CDF_v2_5_MAGIC_NUMBER. */
+    public static final long CDF_v2_5_MAGIC_NUMBER = (((long) CDF_v2_5_MAGIC_NUMBER_1) << 32) + CDF_v2_5_MAGIC_NUMBER_2;
+
+    /** The Constant CDF3_MAGIC. */
     public static final long CDF3_MAGIC = (0xcdf3L << 48) + (0x0001L << 32) + 0x0000_ffff;
 
-    /**
-     *
-     */
+    /** The Constant CDF3_COMPRESSED_MAGIC. */
     public static final long CDF3_COMPRESSED_MAGIC = (0xcdf3L << 48) + (0x0001L << 32) + 0x0000_0000_cccc_0001L;
 
-    /**
-     *
-     */
+    /** The Constant CDF2_MAGIC. */
     public static final long CDF2_MAGIC = (0xcdf2L << 48) + (0x0001L << 32) + 0x0000_ffff;
 
-    /**
-     *
-     */
+    /** The Constant CDF2_MAGIC_DOT5. */
     public static final long CDF2_MAGIC_DOT5 = (0x0000_ffffL << 32) + 0x0000_ffff;
 
-    static Map cdfMap = Collections.synchronizedMap(new WeakHashMap());
+    static final Map<CDFCore, String> cdfMap = Collections.synchronizedMap(new WeakHashMap<>());
 
-    static Long maxMappedMemory;
+    static volatile Long maxMappedMemory;
 
-    private CDFFactory() {
-    }
+    private CDFFactory() {}
 
     /**
-     *
+     * Clean.
      */
     public static void clean() {
 
@@ -69,21 +121,20 @@ public final class CDFFactory {
     /**
      * creates CDFImpl object from a file.
      *
-     * @param fname
+     * @param fname the fname
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the cdf
      */
-    public static CDFImpl getCDF(String fname) throws Throwable {
+    public static CDFImpl getCDF(final String fname) {
         return getCDF(fname, false);
     }
 
     /**
+     * Sets the max mapped memory.
      *
-     * @param value
+     * @param value the new max mapped memory
      */
-    public static void setMaxMappedMemory(long value) {
+    public static void setMaxMappedMemory(final long value) {
 
         if (maxMappedMemory != null) {
 
@@ -98,8 +149,10 @@ public final class CDFFactory {
 
     /**
      * creates CDFImpl object from a byte array.
+     *
+     * @param fileCDFSource
      */
-    static CDFImpl getCDF(byte[] ba) throws Throwable {
+    static CDFImpl getCDF(final byte[] ba, final CDFSource cdfSource) {
         ByteBuffer buf;
 
         synchronized (ba) {
@@ -108,10 +161,10 @@ public final class CDFFactory {
         }
 
         buf.flip();
-        return getVersion(buf);
+        return getVersion(buf, cdfSource);
     }
 
-    static CDFImpl getCDF(ByteBuffer buf) throws Throwable {
+    static CDFImpl getCDF(final ByteBuffer buf) {
         ByteBuffer rbuf;
 
         synchronized (buf) {
@@ -122,88 +175,85 @@ public final class CDFFactory {
             rbuf.order(buf.order());
         }
 
-        return getVersion(rbuf);
+        return getVersion(rbuf, new CDFFactory.ByteBufferCDFSource());
     }
 
-    static CDFImpl getCDF(final String fname, final boolean option) throws Throwable {
+    static CDFImpl getCDF(final String fname, final boolean option) {
         clean();
+
         File file = new File(fname);
+
         final String _fname = file.getPath();
+
         ByteBuffer buf;
 
-        try (FileInputStream fis = new FileInputStream(file)) {
-            FileChannel ch = fis.getChannel();
+        try (final FileInputStream fis = new FileInputStream(file); final FileChannel ch = fis.getChannel()) {
             buf = ch.map(FileChannel.MapMode.READ_ONLY, 0, ch.size());
+        } catch (FileNotFoundException e) {
+            throw new IllegalArgumentException(_fname + " could not be found", e);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to read file:  " + _fname, e);
         }
 
-        CDFImpl cdf = getVersion(buf);
-        cdf.setOption(new ProcessingOption() {
-        });
-        cdf.setSource(new CDFSource() {
-
-            @Override
-            public String getName() {
-                return _fname;
-            }
-
-            @Override
-            public boolean isFile() {
-                return true;
-            }
-        });
+        CDFImpl cdf = getVersion(buf, new FileCDFSource(_fname));
+        cdf.setOption(option ? new AccceptMissingRecords() : new RejectMissingRecords());
         cdfMap.put(cdf, _fname);
         return cdf;
     }
 
     /**
      * creates CDFImpl object from a URL.
+     *
+     * @throws IOException
      */
-    static CDFImpl getCDF(URL url) throws Throwable {
+    static CDFImpl getCDF(final URL url) {
         final String _url = url.toString();
-        URLConnection con = new CDFUrl(url).openConnection();
-        int remaining = con.getContentLength();
-        InputStream is = con.getInputStream();
-        byte[] ba = new byte[remaining];
-        int offset = 0;
 
-        while (remaining > 0) {
-            int got = is.read(ba, offset, remaining);
-            offset += got;
-            remaining -= got;
+        URLConnection con;
+
+        try {
+            con = new CDFUrl(url).openConnection();
+        } catch (IOException e) {
+            throw new UncheckedIOException("failed to open URLConnection: " + url, e);
         }
 
-        CDFImpl cdf = getCDF(ba);
-        cdf.setSource(new CDFSource() {
+        int remaining = con.getContentLength();
 
-            @Override
-            public String getName() {
-                return _url;
+        try (InputStream is = con.getInputStream()) {
+
+            byte[] ba = new byte[remaining];
+            int offset = 0;
+
+            while (remaining > 0) {
+                int got = is.read(ba, offset, remaining);
+                offset += got;
+                remaining -= got;
             }
 
-            @Override
-            public boolean isFile() {
-                return false;
-            }
-        });
-        return cdf;
+            return getCDF(ba, new UrlCDFSource(_url));
+
+        } catch (IOException e) {
+            throw new UncheckedIOException("failed to read from url: " + url, e);
+        }
+
     }
 
-    static CDFImpl getVersion(ByteBuffer buf) throws Throwable {
+    static CDFImpl getVersion(final ByteBuffer buf, final CDFSource cdfSource) {
         LongBuffer lbuf = buf.asLongBuffer();
         long magic = lbuf.get();
 
         if (magic == CDF3_MAGIC) {
-            return new CDF3Impl(buf);
+            return new CDF3Impl(buf, cdfSource);
         }
 
         if (magic == CDF3_COMPRESSED_MAGIC) {
             ByteBuffer mbuf = uncompressed(buf, 3);
-            return new CDF3Impl(mbuf);
+            return new CDF3Impl(mbuf, cdfSource);
         }
 
         if (magic == CDF2_MAGIC_DOT5) {
             int release = buf.getInt(24);
-            return new CDF2Impl(buf, release);
+            return new CDF2Impl(buf, release, cdfSource);
         }
 
         ShortBuffer sbuf = buf.asShortBuffer();
@@ -236,7 +286,7 @@ public final class CDFFactory {
         return null;
     }
 
-    static ByteBuffer uncompressed(ByteBuffer buf, int version) {
+    static ByteBuffer uncompressed(final ByteBuffer buf, final int version) {
         int DATA_OFFSET = 8 + 20;
 
         if (version == 3) {
@@ -290,7 +340,7 @@ public final class CDFFactory {
             }
 
         } catch (IOException ex) {
-            System.out.println(ex.toString());
+            LOGGER.log(Level.SEVERE, ex, () -> "uncompressed failed");
             return null;
         }
 
@@ -303,74 +353,212 @@ public final class CDFFactory {
 
     private static long mappedMemoryUsed() {
 
-        if (cdfMap.size() == 0) {
+        if (cdfMap.isEmpty()) {
             return 0;
         }
 
-        Set set = cdfMap.keySet();
-        Iterator it = set.iterator();
-        long size = 0;
+        return cdfMap.keySet()
+                .stream()
+                .filter(CDFImpl.class::isInstance)
+                .map(CDFImpl.class::cast)
+                .map(CDFImpl::getBuffer)
+                .mapToInt(ByteBuffer::limit)
+                .sum();
 
-        while (it.hasNext()) {
-            size += ((CDFImpl) it.next()).getBuffer().limit();
-        }
-
-        return size;
     }
 
     /**
-     *
+     * The Class CDFSource.
      */
     public static class CDFSource {
 
+        private final String name;
+
         /**
-         *
-         * @return
+         * Instantiates a new CDF source.
          */
-        public String getName() {
-            return "";
+        @Deprecated
+        public CDFSource() {
+            this.name = null;
         }
 
         /**
+         * Instantiates a new CDF source.
          *
-         * @return
+         * @param name the name
+         */
+        public CDFSource(final String name) {
+            this.name = name;
+        }
+
+        /**
+         * Gets the name.
+         *
+         * @return the name
+         */
+        public String getName() {
+            return this.name;
+        }
+
+        /**
+         * Checks if is byte array.
+         *
+         * @return true, if is byte array
          */
         public boolean isByteArray() {
             return false;
         }
 
         /**
+         * Checks if is byte buffer.
          *
-         * @return
+         * @return true, if is byte buffer
          */
         public boolean isByteBuffer() {
             return false;
         }
 
         /**
+         * Checks if is file.
          *
-         * @return
+         * @return true, if is file
          */
         public boolean isFile() {
             return false;
         }
 
         /**
+         * Checks if is url.
          *
-         * @return
+         * @return true, if is url
          */
         public boolean isURL() {
             return false;
         }
     }
 
+    /** The Constant FileCDFSource. */
+    public static final class FileCDFSource extends CDFSource {
+
+        /**
+         * File CDF source.
+         *
+         * @param name the name
+         */
+        public FileCDFSource(final String name) {
+            super(name);
+
+        }
+
+        /**
+         * Checks if is file.
+         *
+         * @return true, if is file
+         */
+        @Override
+        public boolean isFile() {
+            return true;
+        }
+    }
+
     /**
-     *
+     * The Class ProcessingOption.
      */
     public static class ProcessingOption {
 
         String missingRecordsOption() {
             return "reject";
         }
+    }
+
+    public static class RejectMissingRecords extends ProcessingOption {
+
+        @Override
+        String missingRecordsOption() {
+            return "reject";
+        }
+    }
+
+    public static class AccceptMissingRecords extends ProcessingOption {
+
+        @Override
+        String missingRecordsOption() {
+            return "accept";
+        }
+    }
+
+    /**
+     * The Class UrlCDFSource.
+     */
+    public static final class UrlCDFSource extends CDFSource {
+
+        /**
+         * Instantiates a new url CDF source.
+         *
+         * @param name the name
+         */
+        public UrlCDFSource(final String name) {
+            super(name);
+
+        }
+
+        @Override
+        public boolean isURL() {
+            return true;
+        }
+    }
+
+    /**
+     * The Class ByteArrayCDFSource.
+     */
+    public static final class ByteArrayCDFSource extends CDFSource {
+
+        /**
+         * Instantiates a new url CDF source.
+         *
+         * @param name the name
+         */
+        public ByteArrayCDFSource() {
+            super("byte[]");
+
+        }
+
+        /**
+         * Checks if is byte array.
+         *
+         * @return true, if is byte array
+         */
+        @Override
+        public boolean isByteArray() {
+            return true;
+        }
+
+    }
+
+    /**
+     * The Class ByteBufferCDFSource.
+     */
+    public static final class ByteBufferCDFSource extends CDFSource {
+
+        /**
+         * Instantiates a new url CDF source.
+         *
+         * @param name the name
+         */
+        public ByteBufferCDFSource() {
+            super("ByteBuffer");
+
+        }
+
+        /**
+         * Checks if is byte array.
+         *
+         * @return true, if is byte array
+         */
+        @Override
+        public boolean isByteBuffer() {
+            return true;
+        }
+
     }
 }

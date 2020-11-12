@@ -1,11 +1,11 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.lang.reflect.InvocationTargetException;
 // import gov.nasa.gsfc.spdf.common.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
+ * The Class ByteVarContainer.
  *
  * @author nand
  */
@@ -14,18 +14,15 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
     final byte[] bpad;
 
     /**
+     * Instantiates a new byte var container.
      *
-     * @param cdfi
-     * @param vrbl
-     * @param ints
-     *
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws Throwable
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param pt      the pt
      */
-    public ByteVarContainer(CDFImpl thisCDF, Variable var, int[] pt)
-            throws IllegalAccessException, InvocationTargetException, Throwable {
+    public ByteVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt) {
         super(thisCDF, var, pt, true, ByteOrder.BIG_ENDIAN, Byte.TYPE);
+
         Object pad = this.thisCDF.getPadValue(var);
 
         if (DataTypes.isStringType(this.type)) {
@@ -62,31 +59,31 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
     }
 
     /**
+     * Checks if is compatible.
      *
-     * @param type
-     * @param preserve
+     * @param type   the type
+     * @param strict the strict
      *
-     * @return
+     * @return true, if is compatible
      */
-    public static boolean isCompatible(int type, boolean preserve) {
+    public static boolean isCompatible(final int type, final boolean strict) {
         /*
          * boolean stringType = DataTypes.isStringType(type);
          * if (stringType) return false;
          */
-        return isCompatible(type, preserve, Byte.TYPE);
+        return isCompatible(type, strict, Byte.TYPE);
     }
 
     /**
+     * As array.
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the object
      */
-    public Object _asArray() throws Throwable {
+    public Object _asArray() {
         int rank = this.var.getEffectiveRank();
 
         if (rank > 4) {
-            throw new Throwable("Rank > 4 not supported at this time.");
+            throw new IllegalStateException("Ranks > 4 are not supported at this time.");
         }
 
         ByteBuffer buf = getBuffer();
@@ -107,7 +104,8 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
                 buf.get(ba);
                 return ba;
             case 1:
-                int n = (((Integer) this.var.getElementCount().elementAt(0)));
+                int n = this.var.getDimensionElementCounts()
+                        .get(0);
                 records = words / n;
                 byte[][] ba1 = new byte[records][n];
                 for (int r = 0; r < records; r++) {
@@ -115,8 +113,10 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
                 }
                 return (this.singlePoint) ? ba1[0] : ba1;
             case 2:
-                int n0 = (((Integer) this.var.getElementCount().elementAt(0)));
-                int n1 = (((Integer) this.var.getElementCount().elementAt(1)));
+                int n0 = this.var.getDimensionElementCounts()
+                        .get(0);
+                int n1 = this.var.getDimensionElementCounts()
+                        .get(1);
                 records = words / (n0 * n1);
                 byte[][][] ba2 = new byte[records][n0][n1];
                 for (int r = 0; r < records; r++) {
@@ -128,9 +128,12 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
                 }
                 return (this.singlePoint) ? ba2[0] : ba2;
             case 3:
-                n0 = (((Integer) this.var.getElementCount().elementAt(0)));
-                n1 = (((Integer) this.var.getElementCount().elementAt(1)));
-                int n2 = (((Integer) this.var.getElementCount().elementAt(2)));
+                n0 = this.var.getDimensionElementCounts()
+                        .get(0);
+                n1 = this.var.getDimensionElementCounts()
+                        .get(1);
+                int n2 = ((this.var.getDimensionElementCounts()
+                        .get(2)));
                 records = words / (n0 * n1 * n2);
                 byte[][][][] ba3 = new byte[records][n0][n1][n2];
                 for (int r = 0; r < records; r++) {
@@ -146,10 +149,14 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
                 }
                 return (this.singlePoint) ? ba3[0] : ba3;
             case 4:
-                n0 = (((Integer) this.var.getElementCount().elementAt(0)));
-                n1 = (((Integer) this.var.getElementCount().elementAt(1)));
-                n2 = (((Integer) this.var.getElementCount().elementAt(2)));
-                int n3 = (((Integer) this.var.getElementCount().elementAt(3)));
+                n0 = this.var.getDimensionElementCounts()
+                        .get(0);
+                n1 = this.var.getDimensionElementCounts()
+                        .get(1);
+                n2 = ((this.var.getDimensionElementCounts()
+                        .get(2)));
+                int n3 = ((this.var.getDimensionElementCounts()
+                        .get(3)));
                 records = words / (n0 * n1 * n2 * n3);
                 byte[][][][][] ba4 = new byte[records][n0][n1][n2][n3];
                 for (int r = 0; r < records; r++) {
@@ -169,19 +176,13 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
                 }
                 return (this.singlePoint) ? ba4[0] : ba4;
             default:
-                throw new Throwable("Internal error");
+                throw new IllegalStateException("Ranks of " + rank + " are not supported");
         }
 
     }
 
-    /**
-     *
-     * @param size
-     *
-     * @return
-     */
     @Override
-    public Object allocateDataArray(int size) {
+    public Object allocateDataArray(final int size) {
         return null;
     }
 
@@ -190,50 +191,33 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
         return (byte[]) super.as1DArray();
     }
 
-    /**
-     *
-     * @return
-     *
-     * @throws Throwable
-     */
     @Override
-    public AArray asArray() throws Throwable {
+    public AArray asArray() {
         return new ByteArray(_asArray());
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public byte[] asOneDArray() {
         return (byte[]) super.asOneDArray(true);
     }
 
-    /**
-     *
-     * @param cmtarget
-     *
-     * @return
-     */
     @Override
-    public byte[] asOneDArray(boolean cmtarget) {
+    public byte[] asOneDArray(final boolean cmtarget) {
         return (byte[]) super.asOneDArray(cmtarget);
     }
 
     /**
+     * Fill array.
      *
-     * @param array
-     * @param offset
-     * @param first
-     * @param last
-     *
-     * @throws Throwable
+     * @param array  the array
+     * @param offset the offset
+     * @param first  the first
+     * @param last   the last
      */
-    public void fillArray(byte[] array, int offset, int first, int last) throws Throwable {
+    public void fillArray(final byte[] array, final int offset, final int first, final int last) {
 
-        if (this.buffers.size() == 0) {
-            throw new Throwable("buffer not available");
+        if (this.buffers.isEmpty()) {
+            throw new IllegalStateException("buffer not available, size is zero.");
         }
 
         int words = ((last - first) + 1) * this.elements;
@@ -244,35 +228,33 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
     }
 
     @Override
-    ByteBuffer allocateBuffer(int words) {
+    ByteBuffer allocateBuffer(final int words) {
         ByteBuffer _buf = ByteBuffer.allocateDirect(words);
         _buf.order(this.order);
         return _buf;
     }
 
     @Override
-    void doData(ByteBuffer bv, int type, int elements, int toprocess, ByteBuffer _buf, Object _data) {
+    void doData(final ByteBuffer bv, final int _type, final int _elements, final int toprocess, final ByteBuffer _buf,
+            final Object _data) {
         ByteBuffer needed = bv.slice();
         needed.limit(this.itemSize * toprocess);
         _buf.put(needed);
     }
 
     @Override
-    void doMissing(int records, ByteBuffer buf, Object _data, int rec) {
-        byte[] repl = null;
+    void doMissing(final int records, final ByteBuffer buf, final Object _data, final int rec) {
 
-        try {
-            repl = (rec < 0) ? this.bpad : this.var.asByteArray(new int[] { rec });
-        } catch (Throwable th) {
-            th.printStackTrace();
-            System.out.println("Should not see this.");
-        }
+        byte[] repl = (rec < 0) ? this.bpad : this.var.asByteArray(new int[] { rec });
 
         int rem = records;
+
         byte[] ba = new byte[rem * this.elements];
+
         int n = 0;
 
         for (int i = 0; i < rem; i++) {
+
             ba[n++] = repl[0];
 
             for (int j = 1; j < repl.length; j++) {
@@ -282,5 +264,6 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
         }
 
         buf.put(ba, 0, rem * this.elements);
+
     }
 }

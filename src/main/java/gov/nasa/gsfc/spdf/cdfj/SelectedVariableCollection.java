@@ -10,8 +10,8 @@ public interface SelectedVariableCollection {
      * default specification for {@link SparseRecordOption SparseRecordOption},
      * (PAD).
      *
-     * @param name
-     * @param compression
+     * @param name        the name
+     * @param compression the compression
      */
     void add(String name, boolean compression);
 
@@ -19,16 +19,16 @@ public interface SelectedVariableCollection {
      * Add a variable to the output with specified compression and
      * specified setting for {@link SparseRecordOption SparseRecordOption}.
      *
-     * @param name
-     * @param opt
-     * @param compression
+     * @param name        the name
+     * @param compression the compression
+     * @param opt         the opt
      */
     void add(String name, boolean compression, SparseRecordOption opt);
 
     /**
      * Returns a list of variable selected.
      *
-     * @return
+     * @return the names
      */
     String[] getNames();
 
@@ -36,27 +36,27 @@ public interface SelectedVariableCollection {
      * Returns {@link SparseRecordOption SparseRecordOption} chosen for
      * the given variable.
      *
-     * @param name
+     * @param name the name
      *
-     * @return
+     * @return the sparse record option
      */
     SparseRecordOption getSparseRecordOption(String name);
 
     /**
      * Returns whather a given variable is in the list of variable selected.
      *
-     * @param name
+     * @param name the name
      *
-     * @return
+     * @return true, if successful
      */
     boolean hasVariable(String name);
 
     /**
      * Returns whether compression was chosen for the variable.
      *
-     * @param name
+     * @param name the name
      *
-     * @return
+     * @return true, if is compressed
      */
     boolean isCompressed(String name);
 }

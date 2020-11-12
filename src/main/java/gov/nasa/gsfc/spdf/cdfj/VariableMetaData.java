@@ -2,6 +2,9 @@ package gov.nasa.gsfc.spdf.cdfj;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Vector;
 
 /**
@@ -11,8 +14,9 @@ import java.util.Vector;
 public interface VariableMetaData {
 
     /**
+     * Gets the blocking factor.
      *
-     * @return
+     * @return the blocking factor
      */
     int getBlockingFactor();
 
@@ -28,16 +32,14 @@ public interface VariableMetaData {
      * false, compatible conversions will be made even if it results in loss
      * of precision.
      *
-     * @param type
-     * @param bo
-     * @param recordRange
-     * @param preserve
+     * @param type        the type
+     * @param recordRange the record range
+     * @param preserve    the preserve
+     * @param bo          the bo
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the buffer
      */
-    ByteBuffer getBuffer(Class type, int[] recordRange, boolean preserve, ByteOrder bo) throws Throwable;
+    ByteBuffer getBuffer(Class<?> type, int[] recordRange, boolean preserve, ByteOrder bo);
 
     /**
      * Gets an array of VariableDataBuffer objects that provide location of
@@ -48,41 +50,61 @@ public interface VariableMetaData {
      * records. getFirstRecord() and getLastRecord() define the
      * range of records.
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the data buffers
      */
-    VariableDataBuffer[] getDataBuffers() throws Throwable;
+    VariableDataBuffer[] getDataBuffers();
 
     /**
+     * Gets the data buffers.
      *
-     * @param raw
+     * @param raw the raw
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the data buffers
+     * @
      */
-    VariableDataBuffer[] getDataBuffers(boolean raw) throws Throwable;
+    VariableDataBuffer[] getDataBuffers(boolean raw);
 
     /**
      * Gets the size of an item (defined as number of bytes needed to
      * represent the value of this variable at a point).
      *
-     * @return
+     * @return the data item size
      */
     int getDataItemSize();
 
     /**
+     * Return element count for this variable's dimensions.
+     *
+     * @return the dimension element counts as an unmodifiable list
+     */
+    default List<Integer> getDimensionElementCounts() {
+
+        int[] dimensions = getDimensions();
+
+        List<Integer> dimensionElementCounts = new ArrayList<>();
+
+        for (int i = 0; i < dimensions.length; i++) {
+
+            if (getVarys()[i]) {
+                dimensionElementCounts.add(dimensions[i]);
+            }
+
+        }
+
+        return Collections.unmodifiableList(dimensionElementCounts);
+    }
+
+    /**
      * Gets the dimensions.
      *
-     * @return
+     * @return the dimensions
      */
     int[] getDimensions();
 
     /**
-     * Returns effective dimensions
+     * Returns effective dimensions.
      *
-     * @return
+     * @return the effective dimensions
      */
     int[] getEffectiveDimensions();
 
@@ -90,53 +112,56 @@ public interface VariableMetaData {
      * Returns effective rank of this variable.Dimensions for which dimVarys is
      * false do not count.
      *
-     * @return
+     * @return the effective rank
      */
     int getEffectiveRank();
 
     /**
      * Return element count for this variable's dimensions.
      *
-     * @return
+     * @return the element count
+     *
+     * @deprecated Use {@link #getElements()}
      */
-    Vector getElementCount();
+    @Deprecated
+    Vector<Integer> getElementCount();
 
     /**
      * Gets a list of regions that contain data for the variable.Each element of the
-     * vector describes a region as an int[3] array.
+     * CopyOnWriteArrayList describes a region as an int[3] array.
      * Array elements are: record number of first point
      * in the region, record number of last point in the
      * region, and offset of the start of region.
      *
-     * @return
+     * @return the locator
      */
     VariableDataLocator getLocator();
 
     /**
-     * Gets the name of this of this variable
+     * Gets the name of this of this variable.
      *
-     * @return
+     * @return the name
      */
     String getName();
 
     /**
      * Gets the sequence number of the variable inside the CDF.
      *
-     * @return
+     * @return the number
      */
     int getNumber();
 
     /**
      * Gets the number of elements (of type returned by getType()).
      *
-     * @return
+     * @return the number of elements
      */
     int getNumberOfElements();
 
     /**
-     * Gets the number of values (size of time series)
+     * Gets the number of values (size of time series).
      *
-     * @return
+     * @return the number of values
      */
     int getNumberOfValues();
 
@@ -147,7 +172,7 @@ public interface VariableMetaData {
      * If the variable type is
      * long, a loss of precision may occur.
      *
-     * @return
+     * @return the pad value
      */
     Object getPadValue();
 
@@ -156,16 +181,16 @@ public interface VariableMetaData {
      * numeric type.A double[] is returned, unless the variable type is long and
      * preservePrecision is set to true;
      *
-     * @param preservePrecision
+     * @param preservePrecision the preserve precision
      *
-     * @return
+     * @return the pad value
      */
     Object getPadValue(boolean preservePrecision);
 
     /**
-     * Returns record range for this variable
+     * Returns record range for this variable.
      *
-     * @return
+     * @return the record range
      */
     int[] getRecordRange();
 
@@ -173,7 +198,7 @@ public interface VariableMetaData {
      * Gets the type of values of the variable.Supported types are defined in the
      * CDF Internal Format Description
      *
-     * @return
+     * @return the type
      */
     int getType();
 
@@ -181,7 +206,7 @@ public interface VariableMetaData {
      * Gets the dimensional variance.This determines the effective
      * dimensionality of values of the variable.
      *
-     * @return
+     * @return the varys
      */
     boolean[] getVarys();
 
@@ -190,28 +215,28 @@ public interface VariableMetaData {
      * cl is supported while preserving precision.equivalent to isCompatible(Class
      * cl, true)
      *
-     * @param cl
+     * @param cl the cl
      *
-     * @return
+     * @return true, if is compatible
      */
-    boolean isCompatible(Class cl);
+    boolean isCompatible(Class<?> cl);
 
     /**
      * returns whether conversion of this variable to type specified by
      * cl is supported under the given precision preserving constraint.
      *
-     * @param cl
-     * @param preserve
+     * @param cl       the cl
+     * @param preserve the preserve
      *
-     * @return
+     * @return true, if is compatible
      */
-    boolean isCompatible(Class cl, boolean preserve);
+    boolean isCompatible(Class<?> cl, boolean preserve);
 
     /**
      * Determines whether the value of this variable is represented as
      * a compressed byte sequence in the CDF.
      *
-     * @return
+     * @return true, if is compressed
      */
     boolean isCompressed();
 
@@ -219,13 +244,14 @@ public interface VariableMetaData {
      * Shows whether one or more records (in the range returned by
      * getRecordRange()) are missing.
      *
-     * @return
+     * @return true, if is missing records
      */
     boolean isMissingRecords();
 
     /**
+     * Checks if is type R.
      *
-     * @return
+     * @return true, if is type R
      */
     boolean isTypeR();
 
@@ -233,7 +259,7 @@ public interface VariableMetaData {
      * Return whether the missing record should be assigned the pad
      * value.
      *
-     * @return
+     * @return true, if successful
      */
     boolean missingRecordValueIsPad();
 
@@ -241,7 +267,7 @@ public interface VariableMetaData {
      * Return whether the missing record should be assigned the last
      * seen value.If none has been seen, pad value is assigned.
      *
-     * @return
+     * @return true, if successful
      */
     boolean missingRecordValueIsPrevious();
 
@@ -249,7 +275,7 @@ public interface VariableMetaData {
      * Determines whether the value of this variable is the same at
      * all time points.returns true if value may change, false otherwise
      *
-     * @return
+     * @return true, if successful
      */
     boolean recordVariance();
 
@@ -257,7 +283,7 @@ public interface VariableMetaData {
      * Determines whether the value of this variable is presented in
      * a row-major order in the CDF.
      *
-     * @return
+     * @return true, if successful
      */
     boolean rowMajority();
 }

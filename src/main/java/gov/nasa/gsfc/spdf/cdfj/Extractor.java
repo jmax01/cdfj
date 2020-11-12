@@ -9,37 +9,39 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * The Class Extractor.
  *
  * @author nand
  */
 public class Extractor {
 
-    static int MAX_ARRAY = 3;
+    static final int MAX_ARRAY = 3;
 
-    static Hashtable numericMethodMap = new Hashtable();
+    static final Map<String, Method[]> numericMethodMap = new ConcurrentHashMap<>();
 
-    static Hashtable stringMethodMap = new Hashtable();
+    static final Map<String, Method[]> stringMethodMap = new ConcurrentHashMap<>();
 
     static {
-        Class cl = null;
-        Class cdfClass = null;
-        Class variableClass = null;
+        Class<?> cl = null;
+        Class<?> cdfClass = null;
+        Class<?> variableClass = null;
 
         try {
             cl = Class.forName("gov.nasa.gsfc.spdf.cdfj.Extractor");
             cdfClass = Class.forName("gov.nasa.gsfc.spdf.cdfj.CDFImpl");
             variableClass = Class.forName("gov.nasa.gsfc.spdf.cdfj.Variable");
-        } catch (ClassNotFoundException ex) {
-        }
+        } catch (ClassNotFoundException ex) {}
 
         int[] ia = new int[0];
         // Series
-        Class[] seriesArgs = new Class[] { cdfClass, variableClass };
-        Class[][] arglist = new Class[MAX_ARRAY + 1][];
+        Class<?>[] seriesArgs = new Class<?>[] { cdfClass, variableClass };
+        Class<?>[][] arglist = new Class[MAX_ARRAY + 1][];
 
         for (int i = 0; i <= MAX_ARRAY; i++) {
             arglist[i] = seriesArgs;
@@ -47,33 +49,33 @@ public class Extractor {
 
         addFunction("Series", cl, arglist);
         // Element
-        arglist = new Class[][] { null, new Class[] { cdfClass, variableClass, Integer.class },
-                new Class[] { cdfClass, variableClass, Integer.class, Integer.class }, null };
+        arglist = new Class<?>[][] { null, new Class<?>[] { cdfClass, variableClass, Integer.class },
+                new Class<?>[] { cdfClass, variableClass, Integer.class, Integer.class }, null };
         addFunction("Element", cl, arglist);
         // Point
-        arglist = new Class[][] { new Class[] { cdfClass, variableClass, Integer.class },
-                new Class[] { cdfClass, variableClass, Integer.class },
-                new Class[] { cdfClass, variableClass, Integer.class },
-                new Class[] { cdfClass, variableClass, Integer.class } };
+        arglist = new Class<?>[][] { new Class<?>[] { cdfClass, variableClass, Integer.class },
+                new Class<?>[] { cdfClass, variableClass, Integer.class },
+                new Class<?>[] { cdfClass, variableClass, Integer.class },
+                new Class<?>[] { cdfClass, variableClass, Integer.class } };
         addFunction("Point", cl, arglist);
         // Range
-        arglist = new Class[][] { new Class[] { cdfClass, variableClass, Integer.class, Integer.class },
-                new Class[] { cdfClass, variableClass, Integer.class, Integer.class },
+        arglist = new Class<?>[][] { new Class<?>[] { cdfClass, variableClass, Integer.class, Integer.class },
+                new Class<?>[] { cdfClass, variableClass, Integer.class, Integer.class },
                 /*
-                 * new Class[] {cdfClass, variableClass, Integer.class, Integer.class},
+                 * new Class<?>[] {cdfClass, variableClass, Integer.class, Integer.class},
                  */
                 null, null };
         addFunction("Range", cl, arglist);
         // Elements
-        arglist = new Class[][] { null, new Class[] { cdfClass, variableClass, ia.getClass() }, null, null };
+        arglist = new Class<?>[][] { null, new Class<?>[] { cdfClass, variableClass, ia.getClass() }, null, null };
         addFunction("Elements", cl, arglist);
         // RangeForElements
-        arglist = new Class[][] { null,
-                new Class[] { cdfClass, variableClass, Integer.class, Integer.class, ia.getClass() }, null, null };
+        arglist = new Class<?>[][] { null,
+                new Class<?>[] { cdfClass, variableClass, Integer.class, Integer.class, ia.getClass() }, null, null };
         addFunction("RangeForElements", cl, arglist);
         // RangeForElement
-        arglist = new Class[][] { null,
-                new Class[] { cdfClass, variableClass, Integer.class, Integer.class, Integer.class }, null, null };
+        arglist = new Class<?>[][] { null,
+                new Class<?>[] { cdfClass, variableClass, Integer.class, Integer.class, Integer.class }, null, null };
         addFunction("RangeForElement", cl, arglist);
         // String rank 0 and 1 only
         Method[] ma;
@@ -89,12 +91,13 @@ public class Extractor {
     }
 
     /**
+     * Adds the function.
      *
-     * @param func
-     * @param cl
-     * @param args
+     * @param func the func
+     * @param cl   the cl
+     * @param args the args
      */
-    public static void addFunction(String func, Class cl, Class[][] args) {
+    public static void addFunction(final String func, final Class<?> cl, final Class<?>[][] args) {
         Method[] ma = new Method[MAX_ARRAY + 1];
 
         for (int j = 0; j <= MAX_ARRAY; j++) {
@@ -118,13 +121,14 @@ public class Extractor {
     }
 
     /**
+     * Cast to double.
      *
-     * @param o
-     * @param longType
+     * @param o        the o
+     * @param longType the long type
      *
-     * @return
+     * @return the double[]
      */
-    public static double[] castToDouble(Object o, boolean longType) {
+    public static double[] castToDouble(final Object o, final boolean longType) {
         double[] vdata;
 
         if (!longType) {
@@ -143,21 +147,23 @@ public class Extractor {
     }
 
     /**
+     * Do 1 D missing.
      *
-     * @param data
-     * @param padValue
+     * @param data     the data
+     * @param padValue the pad value
      */
-    public static void do1DMissing(double[] data, double padValue) {
+    public static void do1DMissing(final double[] data, final double padValue) {
         do1DMissing(data, padValue, 0, data.length);
     }
 
     /**
+     * Do 1 D missing.
      *
-     * @param data
-     * @param padValue
-     * @param start
+     * @param data     the data
+     * @param padValue the pad value
+     * @param start    the start
      */
-    public static void do1DMissing(double[] data, double padValue, int start) {
+    public static void do1DMissing(final double[] data, final double padValue, final int start) {
         do1DMissing(data, padValue, start, data.length - start);
     }
 
@@ -165,13 +171,14 @@ public class Extractor {
     // if fill
 
     /**
+     * Do 1 D missing.
      *
-     * @param data
-     * @param padValue
-     * @param start
-     * @param count
+     * @param data     the data
+     * @param padValue the pad value
+     * @param start    the start
+     * @param count    the count
      */
-    public static void do1DMissing(double[] data, double padValue, int start, int count) {
+    public static void do1DMissing(final double[] data, final double padValue, final int start, final int count) {
         int offset = start;
 
         for (int i = 0; i < count; i++) {
@@ -181,32 +188,35 @@ public class Extractor {
     }
 
     /**
+     * Do 1 D missing.
      *
-     * @param ldata
-     * @param padValue
+     * @param ldata    the ldata
+     * @param padValue the pad value
      */
-    public static void do1DMissing(long[] ldata, long padValue) {
+    public static void do1DMissing(final long[] ldata, final long padValue) {
         do1DMissing(ldata, padValue, 0, ldata.length);
     }
 
     /**
+     * Do 1 D missing.
      *
-     * @param ldata
-     * @param padValue
-     * @param start
+     * @param ldata    the ldata
+     * @param padValue the pad value
+     * @param start    the start
      */
-    public static void do1DMissing(long[] ldata, long padValue, int start) {
+    public static void do1DMissing(final long[] ldata, final long padValue, final int start) {
         do1DMissing(ldata, padValue, start, ldata.length - start);
     }
 
     /**
+     * Do 1 D missing.
      *
-     * @param ldata
-     * @param padValue
-     * @param start
-     * @param count
+     * @param ldata    the ldata
+     * @param padValue the pad value
+     * @param start    the start
+     * @param count    the count
      */
-    public static void do1DMissing(long[] ldata, long padValue, int start, int count) {
+    public static void do1DMissing(final long[] ldata, final long padValue, final int start, final int count) {
         int offset = start;
 
         for (int i = 0; i < count; i++) {
@@ -216,49 +226,48 @@ public class Extractor {
     }
 
     /**
-     * 1D
+     * 1D.
      *
-     * @param thisCDF
-     * @param pt
-     * @param var
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param pt      the pt
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the 1 D series
      */
-    public static double[] get1DSeries(CDFImpl thisCDF, Variable var, int[] pt) throws Throwable {
+    public static double[] get1DSeries(final CDFImpl thisCDF, final Variable var, final int[] pt) {
         return (double[]) get1DSeries(thisCDF, var, pt, false);
     }
 
     /**
+     * Gets the 1 D series.
      *
-     * @param thisCDF
-     * @param var
-     * @param pt
-     * @param preserve
+     * @param thisCDF  the this CDF
+     * @param var      the var
+     * @param pt       the pt
+     * @param preserve the preserve
      *
-     * @return
+     * @return the 1 D series
      *
-     * @throws Throwable
      */
-    public static Object get1DSeries(CDFImpl thisCDF, Variable var, int[] pt, boolean preserve) throws Throwable {
+    public static Object get1DSeries(final CDFImpl thisCDF, final Variable var, final int[] pt,
+            final boolean preserve) {
         return get1DSeries(thisCDF, var, pt, preserve, false);
     }
 
     /**
+     * Gets the 1 D series.
      *
-     * @param thisCDF
-     * @param var
-     * @param pt
-     * @param preserve
-     * @param swap
+     * @param thisCDF  the this CDF
+     * @param var      the var
+     * @param pt       the pt
+     * @param preserve the preserve
+     * @param swap     the swap
      *
-     * @return
+     * @return the 1 D series
      *
-     * @throws Throwable
      */
-    public static Object get1DSeries(CDFImpl thisCDF, Variable var, int[] pt, boolean preserve, boolean swap)
-            throws Throwable {
+    public static Object get1DSeries(final CDFImpl thisCDF, final Variable var, final int[] pt, final boolean preserve,
+            final boolean swap) {
 
         int begin = 0;
         int numberOfValues = var.getNumberOfValues();
@@ -325,14 +334,14 @@ public class Extractor {
 
         Object temp = null;
 
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         ByteBuffer bv;
         int blk = 0;
 
         if (begin > 0) {// position to first needed block
 
             for (; blk < locations.size(); blk++) {
-                long[] loc = (long[]) locations.elementAt(blk);
+                long[] loc = locations.get(blk);
                 int last = (int) loc[1];
 
                 if (last >= begin) {
@@ -381,7 +390,7 @@ public class Extractor {
         }
 
         for (; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+            long[] loc = locations.get(blk);
             int first = (int) loc[0];
             int last = (int) loc[1];
 
@@ -449,7 +458,7 @@ public class Extractor {
 
             // pad if necessary
             if (next < first) { // next cannot exceed first
-                int target = (end >= first) ? first : end + 1;
+                int target = (end >= first) ? first : (end + 1);
                 int stop = target * elements; // beginning of non pad
                 int start = next * elements;
                 int n = stop - start;
@@ -523,21 +532,17 @@ public class Extractor {
     }
 
     /**
+     * Gets the 1 D series.
      *
-     * @param thisCDF
-     * @param var
-     * @param pt
-     * @param stride
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param pt      the pt
+     * @param stride  the stride
      *
-     * @return
+     * @return the 1 D series
      *
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws Throwable
      */
-    public static double[] get1DSeries(CDFImpl thisCDF, Variable var, int[] pt, int[] stride)
-            throws IllegalAccessException, InvocationTargetException, Throwable {
-        double[] data;
+    public static double[] get1DSeries(final CDFImpl thisCDF, final Variable var, final int[] pt, final int[] stride) {
 
         int end = -1;
         int begin = 0;
@@ -584,7 +589,7 @@ public class Extractor {
         int type = var.getType();
         int itemSize = var.getDataItemSize();
         int elements = itemSize / DataTypes.size[type];
-        data = new double[numberOfValues * elements];
+        double[] data = new double[numberOfValues * elements];
 
         float[] tf = null;
 
@@ -597,18 +602,18 @@ public class Extractor {
         }
 
         int[] edim = var.getEffectiveDimensions();
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         ByteBuffer bv;
         int blk = 0;
         int offset = 0;
 
         if (pt == null) {
-            begin = (int) (((long[]) locations.elementAt(0))[0]);
-            end = (int) (((long[]) locations.elementAt(locations.size() - 1))[1]);
+            begin = (int) (locations.get(0)[0]);
+            end = (int) (locations.get(locations.size() - 1)[1]);
         }
 
         for (; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+            long[] loc = locations.get(blk);
             int first = (int) loc[0];
             int last = (int) loc[1];
 
@@ -620,7 +625,6 @@ public class Extractor {
             bv = positionBuffer(thisCDF, var, loc[2], count);
             // position buffer at the first point desired
             // init is the index of the first point desired
-            int pos = 0;
             int init;
 
             if (begin > first) {
@@ -639,7 +643,7 @@ public class Extractor {
 
             }
 
-            pos = bv.position() + ((init - first) * itemSize);
+            int pos = bv.position() + ((init - first) * itemSize);
             bv.position(pos);
 
             // compute number of points to be extracted and
@@ -687,27 +691,28 @@ public class Extractor {
     /**
      * returns range of blocks containing the range of records (start, end).
      *
-     * @param locations
-     * @param end
-     * @param recordVariance
-     * @param start
+     * @param locations      the locations
+     * @param recordVariance the record variance
+     * @param start          the start
+     * @param end            the end
      *
-     * @return
+     * @return the block range
      */
-    public static int[] getBlockRange(Vector locations, boolean recordVariance, int start, int end) {
+    public static int[] getBlockRange(final List<long[]> locations, final boolean recordVariance, final int start,
+            final int end) {
 
         int firstBlock;
         int lastBlock;
 
         if (recordVariance) {
 
-            if (end < ((long[]) locations.get(0))[0]) {
+            if (end < locations.get(0)[0]) {
                 return null;
             }
 
             lastBlock = locations.size() - 1;
 
-            if (start > ((long[]) locations.get(lastBlock))[1]) {
+            if (start > locations.get(lastBlock)[1]) {
                 return null;
             }
 
@@ -715,7 +720,7 @@ public class Extractor {
             int blk = 0;
 
             for (; blk < locations.size(); blk++) {
-                long[] loc = (long[]) locations.get(blk);
+                long[] loc = locations.get(blk);
 
                 if (start > loc[1]) {
                     continue;
@@ -732,7 +737,7 @@ public class Extractor {
             blk = firstBlock;
 
             for (; blk < locations.size(); blk++) {
-                long[] loc = (long[]) locations.get(blk);
+                long[] loc = locations.get(blk);
                 lastBlock = blk;
 
                 if (end <= loc[1]) {
@@ -741,7 +746,7 @@ public class Extractor {
 
                 if (blk < (locations.size() - 1)) {
 
-                    if (end < ((long[]) locations.get(blk + 1))[0]) {
+                    if (end < locations.get(blk + 1)[0]) {
                         break;
                     }
 
@@ -758,16 +763,16 @@ public class Extractor {
     }
 
     /**
+     * Gets the element 1.
      *
-     * @param thisCDF
-     * @param var
-     * @param idx
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param idx     the idx
      *
-     * @return
+     * @return the element 1
      *
-     * @throws Throwable
      */
-    public static Object getElement1(CDFImpl thisCDF, Variable var, Integer idx) throws Throwable {
+    public static Object getElement1(final CDFImpl thisCDF, final Variable var, final Integer idx) {
 
         if (var.isMissingRecords()) {
             return thisCDF.get(var.getName(), idx);
@@ -807,11 +812,11 @@ public class Extractor {
         }
 
         int loff = element * DataTypes.size[type];
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         int offset = 0;
 
         for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+            long[] loc = locations.get(blk);
             int first = (int) loc[0];
             int last = (int) loc[1];
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], ((last - first) + 1));
@@ -860,7 +865,7 @@ public class Extractor {
                     }
                     break;
                 default:
-                    throw new Throwable(var.getName() + " has unsupported type " + "in this context.");
+                    throw new IllegalArgumentException(var.getName() + " has unsupported type in this context.");
             }
 
             if (offset > numberOfValues) {
@@ -895,22 +900,22 @@ public class Extractor {
     }
 
     /**
+     * Gets the element 1.
      *
-     * @param thisCDF
-     * @param var
-     * @param idx
-     * @param strideObject
+     * @param thisCDF      the this CDF
+     * @param var          the var
+     * @param idx          the idx
+     * @param strideObject the stride object
      *
-     * @return
+     * @return the element 1
      *
-     * @throws Throwable
      */
-    public static double[] getElement1(CDFImpl thisCDF, Variable var, Integer idx, Stride strideObject)
-            throws Throwable {
+    public static double[] getElement1(final CDFImpl thisCDF, final Variable var, final Integer idx,
+            final Stride strideObject) {
         int type = var.getType();
 
         if (DataTypes.typeCategory[type] == DataTypes.LONG) {
-            throw new Throwable("Only scalar variables of type int8 " + "are supported at this time.");
+            throw new IllegalArgumentException("Only scalar variables of type int8 are supported at this time.");
         }
 
         int element = idx;
@@ -945,11 +950,11 @@ public class Extractor {
         int advance = size * _stride;
 
         int loff = element * DataTypes.size[type];
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         int point = 0;
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+        for (Object location : locations) {
+            long[] loc = (long[]) location;
             int first = (int) loc[0];
             int last = (int) loc[1];
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], ((last - first) + 1));
@@ -987,7 +992,7 @@ public class Extractor {
                     point = res;
                     break;
                 default:
-                    throw new Throwable("Unsupported data type for this " + "context");
+                    throw new IllegalArgumentException("Unsupported data type for this context");
             }
 
         }
@@ -996,32 +1001,35 @@ public class Extractor {
     }
 
     /**
+     * Gets the element 2.
+     * <p>
+     * not currently supported
      *
-     * @param thisCDF
-     * @param var
-     * @param pt1
-     * @param pt2
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param pt1     the pt 1
+     * @param pt2     the pt 2
      *
-     * @return
+     * @return the element 2
      *
-     * @throws Throwable
      */
-    public static double[] getElement2(CDFImpl thisCDF, Variable var, Integer pt1, Integer pt2) throws Throwable {
-        throw new Throwable("getElement2 is not supported currently");
-        // return null;
+    public static double[] getElement2(final CDFImpl thisCDF, final Variable var, final Integer pt1,
+            final Integer pt2) {
+        throw new UnsupportedOperationException("getElement2 is not currently supported");
+
     }
 
     /**
+     * Gets the elements 1.
      *
-     * @param thisCDF
-     * @param var
-     * @param idx
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param idx     the idx
      *
-     * @return
+     * @return the elements 1
      *
-     * @throws Throwable
      */
-    public static Object getElements1(CDFImpl thisCDF, Variable var, int[] idx) throws Throwable {
+    public static Object getElements1(final CDFImpl thisCDF, final Variable var, final int[] idx) {
         int numberOfValues = var.getNumberOfValues();
 
         if (numberOfValues == 0) {
@@ -1061,11 +1069,11 @@ public class Extractor {
             padValue = (double[]) getPadValue(thisCDF, var);
         }
 
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         int offset = 0;
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+        for (Object location : locations) {
+            long[] loc = (long[]) location;
             int first = (int) loc[0];
             int last = (int) loc[1];
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], ((last - first) + 1));
@@ -1134,7 +1142,7 @@ public class Extractor {
                     }
                     break;
                 default:
-                    throw new Throwable(var.getName() + " has unsupported type " + "in this context.");
+                    throw new IllegalArgumentException(var.getName() + " has unsupported type in this context.");
             }
 
             offset += ((last - first) + 1);
@@ -1148,19 +1156,22 @@ public class Extractor {
     }
 
     /**
+     * Gets the fill value.
      *
-     * @param thisCDF
-     * @param var
+     * @param thisCDF the this CDF
+     * @param var     the var
      *
-     * @return
+     * @return the fill value
      */
-    public static Object getFillValue(CDFImpl thisCDF, Variable var) {
-        Vector fill = (Vector) thisCDF.getAttribute(var.getName(), "FILLVAL");
+    public static Object getFillValue(final CDFImpl thisCDF, final Variable var) {
+        List<?> fill = (List<?>) thisCDF.getAttribute(var.getName(), "FILLVAL");
         int type = var.getType();
 
-        if (fill.size() != 0) {
+        if (!fill.isEmpty()) {
 
-            if (fill.get(0).getClass().getComponentType() == Double.TYPE) {
+            if (fill.get(0)
+                    .getClass()
+                    .getComponentType() == Double.TYPE) {
                 double dfill = ((double[]) fill.get(0))[0];
 
                 if (DataTypes.typeCategory[type] == DataTypes.LONG) {
@@ -1187,22 +1198,19 @@ public class Extractor {
     }
 
     /**
+     * Gets the method.
      *
-     * @param var
-     * @param func
+     * @param var  the var
+     * @param func the func
      *
-     * @return
-     *
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
+     * @return the method
      */
-    public static Method getMethod(VariableMetaData var, String func)
-            throws IllegalAccessException, InvocationTargetException {
+    public static Method getMethod(final VariableMetaData var, final String func) {
         int rank = var.getEffectiveRank();
         Method[] ma;
 
         if (DataTypes.isStringType(var.getType())) {
-            ma = (Method[]) stringMethodMap.get(func);
+            ma = stringMethodMap.get(func);
 
             if (ma == null) {
                 return null;
@@ -1215,7 +1223,7 @@ public class Extractor {
             return ma[rank];
         }
 
-        ma = (Method[]) numericMethodMap.get(func);
+        ma = numericMethodMap.get(func);
 
         if (ma == null) {
             return null;
@@ -1233,29 +1241,30 @@ public class Extractor {
     }
 
     /**
+     * Gets the one D series.
      *
-     * @param thisCDF
-     * @param var
-     * @param pt
-     * @param cm
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param pt      the pt
+     * @param cm      the cm
      *
-     * @return
+     * @return the one D series
      *
-     * @throws Throwable
      */
-    public static double[] getOneDSeries(CDFImpl thisCDF, Variable var, int[] pt, boolean cm) throws Throwable {
+    public static double[] getOneDSeries(final CDFImpl thisCDF, final Variable var, final int[] pt, final boolean cm) {
         boolean toswap = cm == thisCDF.rowMajority();
         return (double[]) get1DSeries(thisCDF, var, pt, false, toswap);
     }
 
     /**
+     * Gets the pad value.
      *
-     * @param thisCDF
-     * @param var
+     * @param thisCDF the this CDF
+     * @param var     the var
      *
-     * @return
+     * @return the pad value
      */
-    public static Object getPadValue(CDFImpl thisCDF, Variable var) {
+    public static Object getPadValue(final CDFImpl thisCDF, final Variable var) {
         Object o = var.getPadValue(true);
 
         if (o == null) {
@@ -1263,7 +1272,8 @@ public class Extractor {
             boolean fillDefined = true;
             Number fillValue = null;
 
-            if (fill.getClass().getComponentType() == Double.TYPE) {
+            if (fill.getClass()
+                    .getComponentType() == Double.TYPE) {
                 fillDefined = (((double[]) fill)[0] == 0);
 
                 if (fillDefined) {
@@ -1325,16 +1335,16 @@ public class Extractor {
     }
 
     /**
+     * Gets the point 0.
      *
-     * @param thisCDF
-     * @param var
-     * @param pt
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param pt      the pt
      *
-     * @return
+     * @return the point 0
      *
-     * @throws Throwable
      */
-    public static Object getPoint0(CDFImpl thisCDF, Variable var, Integer pt) throws Throwable {
+    public static Object getPoint0(final CDFImpl thisCDF, final Variable var, final Integer pt) {
 
         if (var.isMissingRecords()) {
             return thisCDF.getPoint(var.getName(), pt);
@@ -1343,10 +1353,10 @@ public class Extractor {
         int point = pt;
         int type = var.getType();
         int itemSize = var.getDataItemSize();
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+        for (Object location : locations) {
+            long[] loc = (long[]) location;
 
             if (loc[1] < point) {
                 continue;
@@ -1361,24 +1371,30 @@ public class Extractor {
             Method method;
             Number num;
 
-            switch (DataTypes.typeCategory[type]) {
-                case 0:
-                    return (double) bv.getFloat(pos);
-                case 1:
-                    return bv.getDouble(pos);
-                case 2:
-                    method = DataTypes.method[type];
-                    num = (Number) method.invoke(bv);
-                    return num.doubleValue();
-                case 3:
-                    method = DataTypes.method[type];
-                    long longInt = DataTypes.longInt[type];
-                    num = (Number) method.invoke(bv);
-                    int x = num.intValue();
-                    double d = x >= 0 ? x : longInt + x;
-                    return d;
-                case 5:
-                    return bv.getLong(pos);
+            try {
+
+                switch (DataTypes.typeCategory[type]) {
+                    case 0:
+                        return (double) bv.getFloat(pos);
+                    case 1:
+                        return bv.getDouble(pos);
+                    case 2:
+                        method = DataTypes.method[type];
+                        num = (Number) method.invoke(bv);
+                        return num.doubleValue();
+                    case 3:
+                        method = DataTypes.method[type];
+                        long longInt = DataTypes.longInt[type];
+                        num = (Number) method.invoke(bv);
+                        int x = num.intValue();
+                        double d = (x >= 0) ? x : (longInt + x);
+                        return d;
+                    case 5:
+                        return bv.getLong(pos);
+                }
+
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+
             }
 
         }
@@ -1387,28 +1403,28 @@ public class Extractor {
     }
 
     /**
+     * Gets the point 1.
      *
-     * @param thisCDF
-     * @param var
-     * @param pt
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param pt      the pt
      *
-     * @return
+     * @return the point 1
      *
-     * @throws Throwable
      */
-    public static double[] getPoint1(CDFImpl thisCDF, Variable var, Integer pt) throws Throwable {
+    public static double[] getPoint1(final CDFImpl thisCDF, final Variable var, final Integer pt) {
         int point = pt;
         int type = var.getType();
 
         if (DataTypes.typeCategory[type] == DataTypes.LONG) {
-            throw new Throwable("Only scalar variables of type int8 " + "are supported at this time.");
+            throw new IllegalArgumentException("Only scalar variables of type int8 are supported at this time.");
         }
 
         int itemSize = var.getDataItemSize();
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+        for (Object location : locations) {
+            long[] loc = (long[]) location;
 
             if (loc[1] < point) {
                 continue;
@@ -1421,7 +1437,7 @@ public class Extractor {
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], (int) ((loc[1] - loc[0]) + 1));
             int pos = bv.position() + ((point - (int) loc[0]) * itemSize);
             bv.position(pos);
-            int n = (((Integer) elementCount(var).elementAt(0)));
+            int n = ((elementCount(var).get(0)));
             double[] da = new double[n];
             Method method;
 
@@ -1441,7 +1457,14 @@ public class Extractor {
                 case 2:
                     method = DataTypes.method[type];
                     for (int i = 0; i < n; i++) {
-                        Number num = (Number) method.invoke(bv);
+                        Number num;
+
+                        try {
+                            num = (Number) method.invoke(bv);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                            throw new IllegalStateException("Failed to execute method " + method, e);
+                        }
+
                         da[i] = num.doubleValue();
                     }
                     return da;
@@ -1449,9 +1472,16 @@ public class Extractor {
                     method = DataTypes.method[type];
                     long longInt = DataTypes.longInt[type];
                     for (int i = 0; i < n; i++) {
-                        Number num = (Number) method.invoke(bv);
+                        Number num;
+
+                        try {
+                            num = (Number) method.invoke(bv);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                            throw new IllegalStateException("Failed to execute method " + method, e);
+                        }
+
                         int x = num.intValue();
-                        da[i] = x >= 0 ? x : longInt + x;
+                        da[i] = (x >= 0) ? x : (longInt + x);
                     }
                     return da;
             }
@@ -1462,28 +1492,27 @@ public class Extractor {
     }
 
     /**
+     * Gets the point 2.
      *
-     * @param thisCDF
-     * @param var
-     * @param pt
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param pt      the pt
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the point 2
      */
-    public static double[][] getPoint2(CDFImpl thisCDF, Variable var, Integer pt) throws Throwable {
+    public static double[][] getPoint2(final CDFImpl thisCDF, final Variable var, final Integer pt) {
         int point = pt;
         int type = var.getType();
 
         if (DataTypes.typeCategory[type] == DataTypes.LONG) {
-            throw new Throwable("Only scalar variables of type int8 " + "are supported at this time.");
+            throw new IllegalArgumentException("Only scalar variables of type int8 are supported at this time.");
         }
 
         int itemSize = var.getDataItemSize();
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+        for (Object location : locations) {
+            long[] loc = (long[]) location;
 
             if (loc[1] < point) {
                 continue;
@@ -1496,8 +1525,8 @@ public class Extractor {
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], (int) ((loc[1] - loc[0]) + 1));
             int pos = bv.position() + ((point - (int) loc[0]) * itemSize);
             bv.position(pos);
-            int n0 = (((Integer) elementCount(var).elementAt(0)));
-            int n1 = (((Integer) elementCount(var).elementAt(1)));
+            int n0 = ((elementCount(var).get(0)));
+            int n1 = ((elementCount(var).get(1)));
             double[][] da = new double[n0][n1];
             Method method;
 
@@ -1557,7 +1586,15 @@ public class Extractor {
                         for (int i = 0; i < n0; i++) {
 
                             for (int j = 0; j < n1; j++) {
-                                Number num = (Number) method.invoke(bv);
+                                Number num;
+
+                                try {
+                                    num = (Number) method.invoke(bv);
+                                } catch (IllegalAccessException | IllegalArgumentException
+                                        | InvocationTargetException e) {
+                                    throw new IllegalStateException("Failed to execute method " + method, e);
+                                }
+
                                 da[i][j] = num.doubleValue();
                             }
 
@@ -1568,8 +1605,15 @@ public class Extractor {
                         for (int i = 0; i < n1; i++) {
 
                             for (int j = 0; j < n0; j++) {
-                                Number num = (Number) method.invoke(bv);
-                                da[j][i] = num.doubleValue();
+
+                                try {
+                                    Number num = (Number) method.invoke(bv);
+                                    da[j][i] = num.doubleValue();
+                                } catch (IllegalAccessException | IllegalArgumentException
+                                        | InvocationTargetException e) {
+                                    throw new IllegalStateException("Failed to execute method " + method, e);
+                                }
+
                             }
 
                         }
@@ -1584,9 +1628,17 @@ public class Extractor {
                         for (int i = 0; i < n0; i++) {
 
                             for (int j = 0; j < n1; j++) {
-                                Number num = (Number) method.invoke(bv);
+                                Number num;
+
+                                try {
+                                    num = (Number) method.invoke(bv);
+                                } catch (IllegalAccessException | IllegalArgumentException
+                                        | InvocationTargetException e) {
+                                    throw new IllegalStateException("Failed to execute method " + method, e);
+                                }
+
                                 int x = num.intValue();
-                                double d = x >= 0 ? x : longInt + x;
+                                double d = (x >= 0) ? x : (longInt + x);
                                 da[i][j] = d;
                             }
 
@@ -1597,9 +1649,17 @@ public class Extractor {
                         for (int i = 0; i < n1; i++) {
 
                             for (int j = 0; j < n0; j++) {
-                                Number num = (Number) method.invoke(bv);
+                                Number num;
+
+                                try {
+                                    num = (Number) method.invoke(bv);
+                                } catch (IllegalAccessException | IllegalArgumentException
+                                        | InvocationTargetException e) {
+                                    throw new IllegalStateException("Failed to execute method " + method, e);
+                                }
+
                                 int x = num.intValue();
-                                double d = x >= 0 ? x : longInt + x;
+                                double d = (x >= 0) ? x : (longInt + x);
                                 da[j][i] = d;
                             }
 
@@ -1608,7 +1668,7 @@ public class Extractor {
                     }
                     return da;
                 default:
-                    throw new Throwable(var.getName() + " has unsupported type " + "in this context.");
+                    throw new IllegalArgumentException(var.getName() + " has unsupported type in this context.");
             }
 
         }
@@ -1617,24 +1677,22 @@ public class Extractor {
     }
 
     /**
-     * 3D Point
+     * 3D Point.
      *
-     * @param thisCDF
-     * @param pt
-     * @param var
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param pt      the pt
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the point 3
      */
-    public static double[][][] getPoint3(CDFImpl thisCDF, Variable var, Integer pt) throws Throwable {
+    public static double[][][] getPoint3(final CDFImpl thisCDF, final Variable var, final Integer pt) {
         int point = pt;
         int type = var.getType();
         int itemSize = var.getDataItemSize();
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+        for (Object location : locations) {
+            long[] loc = (long[]) location;
 
             if (loc[1] < point) {
                 continue;
@@ -1647,9 +1705,9 @@ public class Extractor {
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], (int) ((loc[1] - loc[0]) + 1));
             int pos = bv.position() + ((point - (int) loc[0]) * itemSize);
             bv.position(pos);
-            int n0 = (((Integer) elementCount(var).elementAt(0)));
-            int n1 = (((Integer) elementCount(var).elementAt(1)));
-            int n2 = (((Integer) elementCount(var).elementAt(2)));
+            int n0 = ((elementCount(var).get(0)));
+            int n1 = ((elementCount(var).get(1)));
+            int n2 = ((elementCount(var).get(2)));
             double[][][] da = new double[n0][n1][n2];
             Method method;
 
@@ -1727,7 +1785,15 @@ public class Extractor {
                             for (int j = 0; j < n1; j++) {
 
                                 for (int k = 0; k < n2; k++) {
-                                    Number num = (Number) method.invoke(bv);
+                                    Number num;
+
+                                    try {
+                                        num = (Number) method.invoke(bv);
+                                    } catch (IllegalAccessException | IllegalArgumentException
+                                            | InvocationTargetException e) {
+                                        throw new IllegalStateException("Failed to execute method " + method, e);
+                                    }
+
                                     da[i][j][k] = num.doubleValue();
                                 }
 
@@ -1742,7 +1808,15 @@ public class Extractor {
                             for (int j = 0; j < n1; j++) {
 
                                 for (int k = 0; k < n0; k++) {
-                                    Number num = (Number) method.invoke(bv);
+                                    Number num;
+
+                                    try {
+                                        num = (Number) method.invoke(bv);
+                                    } catch (IllegalAccessException | IllegalArgumentException
+                                            | InvocationTargetException e) {
+                                        throw new IllegalStateException("Failed to execute method " + method, e);
+                                    }
+
                                     da[k][j][i] = num.doubleValue();
                                 }
 
@@ -1762,9 +1836,17 @@ public class Extractor {
                             for (int j = 0; j < n1; j++) {
 
                                 for (int k = 0; k < n2; k++) {
-                                    Number num = (Number) method.invoke(bv);
+                                    Number num;
+
+                                    try {
+                                        num = (Number) method.invoke(bv);
+                                    } catch (IllegalAccessException | IllegalArgumentException
+                                            | InvocationTargetException e) {
+                                        throw new IllegalStateException("Failed to execute method " + method, e);
+                                    }
+
                                     int x = num.intValue();
-                                    double d = (x >= 0 ? x : longInt + x);
+                                    double d = ((x >= 0) ? x : (longInt + x));
                                     da[i][j][k] = d;
                                 }
 
@@ -1779,9 +1861,17 @@ public class Extractor {
                             for (int j = 0; j < n1; j++) {
 
                                 for (int k = 0; k < n0; k++) {
-                                    Number num = (Number) method.invoke(bv);
+                                    Number num;
+
+                                    try {
+                                        num = (Number) method.invoke(bv);
+                                    } catch (IllegalAccessException | IllegalArgumentException
+                                            | InvocationTargetException e) {
+                                        throw new IllegalStateException("Failed to execute method " + method, e);
+                                    }
+
                                     int x = num.intValue();
-                                    double d = (x >= 0 ? x : longInt + x);
+                                    double d = ((x >= 0) ? x : (longInt + x));
                                     da[k][j][i] = d;
                                 }
 
@@ -1792,7 +1882,7 @@ public class Extractor {
                     }
                     return da;
                 default:
-                    throw new Throwable(var.getName() + " has unsupported type " + "in this context.");
+                    throw new IllegalArgumentException(var.getName() + " has unsupported type in this context.");
             }
 
         }
@@ -1801,17 +1891,17 @@ public class Extractor {
     }
 
     /**
+     * Gets the range 0.
      *
-     * @param thisCDF
-     * @param var
-     * @param istart
-     * @param iend
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param istart  the istart
+     * @param iend    the iend
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the range 0
      */
-    public static Object getRange0(CDFImpl thisCDF, Variable var, Integer istart, Integer iend) throws Throwable {
+    public static Object getRange0(final CDFImpl thisCDF, final Variable var, final Integer istart,
+            final Integer iend) {
         int start = istart;
         int end = iend;
 
@@ -1841,15 +1931,14 @@ public class Extractor {
             padValue = (double[]) getPadValue(thisCDF, var);
         }
 
-        int[] blks = null;
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
 
         if (locations == null) {
             fillWithPad(longType, _data, start, end, _pad);
             return _data;
         }
 
-        blks = getBlockRange(locations, var.recordVariance(), start, end);
+        int[] blks = getBlockRange(locations, var.recordVariance(), start, end);
 
         if (blks == null) { // no overlap
 
@@ -1927,7 +2016,7 @@ public class Extractor {
             Object[] oa = positionBuffer(thisCDF, var, blks, blk, start, end);
 
             if (oa == null) { //
-                long[] loc = (long[]) locations.get(blk - 1);
+                long[] loc = locations.get(blk - 1);
 
                 if (!longType) {
                     double lastValue = var.asDoubleArray(new int[] { (int) loc[1] })[0];
@@ -2012,7 +2101,14 @@ public class Extractor {
                 case 2:
                     method = DataTypes.method[type];
                     while (offset <= (last - start)) {
-                        Number num = (Number) method.invoke(bv);
+                        Number num;
+
+                        try {
+                            num = (Number) method.invoke(bv);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                            throw new IllegalStateException("Failed to execute method " + method, e);
+                        }
+
                         data[offset++] = num.doubleValue();
                     }
                     break;
@@ -2020,9 +2116,16 @@ public class Extractor {
                     method = DataTypes.method[type];
                     long longInt = DataTypes.longInt[type];
                     while (offset <= (last - start)) {
-                        Number num = (Number) method.invoke(bv);
+                        Number num;
+
+                        try {
+                            num = (Number) method.invoke(bv);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                            throw new IllegalStateException("Failed to execute method " + method, e);
+                        }
+
                         int x = num.intValue();
-                        data[offset++] = (x >= 0 ? x : longInt + x);
+                        data[offset++] = ((x >= 0) ? x : (longInt + x));
                     }
                     break;
                 case 5:
@@ -2087,30 +2190,29 @@ public class Extractor {
     }
 
     /**
+     * Gets the range 0.
      *
-     * @param thisCDF
-     * @param var
-     * @param istart
-     * @param iend
-     * @param strideObject
+     * @param thisCDF      the this CDF
+     * @param var          the var
+     * @param istart       the istart
+     * @param iend         the iend
+     * @param strideObject the stride object
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the range 0
      */
-    public static Object getRange0(CDFImpl thisCDF, Variable var, Integer istart, Integer iend, Stride strideObject)
-            throws Throwable {
+    public static Object getRange0(final CDFImpl thisCDF, final Variable var, final Integer istart, final Integer iend,
+            final Stride strideObject) {
         int begin = istart;
 
         if (begin < 0) {
-            throw new Throwable("getRange0 start < 0");
+            throw new IllegalArgumentException("getRange0 start < 0");
         }
 
         int end = iend;
         int numberOfValues = var.getNumberOfValues();
 
         if (end > numberOfValues) {
-            throw new Throwable("getRange0 end > available " + numberOfValues);
+            throw new IllegalArgumentException("getRange0 end > available " + numberOfValues);
         }
 
         if (numberOfValues == 0) {
@@ -2147,7 +2249,7 @@ public class Extractor {
             data = new double[numberOfValues];
         }
 
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         int[] blks = getBlockRange(locations, var.recordVariance(), begin, end);
         int firstBlock = blks[0];
         int lastBlock = blks[1];
@@ -2195,7 +2297,14 @@ public class Extractor {
                 case 2:
                     method = DataTypes.method[type];
                     for (; n <= last; n += _stride) {
-                        Number num = (Number) method.invoke(bv);
+                        Number num;
+
+                        try {
+                            num = (Number) method.invoke(bv);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                            throw new IllegalStateException("Failed to execute method " + method, e);
+                        }
+
                         data[index++] = num.doubleValue();
                     }
                     break;
@@ -2203,9 +2312,16 @@ public class Extractor {
                     method = DataTypes.method[type];
                     long longInt = DataTypes.longInt[type];
                     for (; n <= last; n += _stride) {
-                        Number num = (Number) method.invoke(bv);
+                        Number num;
+
+                        try {
+                            num = (Number) method.invoke(bv);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                            throw new IllegalStateException("Failed to execute method " + method, e);
+                        }
+
                         int x = num.intValue();
-                        data[index++] = (x >= 0 ? x : longInt + x);
+                        data[index++] = ((x >= 0) ? x : (longInt + x));
                     }
                     break;
                 case 5:
@@ -2215,7 +2331,7 @@ public class Extractor {
                     }
                     break;
                 default:
-                    throw new Throwable("Unsupported data type for this " + "context");
+                    throw new IllegalArgumentException("Unsupported data type for this context");
             }
 
         }
@@ -2250,32 +2366,31 @@ public class Extractor {
      * dimensional variable for the specified range of records.long type not
      * supported in this context - use getRangeForElements1
      *
-     * @param thisCDF
-     * @param iend
-     * @param var
-     * @param istart
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param istart  the istart
+     * @param iend    the iend
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the range 1
      */
-    public static double[][] getRange1(CDFImpl thisCDF, Variable var, Integer istart, Integer iend) throws Throwable {
+    public static double[][] getRange1(final CDFImpl thisCDF, final Variable var, final Integer istart,
+            final Integer iend) {
         int type = var.getType();
 
         if (DataTypes.typeCategory[type] == DataTypes.LONG) {
-            throw new Throwable("Long type not supported in this context");
+            throw new IllegalStateException("Long type not supported in this context");
         }
 
         int start = istart;
         int end = iend;
         var.getNumberOfValues();
         var.getDataItemSize();
-        int elements = (((Integer) elementCount(var).elementAt(0)));
+        int elements = ((elementCount(var).get(0)));
         double[][] data = new double[(end - start) + 1][elements];
         double[] padValue = (double[]) getPadValue(thisCDF, var);
 
         int[] blks = null;
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
 
         if (locations != null) {
             blks = getBlockRange(locations, var.recordVariance(), start, end);
@@ -2325,13 +2440,14 @@ public class Extractor {
         int offset = 0;
 
         for (int blk = firstBlock; blk <= lastBlock; blk++) {
+
             Object[] oa = positionBuffer(thisCDF, var, blks, blk, start, end);
 
             if (oa == null) {
 
                 if (substitute) {
-                    int[] loc = (int[]) locations.get(blk - 1);
-                    double[] lastValue = var.asDoubleArray(new int[] { loc[1] });
+                    long[] loc = locations.get(blk - 1);
+                    double[] lastValue = var.asDoubleArray(new int[] { (int) loc[1] });
 
                     while (offset < data.length) {
                         data[offset] = lastValue;
@@ -2396,7 +2512,7 @@ public class Extractor {
                     offset += ((last - first) + 1);
                     break;
                 default:
-                    throw new Throwable(var.getName() + " has unsupported type " + "in this context.");
+                    throw new IllegalArgumentException(var.getName() + " has unsupported type in this context.");
             }
 
             if (offset > (end - start)) {
@@ -2436,18 +2552,16 @@ public class Extractor {
      * returns range of values for the specified element of a one
      * dimensional variable.returns null if the specified element is not valid.
      *
-     * @param thisCDF
-     * @param ielement
-     * @param var
-     * @param iend
-     * @param istart
+     * @param thisCDF  the this CDF
+     * @param var      the var
+     * @param istart   the istart
+     * @param iend     the iend
+     * @param ielement the ielement
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the range for element 1
      */
-    public static Object getRangeForElement1(CDFImpl thisCDF, Variable var, Integer istart, Integer iend,
-            Integer ielement) throws Throwable {
+    public static Object getRangeForElement1(final CDFImpl thisCDF, final Variable var, final Integer istart,
+            final Integer iend, final Integer ielement) {
         int element = ielement;
 
         if (!validElement(var, new int[] { element })) {
@@ -2480,7 +2594,7 @@ public class Extractor {
         }
 
         int loff = element * DataTypes.size[type];
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         int[] blks = getBlockRange(locations, var.recordVariance(), start, end);
         int firstBlock = blks[0];
         int lastBlock = blks[1];
@@ -2608,20 +2722,19 @@ public class Extractor {
     }
 
     /**
+     * Gets the range for element 1.
      *
-     * @param thisCDF
-     * @param var
-     * @param istart
-     * @param iend
-     * @param ielement
-     * @param strideObject
+     * @param thisCDF      the this CDF
+     * @param var          the var
+     * @param istart       the istart
+     * @param iend         the iend
+     * @param ielement     the ielement
+     * @param strideObject the stride object
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the range for element 1
      */
-    public static Object getRangeForElement1(CDFImpl thisCDF, Variable var, Integer istart, Integer iend,
-            Integer ielement, Stride strideObject) throws Throwable {
+    public static Object getRangeForElement1(final CDFImpl thisCDF, final Variable var, final Integer istart,
+            final Integer iend, final Integer ielement, final Stride strideObject) {
         int element = ielement;
 
         if (!validElement(var, new int[] { element })) {
@@ -2633,7 +2746,7 @@ public class Extractor {
         int numberOfValues = var.getNumberOfValues();
 
         if (end > numberOfValues) {
-            throw new Throwable("getRange0 end > available " + numberOfValues);
+            throw new IllegalArgumentException("getRange0 end > available " + numberOfValues);
         }
 
         if (numberOfValues == 0) {
@@ -2673,7 +2786,7 @@ public class Extractor {
         int itemSize = var.getDataItemSize();
         int advance = itemSize * _stride;
         int loff = element * DataTypes.size[type];
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         int[] blks = getBlockRange(locations, var.recordVariance(), begin, end);
         int firstBlock = blks[0];
         int lastBlock = blks[1];
@@ -2727,7 +2840,7 @@ public class Extractor {
                     }
                     break;
                 default:
-                    throw new Throwable("Unsupported data type for this " + "context");
+                    throw new IllegalArgumentException("Unsupported data type for this context");
             }
 
         }
@@ -2767,18 +2880,16 @@ public class Extractor {
      * valid.-- does not respect 'previous' and cases where the requested
      * range has partial overlap with the available range
      *
-     * @param thisCDF
-     * @param idx
-     * @param var
-     * @param iend
-     * @param istart
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param istart  the istart
+     * @param iend    the iend
+     * @param idx     the idx
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the range for elements 1
      */
-    public static Object getRangeForElements1(CDFImpl thisCDF, Variable var, Integer istart, Integer iend, int[] idx)
-            throws Throwable {
+    public static Object getRangeForElements1(final CDFImpl thisCDF, final Variable var, final Integer istart,
+            final Integer iend, final int[] idx) {
 
         if (!validElement(var, idx)) {
             return null;
@@ -2813,7 +2924,7 @@ public class Extractor {
         }
 
         // loff contains offsets from the beginning of the item
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         int[] blks = getBlockRange(locations, var.recordVariance(), start, end);
         int firstBlock = blks[0];
         int lastBlock = blks[1];
@@ -2927,25 +3038,21 @@ public class Extractor {
     }
     /*
      * public static double [][][] getRange2(CDFImpl thisCDF, Variable var,
-     * Integer istart, Integer iend) throws Throwable {
+     * Integer istart, Integer iend) {
      * throw new Throwable("getRange2 is not supported currently");
      * //return null;
      * }
      */
 
     /**
+     * Gets the series 0.
      *
-     * @param thisCDF
-     * @param var
+     * @param thisCDF the this CDF
+     * @param var     the var
      *
-     * @return
-     *
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws Throwable
+     * @return the series 0
      */
-    public static Object getSeries0(CDFImpl thisCDF, Variable var)
-            throws IllegalAccessException, InvocationTargetException, Throwable {
+    public static Object getSeries0(final CDFImpl thisCDF, final Variable var) {
 
         if (var.isMissingRecords()) {
             return thisCDF.get(var.getName());
@@ -2972,11 +3079,11 @@ public class Extractor {
             pad = ((double[]) getPadValue(thisCDF, var))[0];
         }
 
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         int offset = 0;
 
         for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+            long[] loc = locations.get(blk);
             int first = (int) loc[0];
             int last = (int) loc[1];
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], ((last - first) + 1));
@@ -3014,7 +3121,14 @@ public class Extractor {
                 case 2:
                     method = DataTypes.method[type];
                     while (offset <= last) {
-                        Number num = (Number) method.invoke(bv);
+                        Number num;
+
+                        try {
+                            num = (Number) method.invoke(bv);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                            throw new IllegalStateException("Failed to execute method " + method, e);
+                        }
+
                         data[offset++] = num.doubleValue();
                     }
                     break;
@@ -3022,9 +3136,16 @@ public class Extractor {
                     method = DataTypes.method[type];
                     long longInt = DataTypes.longInt[type];
                     while (offset <= last) {
-                        Number num = (Number) method.invoke(bv);
+                        Number num;
+
+                        try {
+                            num = (Number) method.invoke(bv);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                            throw new IllegalStateException("Failed to execute method " + method, e);
+                        }
+
                         int x = num.intValue();
-                        data[offset++] = x >= 0 ? x : longInt + x;
+                        data[offset++] = (x >= 0) ? x : (longInt + x);
                     }
                     break;
                 case 5:
@@ -3117,23 +3238,19 @@ public class Extractor {
     }
 
     /**
+     * Gets the series 0.
      *
-     * @param thisCDF
-     * @param var
-     * @param strideObject
+     * @param thisCDF      the this CDF
+     * @param var          the var
+     * @param strideObject the stride object
      *
-     * @return
-     *
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws Throwable
+     * @return the series 0
      */
-    public static Object getSeries0(CDFImpl thisCDF, Variable var, Stride strideObject)
-            throws IllegalAccessException, InvocationTargetException, Throwable {
+    public static Object getSeries0(final CDFImpl thisCDF, final Variable var, final Stride strideObject) {
         int type = var.getType();
 
         if (DataTypes.typeCategory[type] == 4) {
-            throw new Throwable("Type " + type + " not supported in this context");
+            throw new IllegalArgumentException("Type " + type + " not supported in this context");
         }
 
         int numberOfValues = var.getNumberOfValues();
@@ -3142,7 +3259,6 @@ public class Extractor {
             return null;
         }
 
-        int numpt;
         int _stride = strideObject.getStride(numberOfValues);
         int size = var.getDataItemSize();
 
@@ -3150,7 +3266,7 @@ public class Extractor {
             return getSeries0(thisCDF, var);
         }
 
-        numpt = numberOfValues / _stride;
+        int numpt = numberOfValues / _stride;
 
         if ((numpt * _stride) < numberOfValues) {
             numpt++;
@@ -3167,11 +3283,11 @@ public class Extractor {
             data = new double[numpt];
         }
 
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         int next = 0;
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+        for (Object location : locations) {
+            long[] loc = (long[]) location;
             int first = (int) loc[0];
             int last = (int) loc[1];
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], ((last - first) + 1));
@@ -3203,7 +3319,14 @@ public class Extractor {
                     method = DataTypes.method[type];
                     for (; pos <= last; pos += _stride) {
                         bv.position(pos * size);
-                        Number num = (Number) method.invoke(bv);
+                        Number num;
+
+                        try {
+                            num = (Number) method.invoke(bv);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                            throw new IllegalStateException("Failed to execute method " + method, e);
+                        }
+
                         data[next++] = num.doubleValue();
                     }
                     break;
@@ -3212,9 +3335,16 @@ public class Extractor {
                     long longInt = DataTypes.longInt[type];
                     for (; pos <= last; pos += _stride) {
                         bv.position(pos * size);
-                        Number num = (Number) method.invoke(bv);
+                        Number num;
+
+                        try {
+                            num = (Number) method.invoke(bv);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                            throw new IllegalStateException("Failed to execute method " + method, e);
+                        }
+
                         int x = num.intValue();
-                        data[next++] = (x >= 0 ? x : longInt + x);
+                        data[next++] = ((x >= 0) ? x : (longInt + x));
                     }
                     break;
                 case 5:
@@ -3224,7 +3354,7 @@ public class Extractor {
                     }
                     break;
                 default:
-                    throw new Throwable("Unsupported data type for this " + "context");
+                    throw new IllegalArgumentException("Unsupported data type for this context");
             }
 
         }
@@ -3255,18 +3385,14 @@ public class Extractor {
     }
 
     /**
+     * Gets the series 1.
      *
-     * @param thisCDF
-     * @param var
+     * @param thisCDF the this CDF
+     * @param var     the var
      *
-     * @return
-     *
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws Throwable
+     * @return the series 1
      */
-    public static double[][] getSeries1(CDFImpl thisCDF, Variable var)
-            throws IllegalAccessException, InvocationTargetException, Throwable {
+    public static double[][] getSeries1(final CDFImpl thisCDF, final Variable var) {
         int numberOfValues = var.getNumberOfValues();
 
         if (numberOfValues == 0) {
@@ -3277,21 +3403,21 @@ public class Extractor {
             numberOfValues = 1;
         }
 
-        int elements = (((Integer) elementCount(var).elementAt(0)));
+        int elements = ((elementCount(var).get(0)));
         double[][] data = new double[numberOfValues][elements];
 
         int type = var.getType();
 
         if (DataTypes.typeCategory[type] == DataTypes.LONG) {
-            throw new Throwable("Only scalar variables of type int8 " + "are supported at this time.");
+            throw new IllegalArgumentException("Only scalar variables of type int8 are supported at this time.");
         }
 
         double[] padValue = (double[]) getPadValue(thisCDF, var);
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         int offset = 0;
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+        for (Object location : locations) {
+            long[] loc = (long[]) location;
             int first = (int) loc[0];
             int last = (int) loc[1];
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], ((last - first) + 1));
@@ -3342,19 +3468,18 @@ public class Extractor {
     }
 
     /**
+     * Gets the series 2.
      *
-     * @param thisCDF
-     * @param var
+     * @param thisCDF the this CDF
+     * @param var     the var
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the series 2
      */
-    public static double[][][] getSeries2(CDFImpl thisCDF, Variable var) throws Throwable {
+    public static double[][][] getSeries2(final CDFImpl thisCDF, final Variable var) {
         int type = var.getType();
 
         if (DataTypes.typeCategory[type] == DataTypes.LONG) {
-            throw new Throwable("Only scalar variables of type int8 " + "are supported at this time.");
+            throw new IllegalArgumentException("Only scalar variables of type int8 are supported at this time.");
         }
 
         int numberOfValues = var.getNumberOfValues();
@@ -3367,15 +3492,15 @@ public class Extractor {
             numberOfValues = 1;
         }
 
-        int n0 = (((Integer) elementCount(var).elementAt(0)));
-        int n1 = (((Integer) elementCount(var).elementAt(1)));
+        int n0 = ((elementCount(var).get(0)));
+        int n1 = ((elementCount(var).get(1)));
         double[][][] data = new double[numberOfValues][n0][n1];
         double[] padValue = (double[]) getPadValue(thisCDF, var);
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         int offset = 0;
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+        for (Object location : locations) {
+            long[] loc = (long[]) location;
             int first = (int) loc[0];
             int last = (int) loc[1];
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], ((last - first) + 1));
@@ -3604,7 +3729,7 @@ public class Extractor {
 
                                     for (int l = 0; l < n1; l++) {
                                         int x = bv.get();
-                                        data[offset][m][l] = x >= 0 ? x : _num + x;
+                                        data[offset][m][l] = (x >= 0) ? x : (_num + x);
                                     }
 
                                 }
@@ -3620,7 +3745,7 @@ public class Extractor {
 
                                     for (int l = 0; l < n0; l++) {
                                         int x = bv.get();
-                                        data[offset][l][m] = x >= 0 ? x : _num + x;
+                                        data[offset][l][m] = (x >= 0) ? x : (_num + x);
                                     }
 
                                 }
@@ -3644,7 +3769,7 @@ public class Extractor {
 
                                     for (int l = 0; l < n1; l++) {
                                         int x = bvs.get();
-                                        data[offset][m][l] = x >= 0 ? x : _num + x;
+                                        data[offset][m][l] = (x >= 0) ? x : (_num + x);
                                     }
 
                                 }
@@ -3660,7 +3785,7 @@ public class Extractor {
 
                                     for (int l = 0; l < n0; l++) {
                                         int x = bvs.get();
-                                        data[offset][l][m] = x >= 0 ? x : _num + x;
+                                        data[offset][l][m] = (x >= 0) ? x : (_num + x);
                                     }
 
                                 }
@@ -3684,7 +3809,7 @@ public class Extractor {
 
                                     for (int l = 0; l < n1; l++) {
                                         int x = bvi.get();
-                                        data[offset][m][l] = x >= 0 ? x : _num + x;
+                                        data[offset][m][l] = (x >= 0) ? x : (_num + x);
                                     }
 
                                 }
@@ -3700,7 +3825,7 @@ public class Extractor {
 
                                     for (int l = 0; l < n0; l++) {
                                         int x = bvi.get();
-                                        data[offset][l][m] = x >= 0 ? x : _num + x;
+                                        data[offset][l][m] = (x >= 0) ? x : (_num + x);
                                     }
 
                                 }
@@ -3713,7 +3838,7 @@ public class Extractor {
                         break;
                     }
                 default:
-                    throw new Throwable(var.getName() + " has unsupported type " + "in this context.");
+                    throw new IllegalArgumentException(var.getName() + " has unsupported type in this context.");
             }
 
         }
@@ -3722,20 +3847,18 @@ public class Extractor {
     }
 
     /**
-     * 3D Series
+     * Gets the series 3.
      *
-     * @param thisCDF
-     * @param var
+     * @param thisCDF the this CDF
+     * @param var     the var
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the series 3
      */
-    public static double[][][][] getSeries3(CDFImpl thisCDF, Variable var) throws Throwable {
+    public static double[][][][] getSeries3(final CDFImpl thisCDF, final Variable var) {
         int type = var.getType();
 
         if (DataTypes.typeCategory[type] == DataTypes.LONG) {
-            throw new Throwable("Only scalar variables of type int8 " + "are supported at this time.");
+            throw new IllegalArgumentException("Only scalar variables of type int8 are supported at this time.");
         }
 
         int numberOfValues = var.getNumberOfValues();
@@ -3748,17 +3871,17 @@ public class Extractor {
             numberOfValues = 1;
         }
 
-        int n0 = (((Integer) elementCount(var).elementAt(0)));
-        int n1 = (((Integer) elementCount(var).elementAt(1)));
-        int n2 = (((Integer) elementCount(var).elementAt(2)));
+        int n0 = ((elementCount(var).get(0)));
+        int n1 = ((elementCount(var).get(1)));
+        int n2 = ((elementCount(var).get(2)));
         double[][][][] data = new double[numberOfValues][n0][n1][n2];
         double[] fill = (double[]) getFillValue(thisCDF, var);
         double fillValue = (fill[0] != 0) ? Double.NaN : fill[1];
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
         int next = 0;
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+        for (Object location : locations) {
+            long[] loc = (long[]) location;
             int first = (int) loc[0];
             int last = (int) loc[1];
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], (last - first) + 1);
@@ -3901,7 +4024,15 @@ public class Extractor {
                                 for (int l = 0; l < n1; l++) {
 
                                     for (int k = 0; k < n2; k++) {
-                                        Number num = (Number) method.invoke(bv);
+                                        Number num;
+
+                                        try {
+                                            num = (Number) method.invoke(bv);
+                                        } catch (IllegalAccessException | IllegalArgumentException
+                                                | InvocationTargetException e) {
+                                            throw new IllegalStateException("Failed to execute method " + method, e);
+                                        }
+
                                         data[n][m][l][k] = num.doubleValue();
                                     }
 
@@ -3920,7 +4051,15 @@ public class Extractor {
                                 for (int l = 0; l < n1; l++) {
 
                                     for (int k = 0; k < n0; k++) {
-                                        Number num = (Number) method.invoke(bv);
+                                        Number num;
+
+                                        try {
+                                            num = (Number) method.invoke(bv);
+                                        } catch (IllegalAccessException | IllegalArgumentException
+                                                | InvocationTargetException e) {
+                                            throw new IllegalStateException("Failed to execute method " + method, e);
+                                        }
+
                                         data[n][k][l][m] = num.doubleValue();
                                     }
 
@@ -3944,9 +4083,17 @@ public class Extractor {
                                 for (int l = 0; l < n1; l++) {
 
                                     for (int k = 0; k < n2; k++) {
-                                        Number num = (Number) method.invoke(bv);
+                                        Number num;
+
+                                        try {
+                                            num = (Number) method.invoke(bv);
+                                        } catch (IllegalAccessException | IllegalArgumentException
+                                                | InvocationTargetException e) {
+                                            throw new IllegalStateException("Failed to execute method " + method, e);
+                                        }
+
                                         int x = num.intValue();
-                                        data[n][m][l][k] = (x >= 0 ? x : longInt + x);
+                                        data[n][m][l][k] = ((x >= 0) ? x : (longInt + x));
                                     }
 
                                 }
@@ -3964,9 +4111,17 @@ public class Extractor {
                                 for (int l = 0; l < n1; l++) {
 
                                     for (int k = 0; k < n0; k++) {
-                                        Number num = (Number) method.invoke(bv);
+                                        Number num;
+
+                                        try {
+                                            num = (Number) method.invoke(bv);
+                                        } catch (IllegalAccessException | IllegalArgumentException
+                                                | InvocationTargetException e) {
+                                            throw new IllegalStateException("Failed to execute method " + method, e);
+                                        }
+
                                         int x = num.intValue();
-                                        data[n][k][l][m] = (x >= 0 ? x : longInt + x);
+                                        data[n][k][l][m] = ((x >= 0) ? x : (longInt + x));
                                     }
 
                                 }
@@ -3978,7 +4133,7 @@ public class Extractor {
                     }
                     break;
                 default:
-                    throw new Throwable(var.getName() + " has unsupported type " + "in this context.");
+                    throw new IllegalArgumentException(var.getName() + " has unsupported type in this context.");
             }
 
             next = last + 1;
@@ -3988,21 +4143,21 @@ public class Extractor {
     }
 
     /**
-     * 0D series of string
+     * 0D series of string.
      *
-     * @param thisCDF
-     * @param var
+     * @param thisCDF the this CDF
+     * @param var     the var
      *
-     * @return
+     * @return the string series 0
      */
-    public static String[] getStringSeries0(CDFImpl thisCDF, Variable var) {
+    public static String[] getStringSeries0(final CDFImpl thisCDF, final Variable var) {
         int numberOfValues = var.getNumberOfValues();
         String[] data = new String[numberOfValues];
         int len = var.getNumberOfElements();
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+        for (Object location : locations) {
+            long[] loc = (long[]) location;
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], (int) ((loc[1] - loc[0]) + 1));
             int pos = bv.position();
 
@@ -4026,14 +4181,14 @@ public class Extractor {
     }
 
     /**
-     * 1D series of string
+     * Gets the string series 1.
      *
-     * @param thisCDF
-     * @param var
+     * @param thisCDF the this CDF
+     * @param var     the var
      *
-     * @return
+     * @return the string series 1
      */
-    public static String[][] getStringSeries1(CDFImpl thisCDF, Variable var) {
+    public static String[][] getStringSeries1(final CDFImpl thisCDF, final Variable var) {
         int numberOfValues = var.getNumberOfValues();
 
         if (numberOfValues == 0) {
@@ -4044,14 +4199,14 @@ public class Extractor {
             numberOfValues = 1;
         }
 
-        int elements = (((Integer) elementCount(var).elementAt(0)));
+        int elements = ((elementCount(var).get(0)));
         String[][] data = new String[numberOfValues][elements];
         var.getDataItemSize();
         int len = var.getNumberOfElements();
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = (long[]) locations.elementAt(blk);
+        for (Object location : locations) {
+            long[] loc = (long[]) location;
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], (int) ((loc[1] - loc[0]) + 1));
             int pos = bv.position();
 
@@ -4071,13 +4226,15 @@ public class Extractor {
     }
 
     /**
+     * Gets the string series 2.
      *
-     * @param thisCDF
-     * @param var
+     * @param thisCDF the this CDF
+     * @param var     the var
      *
-     * @return
+     * @return the string series 2
      */
-    public static String[][][] getStringSeries2(CDFImpl thisCDF, Variable var) {
+    // FIXME: Always returns null
+    public static String[][][] getStringSeries2(final CDFImpl thisCDF, final Variable var) {
         return null;
     }
 
@@ -4087,12 +4244,12 @@ public class Extractor {
      * advanced by the smaller of size, or the length of the null
      * terminated string
      *
-     * @param bv
-     * @param size
+     * @param bv   the bv
+     * @param size the size
      *
-     * @return
+     * @return the string value
      */
-    public static String getStringValue(ByteBuffer bv, int size) {
+    public static String getStringValue(final ByteBuffer bv, final int size) {
         byte[] ba = new byte[size];
         int i = 0;
 
@@ -4109,15 +4266,15 @@ public class Extractor {
     }
 
     /**
-     * good for rank 1
+     * good for rank 1.
      *
-     * @param var
-     * @param idx
+     * @param var the var
+     * @param idx the idx
      *
-     * @return
+     * @return true, if successful
      */
-    public static boolean validElement(Variable var, int[] idx) {
-        int elements = (((Integer) elementCount(var).elementAt(0)));
+    public static boolean validElement(final Variable var, final int[] idx) {
+        int elements = ((elementCount(var).get(0)));
 
         for (int j : idx) {
 
@@ -4132,8 +4289,8 @@ public class Extractor {
     }
 
     // bv is positioned at the first point desired
-    static void do1D(ByteBuffer bv, int type, float[] tf, double[] data, int offset, int count, int elements,
-            int _stride) throws IllegalAccessException, InvocationTargetException, Throwable {
+    static void do1D(final ByteBuffer bv, final int type, final float[] tf, final double[] data, int offset,
+            final int count, final int elements, final int _stride) {
         Method method;
         int span = _stride * elements;
         int pos = bv.position();
@@ -4164,7 +4321,14 @@ public class Extractor {
                     bv.position(pos + (n * span));
 
                     for (int e = 0; e < elements; e++) {
-                        Number num = (Number) method.invoke(bv);
+                        Number num;
+
+                        try {
+                            num = (Number) method.invoke(bv);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                            throw new IllegalStateException("Failed to execute method " + method, e1);
+                        }
+
                         data[offset++] = num.doubleValue();
                     }
 
@@ -4178,21 +4342,28 @@ public class Extractor {
                     bv.position(n * span);
 
                     for (int e = 0; e < elements; e++) {
-                        Number num = (Number) method.invoke(bv);
+                        Number num;
+
+                        try {
+                            num = (Number) method.invoke(bv);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                            throw new IllegalStateException("Failed to execute method " + method, e1);
+                        }
+
                         int x = num.intValue();
-                        data[offset++] = (x >= 0 ? x : longInt + x);
+                        data[offset++] = ((x >= 0) ? x : (longInt + x));
                     }
 
                 }
                 break;
             default:
-                throw new Throwable("Unsupported data type for this " + "context");
+                throw new IllegalArgumentException("Unsupported data type for this context");
         }
 
     }
 
-    static void do1D(ByteBuffer bv, int type, Object temp, Object result, int offset, int number, boolean preserve,
-            boolean swap, int[] edim) throws Throwable {
+    static void do1D(final ByteBuffer bv, final int type, final Object temp, final Object result, final int offset,
+            final int number, final boolean preserve, final boolean swap, final int[] edim) {
 
         if (edim.length > 1) {
 
@@ -4210,61 +4381,67 @@ public class Extractor {
             data = (double[]) result;
         }
 
-        switch (DataTypes.typeCategory[type]) {
-            case 0:
-                float[] tf = new float[number];
-                FloatBuffer bvf = bv.asFloatBuffer();
-                bvf.get(tf, 0, number);
-                for (int n = 0; n < number; n++) {
-                    data[offset + n] = tf[n];
-                }
-                break;
-            case 1:
-                DoubleBuffer bvd = bv.asDoubleBuffer();
-                bvd.get(data, offset, number);
-                break;
-            case 2:
-                method = DataTypes.method[type];
-                for (int e = 0; e < number; e++) {
-                    Number num = (Number) method.invoke(bv);
-                    data[offset + e] = num.doubleValue();
-                }
-                break;
-            case 3:
-                method = DataTypes.method[type];
-                long longInt = DataTypes.longInt[type];
-                for (int e = 0; e < number; e++) {
-                    Number num = (Number) method.invoke(bv);
-                    int x = num.intValue();
-                    data[offset + e] = (x >= 0 ? x : longInt + x);
-                }
-                break;
-            case 5:
-                LongBuffer bvl = bv.asLongBuffer();
-                if (!preserve) {
-                    long[] tl = new long[number];
-                    data = (double[]) result;
-                    bvl.get(tl, 0, number);
+        try {
 
+            switch (DataTypes.typeCategory[type]) {
+                case 0:
+                    float[] tf = new float[number];
+                    FloatBuffer bvf = bv.asFloatBuffer();
+                    bvf.get(tf, 0, number);
                     for (int n = 0; n < number; n++) {
-                        data[offset + n] = tl[n];
+                        data[offset + n] = tf[n];
                     }
-
                     break;
-                }
-                long[] ldata = (long[]) result;
-                bvl.get(ldata, offset, number);
+                case 1:
+                    DoubleBuffer bvd = bv.asDoubleBuffer();
+                    bvd.get(data, offset, number);
+                    break;
+                case 2:
+                    method = DataTypes.method[type];
+                    for (int e = 0; e < number; e++) {
+                        Number num = (Number) method.invoke(bv);
+                        data[offset + e] = num.doubleValue();
+                    }
+                    break;
+                case 3:
+                    method = DataTypes.method[type];
+                    long longInt = DataTypes.longInt[type];
+                    for (int e = 0; e < number; e++) {
+                        Number num = (Number) method.invoke(bv);
+                        int x = num.intValue();
+                        data[offset + e] = ((x >= 0) ? x : (longInt + x));
+                    }
+                    break;
+                case 5:
+                    LongBuffer bvl = bv.asLongBuffer();
+                    if (!preserve) {
+                        long[] tl = new long[number];
+                        data = (double[]) result;
+                        bvl.get(tl, 0, number);
+
+                        for (int n = 0; n < number; n++) {
+                            data[offset + n] = tl[n];
+                        }
+
+                        break;
+                    }
+                    long[] ldata = (long[]) result;
+                    bvl.get(ldata, offset, number);
+            }
+
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            throw new IllegalArgumentException("do1D failed", e);
         }
 
     }
 
-    static void do1D(ByteBuffer bv, int type, Object temp, Object result, int offset, int number, boolean swap,
-            int[] edim) throws Throwable {
+    static void do1D(final ByteBuffer bv, final int type, final Object temp, final Object result, final int offset,
+            final int number, final boolean swap, final int[] edim) {
         do1D(bv, type, temp, result, offset, number, false, swap, edim);
     }
 
-    static void do1DSwap(ByteBuffer bv, int type, Object temp, Object result, int offset, int number, boolean preserve,
-            int[] dim) throws Throwable {
+    static void do1DSwap(final ByteBuffer bv, final int type, final Object temp, final Object result, final int offset,
+            final int number, final boolean preserve, final int[] dim) {
         double[] data = null;
 
         if (DataTypes.typeCategory[type] != DataTypes.LONG) {
@@ -4275,38 +4452,21 @@ public class Extractor {
         int n = 0;
         Method method;
 
-        switch (DataTypes.typeCategory[type]) {
-            case 0:
-                float[] tf = new float[number];
-                FloatBuffer bvf = bv.asFloatBuffer();
-                bvf.get(tf, 0, number);
-                if (dim.length == 2) {
+        try {
 
-                    while (n < number) {
+            switch (DataTypes.typeCategory[type]) {
+                case 0:
+                    float[] tf = new float[number];
+                    FloatBuffer bvf = bv.asFloatBuffer();
+                    bvf.get(tf, 0, number);
+                    if (dim.length == 2) {
 
-                        for (int j = 0; j < dim[1]; j++) {
-
-                            for (int i = 0; i < dim[0]; i++) {
-                                data[offset + n] = tf[(i * dim[1]) + j];
-                                n++;
-                            }
-
-                        }
-
-                    }
-
-                }
-                if (dim.length == 3) {
-
-                    while (n < number) {
-
-                        // System.out.println("number " + number + "," + n);
-                        for (int k = 0; k < dim[2]; k++) {
+                        while (n < number) {
 
                             for (int j = 0; j < dim[1]; j++) {
 
                                 for (int i = 0; i < dim[0]; i++) {
-                                    data[offset + n] = tf[(i * dim[1] * dim[2]) + (j * dim[2]) + k];
+                                    data[offset + n] = tf[(i * dim[1]) + j];
                                     n++;
                                 }
 
@@ -4315,38 +4475,20 @@ public class Extractor {
                         }
 
                     }
+                    if (dim.length == 3) {
 
-                }
-                break;
-            case 1:
-                DoubleBuffer bvd = bv.asDoubleBuffer();
-                if (dim.length == 2) {
+                        while (n < number) {
 
-                    while (n < number) {
+                            // System.out.println("number " + number + "," + n);
+                            for (int k = 0; k < dim[2]; k++) {
 
-                        for (int j = 0; j < dim[1]; j++) {
+                                for (int j = 0; j < dim[1]; j++) {
 
-                            for (int i = 0; i < dim[0]; i++) {
-                                data[offset + n] = bvd.get((i * dim[1]) + j);
-                                n++;
-                            }
+                                    for (int i = 0; i < dim[0]; i++) {
+                                        data[offset + n] = tf[(i * dim[1] * dim[2]) + (j * dim[2]) + k];
+                                        n++;
+                                    }
 
-                        }
-
-                    }
-
-                }
-                if (dim.length == 3) {
-
-                    while (n < number) {
-
-                        for (int k = 0; k < dim[2]; k++) {
-
-                            for (int j = 0; j < dim[1]; j++) {
-
-                                for (int i = 0; i < dim[0]; i++) {
-                                    data[offset + n] = bvd.get((i * dim[1] * dim[2]) + (j * dim[2]) + k);
-                                    n++;
                                 }
 
                             }
@@ -4354,42 +4496,120 @@ public class Extractor {
                         }
 
                     }
-
-                }
-                break;
-            case 2:
-                method = DataTypes.method[type];
-                td = new double[number];
-                for (int e = 0; e < number; e++) {
-                    Number num = (Number) method.invoke(bv);
-                    td[e] = num.doubleValue();
-                }
-                break;
-            case 3:
-                method = DataTypes.method[type];
-                td = new double[number];
-                long longInt = DataTypes.longInt[type];
-                for (int e = 0; e < number; e++) {
-                    Number num = (Number) method.invoke(bv);
-                    int x = num.intValue();
-                    td[e] = (x >= 0 ? x : longInt + x);
-                }
-                break;
-            case 5:
-                LongBuffer bvl = bv.asLongBuffer();
-                if (!preserve) {
-                    long[] tl = new long[number];
-                    data = (double[]) result;
-                    td = new double[number];
-                    bvl.get(tl, 0, number);
-
-                    for (int i = 0; i < number; i++) {
-                        td[i] = tl[i];
-                    }
-
                     break;
-                }
-                long[] ldata = (long[]) result;
+                case 1:
+                    DoubleBuffer bvd = bv.asDoubleBuffer();
+                    if (dim.length == 2) {
+
+                        while (n < number) {
+
+                            for (int j = 0; j < dim[1]; j++) {
+
+                                for (int i = 0; i < dim[0]; i++) {
+                                    data[offset + n] = bvd.get((i * dim[1]) + j);
+                                    n++;
+                                }
+
+                            }
+
+                        }
+
+                    }
+                    if (dim.length == 3) {
+
+                        while (n < number) {
+
+                            for (int k = 0; k < dim[2]; k++) {
+
+                                for (int j = 0; j < dim[1]; j++) {
+
+                                    for (int i = 0; i < dim[0]; i++) {
+                                        data[offset + n] = bvd.get((i * dim[1] * dim[2]) + (j * dim[2]) + k);
+                                        n++;
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+                    break;
+                case 2:
+                    method = DataTypes.method[type];
+                    td = new double[number];
+                    for (int e = 0; e < number; e++) {
+                        Number num = (Number) method.invoke(bv);
+                        td[e] = num.doubleValue();
+                    }
+                    break;
+                case 3:
+                    method = DataTypes.method[type];
+                    td = new double[number];
+                    long longInt = DataTypes.longInt[type];
+                    for (int e = 0; e < number; e++) {
+                        Number num = (Number) method.invoke(bv);
+                        int x = num.intValue();
+                        td[e] = ((x >= 0) ? x : (longInt + x));
+                    }
+                    break;
+                case 5:
+                    LongBuffer bvl = bv.asLongBuffer();
+                    if (!preserve) {
+                        long[] tl = new long[number];
+                        data = (double[]) result;
+                        td = new double[number];
+                        bvl.get(tl, 0, number);
+
+                        for (int i = 0; i < number; i++) {
+                            td[i] = tl[i];
+                        }
+
+                        break;
+                    }
+                    long[] ldata = (long[]) result;
+                    if (dim.length == 2) {
+
+                        while (n < number) {
+
+                            for (int j = 0; j < dim[1]; j++) {
+
+                                for (int i = 0; i < dim[0]; i++) {
+                                    ldata[offset + n] = bvl.get((i * dim[1]) + j);
+                                    n++;
+                                }
+
+                            }
+
+                        }
+
+                    }
+                    if (dim.length == 3) {
+
+                        while (n < number) {
+
+                            for (int k = 0; k < dim[2]; k++) {
+
+                                for (int j = 0; j < dim[1]; j++) {
+
+                                    for (int i = 0; i < dim[0]; i++) {
+                                        ldata[offset + n] = bvl.get((i * dim[1] * dim[2]) + (j * dim[2]) + k);
+                                        n++;
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+                    break;
+            }
+
+            if (td != null) {
+
                 if (dim.length == 2) {
 
                     while (n < number) {
@@ -4397,7 +4617,7 @@ public class Extractor {
                         for (int j = 0; j < dim[1]; j++) {
 
                             for (int i = 0; i < dim[0]; i++) {
-                                ldata[offset + n] = bvl.get((i * dim[1]) + j);
+                                data[offset + n] = td[(i * dim[1]) + j];
                                 n++;
                             }
 
@@ -4406,6 +4626,7 @@ public class Extractor {
                     }
 
                 }
+
                 if (dim.length == 3) {
 
                     while (n < number) {
@@ -4415,7 +4636,7 @@ public class Extractor {
                             for (int j = 0; j < dim[1]; j++) {
 
                                 for (int i = 0; i < dim[0]; i++) {
-                                    ldata[offset + n] = bvl.get((i * dim[1] * dim[2]) + (j * dim[2]) + k);
+                                    data[offset + n] = td[(i * dim[1] * dim[2]) + (j * dim[2]) + k];
                                     n++;
                                 }
 
@@ -4426,49 +4647,11 @@ public class Extractor {
                     }
 
                 }
-                break;
-        }
-
-        if (td != null) {
-
-            if (dim.length == 2) {
-
-                while (n < number) {
-
-                    for (int j = 0; j < dim[1]; j++) {
-
-                        for (int i = 0; i < dim[0]; i++) {
-                            data[offset + n] = td[(i * dim[1]) + j];
-                            n++;
-                        }
-
-                    }
-
-                }
 
             }
 
-            if (dim.length == 3) {
-
-                while (n < number) {
-
-                    for (int k = 0; k < dim[2]; k++) {
-
-                        for (int j = 0; j < dim[1]; j++) {
-
-                            for (int i = 0; i < dim[0]; i++) {
-                                data[offset + n] = td[(i * dim[1] * dim[2]) + (j * dim[2]) + k];
-                                n++;
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            throw new IllegalArgumentException("do1DSwap failed", e);
         }
 
     }
@@ -4476,14 +4659,21 @@ public class Extractor {
     // for a range of points of one dimensional variable of count elements
     // start at the current buffer position;
     // on return, buffer position is advanced by the data read
-    static void doSignedInteger(ByteBuffer bv, int type, int first, int last, int count, double[][] data)
-            throws IllegalAccessException, InvocationTargetException {
+    static void doSignedInteger(final ByteBuffer bv, final int type, final int first, final int last, final int count,
+            final double[][] data) {
         Method method = DataTypes.method[type];
 
         for (int n = first; n <= last; n++) {
 
             for (int e = 0; e < count; e++) {
-                Number num = (Number) method.invoke(bv);
+                Number num;
+
+                try {
+                    num = (Number) method.invoke(bv);
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                    throw new IllegalStateException("Failed to execute method " + method, e1);
+                }
+
                 data[n][e] = num.doubleValue();
             }
 
@@ -4493,8 +4683,8 @@ public class Extractor {
 
     // for a range of points of scalar variable
     // on return, buffer position is advanced by the data read
-    static void doSignedInteger(ByteBuffer bv, int pos, int type, int size, int first, int last, double[] data)
-            throws IllegalAccessException, InvocationTargetException {
+    static void doSignedInteger(final ByteBuffer bv, final int pos, final int type, final int size, final int first,
+            final int last, final double[] data) {
         int index = first;
         doSignedInteger(bv, pos, type, size, first, last, data, index);
         /*
@@ -4510,14 +4700,21 @@ public class Extractor {
     }
 
     //
-    static int doSignedInteger(ByteBuffer bv, int pos, int type, int size, int first, int last, double[] data,
-            int index) throws IllegalAccessException, InvocationTargetException {
+    static int doSignedInteger(final ByteBuffer bv, int pos, final int type, final int size, final int first,
+            final int last, final double[] data, int index) {
         Method method = DataTypes.method[type];
         bv.position(pos);
 
         for (int n = first; n <= last; n++) {
             bv.position(pos);
-            Number num = (Number) method.invoke(bv);
+            Number num;
+
+            try {
+                num = (Number) method.invoke(bv);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new IllegalStateException("Failed to execute method " + method, e);
+            }
+
             data[index++] = num.doubleValue();
             pos += size;
         }
@@ -4525,13 +4722,20 @@ public class Extractor {
         return index;
     }
 
-    static int doSignedInteger(ByteBuffer bv, int pos, int type, int size, int first, int last, double[] data,
-            int index, int[] stride) throws IllegalAccessException, InvocationTargetException {
+    static int doSignedInteger(final ByteBuffer bv, int pos, final int type, final int size, final int first,
+            final int last, final double[] data, int index, final int[] stride) {
         Method method = DataTypes.method[type];
         bv.position(pos);
 
         for (int n = first; n <= last; n += stride[0]) {
-            Number num = (Number) method.invoke(bv);
+            Number num;
+
+            try {
+                num = (Number) method.invoke(bv);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new IllegalStateException("Failed to execute method " + method, e);
+            }
+
             data[index++] = num.doubleValue();
             pos += size;
             bv.position(pos);
@@ -4540,8 +4744,8 @@ public class Extractor {
         return index;
     }
 
-    static int doSignedInteger(ByteBuffer bv, int pos, int type, int size, int first, int last, double[] data,
-            int[] stride, int point) throws IllegalAccessException, InvocationTargetException {
+    static int doSignedInteger(final ByteBuffer bv, int pos, final int type, final int size, final int first,
+            final int last, final double[] data, final int[] stride, final int point) {
         Method method = DataTypes.method[type];
         int index = point;
         bv.position(pos);
@@ -4550,7 +4754,14 @@ public class Extractor {
         int n = first;
 
         while (n <= last) {
-            Number num = (Number) method.invoke(bv);
+            Number num;
+
+            try {
+                num = (Number) method.invoke(bv);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new IllegalStateException("Failed to execute method " + method, e);
+            }
+
             data[index++] = num.doubleValue();
             n += _stride;
             pos += advance;
@@ -4560,8 +4771,8 @@ public class Extractor {
         return index;
     }
 
-    static void doSignedInteger(ByteBuffer bv, int pos, int type, int size, int first, int last, int[] offsets,
-            double[][] data) throws IllegalAccessException, InvocationTargetException {
+    static void doSignedInteger(final ByteBuffer bv, int pos, final int type, final int size, final int first,
+            final int last, final int[] offsets, final double[][] data) {
         Method method = DataTypes.method[type];
         bv.position(pos);
         int ne = offsets.length;
@@ -4570,7 +4781,14 @@ public class Extractor {
 
             for (int e = 0; e < ne; e++) {
                 bv.position(pos + offsets[e]);
-                Number num = (Number) method.invoke(bv);
+                Number num;
+
+                try {
+                    num = (Number) method.invoke(bv);
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                    throw new IllegalStateException("Failed to execute method " + method, e1);
+                }
+
                 data[n][e] = num.doubleValue();
             }
 
@@ -4579,8 +4797,8 @@ public class Extractor {
 
     }
 
-    static int doSignedInteger(ByteBuffer bv, int pos, int type, int size, int first, int last, int[] offsets,
-            double[][] data, int index) throws IllegalAccessException, InvocationTargetException {
+    static int doSignedInteger(final ByteBuffer bv, int pos, final int type, final int size, final int first,
+            final int last, final int[] offsets, final double[][] data, int index) {
         Method method = DataTypes.method[type];
         bv.position(pos);
         int ne = offsets.length;
@@ -4589,7 +4807,14 @@ public class Extractor {
 
             for (int e = 0; e < ne; e++) {
                 bv.position(pos + offsets[e]);
-                Number num = (Number) method.invoke(bv);
+                Number num;
+
+                try {
+                    num = (Number) method.invoke(bv);
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                    throw new IllegalStateException("Failed to execute method " + method, e1);
+                }
+
                 data[index][e] = num.doubleValue();
             }
 
@@ -4602,75 +4827,105 @@ public class Extractor {
 
     // not supported when there are gaps
 
-    static void doUnsignedInteger(ByteBuffer bv, int type, int first, int last, int count, double[][] data)
-            throws IllegalAccessException, InvocationTargetException {
+    static void doUnsignedInteger(final ByteBuffer bv, final int type, final int first, final int last, final int count,
+            final double[][] data) {
+
         Method method = DataTypes.method[type];
+
         long longInt = DataTypes.longInt[type];
 
         for (int n = first; n <= last; n++) {
 
             for (int e = 0; e < count; e++) {
-                Number num = (Number) method.invoke(bv);
+                Number num;
+
+                try {
+                    num = (Number) method.invoke(bv);
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                    throw new IllegalStateException("Failed to execute method " + method, e1);
+                }
+
                 int x = num.intValue();
-                data[n][e] = x >= 0 ? x : longInt + x;
+                data[n][e] = (x >= 0) ? x : (longInt + x);
             }
 
         }
 
     }
 
-    static void doUnsignedInteger(ByteBuffer bv, int pos, int type, int size, int first, int last, double[] data)
-            throws IllegalAccessException, InvocationTargetException {
+    static void doUnsignedInteger(final ByteBuffer bv, int pos, final int type, final int size, final int first,
+            final int last, final double[] data) {
         Method method = DataTypes.method[type];
         long longInt = DataTypes.longInt[type];
         bv.position(pos);
 
         for (int n = first; n <= last; n++) {
             bv.position(pos);
-            Number num = (Number) method.invoke(bv);
+            Number num;
+
+            try {
+                num = (Number) method.invoke(bv);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new IllegalStateException("Failed to execute method " + method, e);
+            }
+
             int x = num.intValue();
-            data[n] = x >= 0 ? x : longInt + x;
+            data[n] = (x >= 0) ? x : (longInt + x);
             pos += size;
         }
 
     }
 
-    static int doUnsignedInteger(ByteBuffer bv, int pos, int type, int size, int first, int last, double[] data,
-            int index) throws IllegalAccessException, InvocationTargetException {
+    static int doUnsignedInteger(final ByteBuffer bv, int pos, final int type, final int size, final int first,
+            final int last, final double[] data, int index) {
         Method method = DataTypes.method[type];
         long longInt = DataTypes.longInt[type];
         bv.position(pos);
 
         for (int n = first; n <= last; n++) {
             bv.position(pos);
-            Number num = (Number) method.invoke(bv);
+            Number num;
+
+            try {
+                num = (Number) method.invoke(bv);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new IllegalStateException("Failed to execute method " + method, e);
+            }
+
             int x = num.intValue();
-            data[index++] = x >= 0 ? x : longInt + x;
+            data[index++] = (x >= 0) ? x : (longInt + x);
             pos += size;
         }
 
         return index;
     }
 
-    static int doUnsignedInteger(ByteBuffer bv, int pos, int type, int size, int first, int last, double[] data,
-            int index, int[] stride) throws IllegalAccessException, InvocationTargetException {
+    static int doUnsignedInteger(final ByteBuffer bv, int pos, final int type, final int size, final int first,
+            final int last, final double[] data, int index, final int[] stride) {
         Method method = DataTypes.method[type];
         long longInt = DataTypes.longInt[type];
         bv.position(pos);
 
         for (int n = first; n <= last; n += stride[0]) {
             bv.position(pos);
-            Number num = (Number) method.invoke(bv);
+            Number num;
+
+            try {
+                num = (Number) method.invoke(bv);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new IllegalStateException("Failed to execute method " + method, e);
+            }
+
             int x = num.intValue();
-            data[index++] = (x >= 0 ? x : longInt + x);
+            data[index++] = ((x >= 0) ? x : (longInt + x));
             pos += size;
         }
 
         return index;
     }
 
-    static int doUnsignedInteger(ByteBuffer bv, int pos, int type, int size, int first, int last, double[] data,
-            int[] stride, int point) throws IllegalAccessException, InvocationTargetException {
+    static int doUnsignedInteger(final ByteBuffer bv, int pos, final int type, final int size, final int first,
+            final int last, final double[] data, final int[] stride, final int point) {
         Method method = DataTypes.method[type];
         long longInt = DataTypes.longInt[type];
         int index = point;
@@ -4681,9 +4936,16 @@ public class Extractor {
 
         while (n <= last) {
             bv.position(pos);
-            Number num = (Number) method.invoke(bv);
+            Number num;
+
+            try {
+                num = (Number) method.invoke(bv);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new IllegalStateException("Failed to execute method " + method, e);
+            }
+
             int x = num.intValue();
-            data[index++] = (x >= 0 ? x : longInt + x);
+            data[index++] = ((x >= 0) ? x : (longInt + x));
             n += _stride;
             pos += advance;
         }
@@ -4691,8 +4953,8 @@ public class Extractor {
         return index;
     }
 
-    static void doUnsignedInteger(ByteBuffer bv, int pos, int type, int size, int first, int last, int[] offsets,
-            double[][] data) throws IllegalAccessException, InvocationTargetException {
+    static void doUnsignedInteger(final ByteBuffer bv, int pos, final int type, final int size, final int first,
+            final int last, final int[] offsets, final double[][] data) {
         Method method = DataTypes.method[type];
         long longInt = DataTypes.longInt[type];
         bv.position(pos);
@@ -4702,9 +4964,16 @@ public class Extractor {
 
             for (int e = 0; e < ne; e++) {
                 bv.position(pos + offsets[e]);
-                Number num = (Number) method.invoke(bv);
+                Number num;
+
+                try {
+                    num = (Number) method.invoke(bv);
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                    throw new IllegalStateException("Failed to execute method " + method, e1);
+                }
+
                 int x = num.intValue();
-                data[n][e] = x >= 0 ? x : longInt + x;
+                data[n][e] = (x >= 0) ? x : (longInt + x);
             }
 
             pos += size;
@@ -4712,20 +4981,31 @@ public class Extractor {
 
     }
 
-    static int doUnsignedInteger(ByteBuffer bv, int pos, int type, int size, int first, int last, int[] offsets,
-            double[][] data, int index) throws IllegalAccessException, InvocationTargetException {
+    static int doUnsignedInteger(final ByteBuffer bv, int pos, final int type, final int size, final int first,
+            final int last, final int[] offsets, final double[][] data, int index) {
+
         Method method = DataTypes.method[type];
+
         long longInt = DataTypes.longInt[type];
+
         bv.position(pos);
+
         int ne = offsets.length;
 
         for (int n = first; n <= last; n++) {
 
             for (int e = 0; e < ne; e++) {
                 bv.position(pos + offsets[e]);
-                Number num = (Number) method.invoke(bv);
+                Number num;
+
+                try {
+                    num = (Number) method.invoke(bv);
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                    throw new IllegalStateException("Failed to execute method " + method, e1);
+                }
+
                 int x = num.intValue();
-                data[index][e] = x >= 0 ? x : longInt + x;
+                data[index][e] = (x >= 0) ? x : (longInt + x);
             }
 
             pos += size;
@@ -4735,9 +5015,9 @@ public class Extractor {
         return index;
     }
 
-    static Vector elementCount(VariableMetaData var) {
+    static CopyOnWriteArrayList<Integer> elementCount(final VariableMetaData var) {
         int[] dimensions = var.getDimensions();
-        Vector ecount = new Vector();
+        CopyOnWriteArrayList<Integer> ecount = new CopyOnWriteArrayList<Integer>();
 
         for (int i = 0; i < dimensions.length; i++) {
 
@@ -4750,7 +5030,8 @@ public class Extractor {
         return ecount;
     }
 
-    static void fillWithPad(boolean longType, Object _data, int start, int end, Object _pad) throws Throwable {
+    static void fillWithPad(final boolean longType, final Object _data, final int start, final int end,
+            final Object _pad) {
         int n = 0;
 
         if (longType) {
@@ -4773,8 +5054,8 @@ public class Extractor {
 
     }
 
-    static void fillWithPrevious(Variable var, boolean longType, Object _data, int start, int end, Object _pad)
-            throws Throwable {
+    static void fillWithPrevious(final Variable var, final boolean longType, final Object _data, final int start,
+            final int end, final Object _pad) {
         int _last = var.getRecordRange()[1];
         int n = 0;
 
@@ -4807,9 +5088,10 @@ public class Extractor {
      * the specified block of data corresponding to variable 'var' for the
      * range of records (start, end).
      */
-    static Object[] positionBuffer(CDFImpl impl, Variable var, int[] blockRange, int blk, int start, int end) {
-        Vector locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsVector();
-        long[] loc = (long[]) locations.elementAt(blk);
+    static Object[] positionBuffer(final CDFImpl impl, final Variable var, final int[] blockRange, final int blk,
+            final int start, final int end) {
+        List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
+        long[] loc = locations.get(blk);
         int first = (int) loc[0];
         int last = (int) loc[1];
         ByteBuffer bv = positionBuffer(impl, var, loc[2], ((last - first) + 1));
@@ -4849,7 +5131,8 @@ public class Extractor {
      * returns ByteBuffer containing count values for variable var starting at
      * CDF offset value offset.
      */
-    static ByteBuffer positionBuffer(CDFImpl impl, VariableMetaData var, long offset, int count) {
+    static ByteBuffer positionBuffer(final CDFImpl impl, final VariableMetaData var, final long offset,
+            final int count) {
         ByteBuffer bv;
 
         if (!var.isCompressed()) {

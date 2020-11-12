@@ -10,6 +10,7 @@ import java.nio.FloatBuffer;
 import java.nio.LongBuffer;
 
 /**
+ * The Class DoubleVarContainer.
  *
  * @author nand
  */
@@ -18,37 +19,32 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
     final double[] dpad;
 
     /**
+     * Instantiates a new double var container.
      *
-     * @param cdfi
-     * @param vrbl
-     * @param ints
-     * @param bln
-     *
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws Throwable
+     * @param thisCDF  the this CDF
+     * @param var      the var
+     * @param pt       the pt
+     * @param preserve the preserve
      */
-    public DoubleVarContainer(CDFImpl thisCDF, Variable var, int[] pt, boolean preserve)
-            throws IllegalAccessException, InvocationTargetException, Throwable {
+    public DoubleVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt, final boolean preserve) {
         this(thisCDF, var, pt, preserve, ByteOrder.nativeOrder());
     }
 
     /**
+     * Instantiates a new double var container.
      *
-     * @param cdfi
-     * @param vrbl
-     * @param ints
-     * @param bln
-     * @param bo
-     *
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws Throwable
+     * @param thisCDF  the this CDF
+     * @param variable the var
+     * @param pt       the pt
+     * @param preserve the preserve
+     * @param bo       the bo
      */
-    public DoubleVarContainer(CDFImpl thisCDF, Variable var, int[] pt, boolean preserve, ByteOrder bo)
-            throws IllegalAccessException, InvocationTargetException, Throwable {
-        super(thisCDF, var, pt, preserve, bo, Double.TYPE);
-        Object pad = this.thisCDF.getPadValue(var);
+    public DoubleVarContainer(final CDFImpl thisCDF, final Variable variable, final int[] pt, final boolean preserve,
+            final ByteOrder bo) {
+
+        super(thisCDF, variable, pt, preserve, bo, Double.TYPE);
+
+        Object pad = this.thisCDF.getPadValue(variable);
 
         if (DataTypes.typeCategory[this.type] == DataTypes.LONG) {
             long[] lpad = (long[]) pad;
@@ -65,27 +61,27 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
     }
 
     /**
+     * Checks if is compatible.
      *
-     * @param type
-     * @param preserve
+     * @param type     the type
+     * @param preserve the preserve
      *
-     * @return
+     * @return true, if is compatible
      */
-    public static boolean isCompatible(int type, boolean preserve) {
+    public static boolean isCompatible(final int type, final boolean preserve) {
         return isCompatible(type, preserve, Double.TYPE);
     }
 
     /**
+     * As array.
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the object
      */
-    public Object _asArray() throws Throwable {
+    public Object _asArray() {
         int rank = this.var.getEffectiveRank();
 
         if (rank > 4) {
-            throw new Throwable("Rank > 4 not supported yet.");
+            throw new IllegalStateException("Ranks > 4 are not supported at this time.");
         }
 
         ByteBuffer buf = getBuffer();
@@ -102,9 +98,10 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
             case 0:
                 double[] _a0 = new double[words];
                 _buf.get(_a0);
-                return (this.singlePoint) ? new Double(_a0[0]) : _a0;
+                return (this.singlePoint) ? Double.valueOf(_a0[0]) : _a0;
             case 1:
-                int n = (((Integer) this.var.getElementCount().elementAt(0)));
+                int n = this.var.getDimensionElementCounts()
+                        .get(0);
                 records = words / n;
                 double[][] _a1 = new double[records][n];
                 for (int r = 0; r < records; r++) {
@@ -112,8 +109,10 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
                 }
                 return (this.singlePoint) ? _a1[0] : _a1;
             case 2:
-                int n0 = (((Integer) this.var.getElementCount().elementAt(0)));
-                int n1 = (((Integer) this.var.getElementCount().elementAt(1)));
+                int n0 = this.var.getDimensionElementCounts()
+                        .get(0);
+                int n1 = this.var.getDimensionElementCounts()
+                        .get(1);
                 records = words / (n0 * n1);
                 double[][][] _a2 = new double[records][n0][n1];
                 if (this.var.rowMajority()) {
@@ -143,9 +142,12 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
                 }
                 return (this.singlePoint) ? _a2[0] : _a2;
             case 3:
-                n0 = (((Integer) this.var.getElementCount().elementAt(0)));
-                n1 = (((Integer) this.var.getElementCount().elementAt(1)));
-                int n2 = (((Integer) this.var.getElementCount().elementAt(2)));
+                n0 = this.var.getDimensionElementCounts()
+                        .get(0);
+                n1 = this.var.getDimensionElementCounts()
+                        .get(1);
+                int n2 = ((this.var.getDimensionElementCounts()
+                        .get(2)));
                 records = words / (n0 * n1 * n2);
                 double[][][][] _a3 = new double[records][n0][n1][n2];
                 if (this.var.rowMajority()) {
@@ -183,10 +185,14 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
                 }
                 return (this.singlePoint) ? _a3[0] : _a3;
             case 4:
-                n0 = (((Integer) this.var.getElementCount().elementAt(0)));
-                n1 = (((Integer) this.var.getElementCount().elementAt(1)));
-                n2 = (((Integer) this.var.getElementCount().elementAt(2)));
-                int n3 = (((Integer) this.var.getElementCount().elementAt(3)));
+                n0 = this.var.getDimensionElementCounts()
+                        .get(0);
+                n1 = this.var.getDimensionElementCounts()
+                        .get(1);
+                n2 = ((this.var.getDimensionElementCounts()
+                        .get(2)));
+                int n3 = ((this.var.getDimensionElementCounts()
+                        .get(3)));
                 records = words / (n0 * n1 * n2 * n3);
                 double[][][][][] _a4 = new double[records][n0][n1][n2][n3];
                 if (this.var.rowMajority()) {
@@ -232,7 +238,8 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
                 }
                 return (this.singlePoint) ? _a4[0] : _a4;
             default:
-                throw new Throwable("Internal error");
+                // XXX: Not reachable
+                throw new IllegalStateException("Rank > 4 not supported yet.");
         }
 
     }
@@ -243,36 +250,37 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
     }
 
     @Override
-    public DoubleArray asArray() throws Throwable {
+    public DoubleArray asArray() {
         return new DoubleArray(_asArray());
     }
 
     /**
+     * As array element.
      *
-     * @param index0
-     * @param index1
+     * @param index0 the index 0
+     * @param index1 the index 1
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the double[]
      */
-    public Object asArrayElement(int index0, int index1) throws Throwable {
+    public double[] asArrayElement(final int index0, final int index1) {
         int rank = this.var.getEffectiveRank();
 
         if (rank != 2) {
-            throw new Throwable("Rank other than 2 not supported.");
+            throw new IllegalStateException("Rank other than 2 not supported, was " + rank);
         }
 
-        int n0 = (((Integer) this.var.getElementCount().elementAt(0)));
+        int n0 = this.var.getDimensionElementCounts()
+                .get(0);
 
         if ((index0 < 0) || (index0 >= n0)) {
-            throw new Throwable("Invalid first index " + index0);
+            throw new IllegalArgumentException("Invalid first index " + index0);
         }
 
-        int n1 = (((Integer) this.var.getElementCount().elementAt(1)));
+        int n1 = this.var.getDimensionElementCounts()
+                .get(1);
 
         if ((index1 < 0) || (index1 >= n1)) {
-            throw new Throwable("Invalid second index " + index1);
+            throw new IllegalArgumentException("Invalid second index " + index1);
         }
 
         int pointSize = n0 * n1;
@@ -286,7 +294,7 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
         DoubleBuffer _buf = buf.asDoubleBuffer();
         int records = words / pointSize;
         double[] _a1 = new double[records];
-        int loc = (this.var.rowMajority()) ? (n1 * index0) + index1 : (n0 * index1) + index0;
+        int loc = (this.var.rowMajority()) ? ((n1 * index0) + index1) : ((n0 * index1) + index0);
         int pos = 0;
 
         for (int r = 0; r < records; r++) {
@@ -326,18 +334,18 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
      */
 
     /**
+     * As array element.
      *
-     * @param elements
+     * @param elements the elements
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the object
      */
-    public Object asArrayElement(int[] elements) throws Throwable {
+    public Object asArrayElement(final int[] elements) {
+
         int rank = this.var.getEffectiveRank();
 
         if (rank != 1) {
-            throw new Throwable("Rank > 1 not supported.");
+            throw new IllegalStateException("Rank > 1 not supported.");
         }
 
         if (!validElement(this.var, elements)) {
@@ -352,9 +360,9 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
 
         int words = (buf.remaining()) / 8;
         DoubleBuffer _buf = buf.asDoubleBuffer();
-        int records = -1;
-        int n = (((Integer) this.var.getElementCount().elementAt(0)));
-        records = words / n;
+        int n = this.var.getDimensionElementCounts()
+                .get(0);
+        int records = words / n;
 
         if (elements.length == 1) {
             int element = elements[0];
@@ -385,199 +393,194 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
         return data;
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public double[] asOneDArray() {
         return (double[]) super.asOneDArray(true);
     }
 
-    /**
-     *
-     * @param cmtarget
-     *
-     * @return
-     */
     @Override
-    public double[] asOneDArray(boolean cmtarget) {
+    public double[] asOneDArray(final boolean cmtarget) {
         return (double[]) super.asOneDArray(cmtarget);
     }
 
     /**
+     * Fill array.
      *
-     * @param array
-     * @param offset
-     * @param first
-     * @param last
-     *
-     * @throws Throwable
+     * @param array  the array
+     * @param offset the offset
+     * @param first  the first
+     * @param last   the last
      */
+    public void fillArray(final double[] array, final int offset, final int first, final int last) {
 
-    public void fillArray(double[] array, int offset, int first, int last) throws Throwable {
-
-        if (this.buffers.size() == 0) {
-            throw new Throwable("buffer not available");
+        if (this.buffers.isEmpty()) {
+            throw new IllegalStateException("buffer not available");
         }
 
         int words = ((last - first) + 1) * this.elements;
         ByteBuffer b = getBuffer();
         int pos = (first - getRecordRange()[0]) * this.elements * getLength();
         b.position(pos);
-        b.asDoubleBuffer().get(array, offset, words);
+        b.asDoubleBuffer()
+                .get(array, offset, words);
     }
 
     @Override
-    ByteBuffer allocateBuffer(int words) {
+    ByteBuffer allocateBuffer(final int words) {
         ByteBuffer _buf = ByteBuffer.allocateDirect(8 * words);
         _buf.order(this.order);
         return _buf;
     }
 
     @Override
-    Object allocateDataArray(int size) {
+    Object allocateDataArray(final int size) {
         return new double[size];
     }
 
     @Override
-    void doData(ByteBuffer bv, int type, int elements, int toprocess, ByteBuffer _buf, Object _data)
-            throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        double[] data = (double[]) _data;
-        int position = _buf.position();
-        DoubleBuffer dbuf = _buf.asDoubleBuffer();
-        Method method;
-        int processed = 0;
+    void doData(final ByteBuffer bv, final int type, final int elements, final int toprocess, final ByteBuffer _buf,
+            final Object _data) {
 
-        switch (DataTypes.typeCategory[type]) {
-            case 0:
-                float[] tf = new float[data.length];
-                int ipos = bv.position();
-                FloatBuffer bvf = bv.asFloatBuffer();
-                while (processed < toprocess) {
-                    int _num = (toprocess - processed) * elements;
+        Method method = null;
 
-                    if (_num > data.length) {
-                        _num = data.length;
+        try {
+            double[] data = (double[]) _data;
+
+            int position = _buf.position();
+
+            DoubleBuffer dbuf = _buf.asDoubleBuffer();
+
+            int processed = 0;
+
+            switch (DataTypes.typeCategory[type]) {
+                case 0:
+                    float[] tf = new float[data.length];
+                    int ipos = bv.position();
+                    FloatBuffer bvf = bv.asFloatBuffer();
+                    while (processed < toprocess) {
+                        int _num = (toprocess - processed) * elements;
+
+                        if (_num > data.length) {
+                            _num = data.length;
+                        }
+
+                        bvf.get(tf, 0, _num);
+                        ipos += 4 * _num;
+
+                        for (int n = 0; n < _num; n++) {
+                            data[n] = tf[n];
+                        }
+
+                        dbuf.put(data, 0, _num);
+                        position += 8 * _num;
+                        processed += (_num / elements);
                     }
+                    bv.position(ipos);
+                    _buf.position(position);
+                    break;
+                case 1:
+                    ipos = bv.position();
+                    DoubleBuffer bvd = bv.asDoubleBuffer();
+                    while (processed < toprocess) {
+                        int _num = (toprocess - processed) * elements;
 
-                    bvf.get(tf, 0, _num);
-                    ipos += 4 * _num;
+                        if (_num > data.length) {
+                            _num = data.length;
+                        }
 
-                    for (int n = 0; n < _num; n++) {
-                        data[n] = tf[n];
+                        bvd.get(data, 0, _num);
+                        ipos += 8 * _num;
+                        dbuf.put(data, 0, _num);
+                        position += 8 * _num;
+                        processed += (_num / elements);
                     }
+                    bv.position(ipos);
+                    _buf.position(position);
+                    break;
+                case 2:
+                    method = DataTypes.method[type];
+                    while (processed < toprocess) {
+                        int _num = (toprocess - processed) * elements;
 
-                    dbuf.put(data, 0, _num);
-                    position += 8 * _num;
-                    processed += (_num / elements);
-                }
-                bv.position(ipos);
-                _buf.position(position);
-                break;
-            case 1:
-                ipos = bv.position();
-                DoubleBuffer bvd = bv.asDoubleBuffer();
-                while (processed < toprocess) {
-                    int _num = (toprocess - processed) * elements;
+                        if (_num > data.length) {
+                            _num = data.length;
+                        }
 
-                    if (_num > data.length) {
-                        _num = data.length;
+                        for (int e = 0; e < _num; e++) {
+                            Number num = (Number) method.invoke(bv);
+                            data[e] = num.doubleValue();
+                        }
+
+                        dbuf.put(data, 0, _num);
+                        position += 8 * _num;
+                        processed += (_num / elements);
                     }
+                    _buf.position(position);
+                    break;
+                case 3:
+                    method = DataTypes.method[type];
+                    long longInt = DataTypes.longInt[type];
+                    while (processed < toprocess) {
+                        int _num = (toprocess - processed) * elements;
 
-                    bvd.get(data, 0, _num);
-                    ipos += 8 * _num;
-                    dbuf.put(data, 0, _num);
-                    position += 8 * _num;
-                    processed += (_num / elements);
-                }
-                bv.position(ipos);
-                _buf.position(position);
-                break;
-            case 2:
-                method = DataTypes.method[type];
-                while (processed < toprocess) {
-                    int _num = (toprocess - processed) * elements;
+                        if (_num > data.length) {
+                            _num = data.length;
+                        }
 
-                    if (_num > data.length) {
-                        _num = data.length;
+                        for (int e = 0; e < _num; e++) {
+                            Number num = (Number) method.invoke(bv);
+                            int x = num.intValue();
+                            data[e] = (x >= 0) ? x : (longInt + x);
+                        }
+
+                        dbuf.put(data, 0, _num);
+                        position += 8 * _num;
+                        processed += (_num / elements);
                     }
+                    _buf.position(position);
+                    break;
+                case 5:
+                    ipos = bv.position();
+                    LongBuffer bvl = bv.asLongBuffer();
+                    long[] tl = new long[data.length];
+                    while (processed < toprocess) {
+                        int _num = (toprocess - processed) * elements;
 
-                    for (int e = 0; e < _num; e++) {
-                        Number num = (Number) method.invoke(bv);
-                        data[e] = num.doubleValue();
+                        if (_num > data.length) {
+                            _num = data.length;
+                        }
+
+                        bvl.get(tl, 0, _num);
+                        ipos += 8 * _num;
+
+                        for (int n = 0; n < _num; n++) {
+                            data[n] = tl[n];
+                        }
+
+                        dbuf.put(data, 0, _num);
+                        position += 8 * _num;
+                        processed += (_num / elements);
                     }
+                    bv.position(ipos);
+                    _buf.position(position);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unrecognized data type " + type);
+            }
 
-                    dbuf.put(data, 0, _num);
-                    position += 8 * _num;
-                    processed += (_num / elements);
-                }
-                _buf.position(position);
-                break;
-            case 3:
-                method = DataTypes.method[type];
-                long longInt = DataTypes.longInt[type];
-                while (processed < toprocess) {
-                    int _num = (toprocess - processed) * elements;
+        } catch (IllegalAccessException | InvocationTargetException e) {
 
-                    if (_num > data.length) {
-                        _num = data.length;
-                    }
-
-                    for (int e = 0; e < _num; e++) {
-                        Number num = (Number) method.invoke(bv);
-                        int x = num.intValue();
-                        data[e] = x >= 0 ? x : longInt + x;
-                    }
-
-                    dbuf.put(data, 0, _num);
-                    position += 8 * _num;
-                    processed += (_num / elements);
-                }
-                _buf.position(position);
-                break;
-            case 5:
-                ipos = bv.position();
-                LongBuffer bvl = bv.asLongBuffer();
-                long[] tl = new long[data.length];
-                while (processed < toprocess) {
-                    int _num = (toprocess - processed) * elements;
-
-                    if (_num > data.length) {
-                        _num = data.length;
-                    }
-
-                    bvl.get(tl, 0, _num);
-                    ipos += 8 * _num;
-
-                    for (int n = 0; n < _num; n++) {
-                        data[n] = tl[n];
-                    }
-
-                    dbuf.put(data, 0, _num);
-                    position += 8 * _num;
-                    processed += (_num / elements);
-                }
-                bv.position(ipos);
-                _buf.position(position);
-                break;
-            default:
-                throw new RuntimeException("Unrecognized data type " + type);
+            throw new IllegalStateException("Failed to invoke method" + method.getName(), e);
         }
 
     }
 
     @Override
-    void doMissing(int records, ByteBuffer _buf, Object _data, int rec) {
-        double[] data = (double[]) _data;
-        double[] repl = null;
+    void doMissing(final int records, final ByteBuffer _buf, final Object _data, final int rec) {
 
-        try {
-            repl = (rec < 0) ? this.dpad : this.var.asDoubleArray(new int[] { rec });
-        } catch (Throwable th) {
-            th.printStackTrace();
-            System.out.println("Should not see this.");
-        }
+        double[] data = (double[]) _data;
+
+        double[] repl = (rec < 0) ? this.dpad : this.var.asDoubleArray(new int[] { rec });
 
         int position = _buf.position();
         DoubleBuffer dbuf = _buf.asDoubleBuffer();
@@ -600,10 +603,6 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
 
             }
 
-            /*
-             * System.out.println(dbuf + "," + tofill + "," + elements + "," +
-             * data.length);
-             */
             dbuf.put(data, 0, tofill * this.elements);
             position += 8 * tofill * this.elements;
             rem -= tofill;

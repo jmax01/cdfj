@@ -7,7 +7,7 @@ import java.util.Objects;
 /**
  * Attribute Descriptor Record
  * <p>
- * Information about an attribute
+ * Information about an attribute.
  *
  * @author nand
  * @author jmax01
@@ -71,7 +71,7 @@ public class ADR {
     /** The Constant ADR_NGR_ENTRIES_FIELD_LENGTH. */
     public static final int ADR_NGR_ENTRIES_FIELD_LENGTH = 4;
 
-    /** The Constant ADR_MAX_GR_ENTRY_FIELD_OFFSET */
+    /** The Constant ADR_MAX_GR_ENTRY_FIELD_OFFSET. */
     public static final int ADR_MAX_GR_ENTRY_FIELD_OFFSET = ADR_NGR_ENTRIES_FIELD_OFFSET + ADR_NGR_ENTRIES_FIELD_LENGTH;
 
     /** The Constant ADR_MAX_GR_ENTRY_FIELD_LENGTH. */
@@ -456,9 +456,6 @@ public class ADR {
      * 4 Variable scope assumed.
      *
      * @param scope the new scope
-     *
-     * @throws {@link IllegalArgumentException} if the supplied scope is not 1,
-     *                2, 3,or 4;
      */
     public void setScope(final int scope) {
 

@@ -3,85 +3,62 @@ package gov.nasa.gsfc.spdf.cdfj;
 import java.nio.ByteBuffer;
 
 /**
- *
- * @author nand
+ * The Class StringArray.
  */
 public class StringArray extends AArray {
 
     /**
+     * Instantiates a new string array.
      *
-     * @param o
-     *
-     * @throws Throwable
+     * @param o the o
      */
-    public StringArray(Object o) throws Throwable {
+    public StringArray(final Object o) {
         super(o);
     }
 
     /**
+     * Instantiates a new string array.
      *
-     * @param o
-     * @param bln
-     *
-     * @throws Throwable
+     * @param o        the o
+     * @param majority the majority
      */
-    public StringArray(Object o, boolean majority) throws Throwable {
+    public StringArray(final Object o, final boolean majority) {
         super(o, majority);
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Override
-    public Object array() {
-
-        switch (this.dim) {
-            case 1:
-                return this.o;
-            case 2:
-                return this.o;
-            case 3:
-                return this.o;
-            case 4:
-                return this.o;
-        }
-
-        return null;
     }
 
     /**
      * create a byte buffer of a compatible type.
      */
     @Override
-    public ByteBuffer buffer(Class<?> cl, int size) throws Throwable {
+    public ByteBuffer buffer(final Class<?> cl, final int size) {
 
         if (cl != String.class) {
-            throw new Throwable("Valid for String type only");
+            throw new IllegalArgumentException(cl.getCanonicalName() + " is not type String");
         }
 
-        if (this.dim > 4) {
-            throw new Throwable("Rank > 4 not supported");
+        if (this.dimensions > 4) {
+            throw new IllegalStateException("Rank > 4 not supported, is " + this.dimensions);
         }
 
         ByteBuffer buf = allocate(size);
-        int[] _dim = this.aa.getDimensions();
 
-        switch (this.dim) {
+        int[] _dim = this.attributeArray.getDimensions();
+
+        switch (this.dimensions) {
             case 1:
-                String[] _s1 = (String[]) this.o;
+                String[] _s1 = (String[]) this.data;
                 addString(buf, _s1, size);
                 buf.flip();
                 return buf;
             case 2:
-                String[][] _s2 = (String[][]) this.o;
+                String[][] _s2 = (String[][]) this.data;
                 for (int i = 0; i < _dim[0]; i++) {
                     addString(buf, _s2[i], size);
                 }
                 buf.flip();
                 return buf;
             case 3:
-                String[][][] _s3 = (String[][][]) this.o;
+                String[][][] _s3 = (String[][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -110,7 +87,7 @@ public class StringArray extends AArray {
                 buf.flip();
                 return buf;
             case 4:
-                String[][][][] _s4 = (String[][][][]) this.o;
+                String[][][][] _s4 = (String[][][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -146,13 +123,14 @@ public class StringArray extends AArray {
                 }
                 buf.flip();
                 return buf;
+            default:
+                throw new IllegalStateException("Rank > 4 not supported, is " + this.dimensions);
         }
 
-        return null;
     }
 
     /*
-     * void addString(ByteBuffer buf, String[] sa, int max) throws Throwable {
+     * void addString(ByteBuffer buf, String[] sa, int max) {
      * for (int i = 0; i < sa.length; i++) {
      * int len = sa[i].length();
      * if (len > max) throw new Throwable("String " + sa[i] +
@@ -165,11 +143,11 @@ public class StringArray extends AArray {
      * }
      * }
      */
-    void addString(ByteBuffer buf, String s, int max) throws Throwable {
+    void addString(final ByteBuffer buf, final String s, final int max) {
         int len = s.length();
 
         if (len > max) {
-            throw new Throwable("String " + s + " is longer than the specified max " + max);
+            throw new IllegalArgumentException("String " + s + " is longer than the specified max " + max);
         }
 
         byte[] _bar = s.getBytes();
@@ -181,7 +159,7 @@ public class StringArray extends AArray {
 
     }
 
-    void addString(ByteBuffer buf, String[] sa, int max) throws Throwable {
+    void addString(final ByteBuffer buf, final String[] sa, final int max) {
 
         for (String sa1 : sa) {
             addString(buf, sa1, max);

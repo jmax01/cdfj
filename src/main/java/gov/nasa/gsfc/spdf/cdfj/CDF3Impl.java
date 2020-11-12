@@ -4,28 +4,36 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 
-final class CDF3Impl extends CDFImpl implements CDF3, java.io.Serializable {
+import gov.nasa.gsfc.spdf.cdfj.CDFFactory.CDFSource;
 
-    /**
-     *
-     */
+final class CDF3Impl extends CDFImpl implements CDF3 {
+
     private static final long serialVersionUID = -6571034001247038621L;
 
+    /** The GDR offset. */
     public long GDROffset;
 
-    final FileChannel fc;
-
-    protected CDF3Impl(ByteBuffer buf) throws Throwable {
-        this(buf, null);
+    /**
+     * Instantiates a new CDF 3 impl.
+     *
+     * @param buf the buf
+     */
+    CDF3Impl(final ByteBuffer buf) {
+        this(buf, (FileChannel) null);
     }
 
-    protected CDF3Impl(ByteBuffer buf, FileChannel ch) throws Throwable {
-        super(buf);
-        this.fc = ch;
+    /**
+     * Instantiates a new CDF 3 impl.
+     *
+     * @param buf         the buf
+     * @param fileChannel the file channel
+     */
+    CDF3Impl(final ByteBuffer buf, final FileChannel fileChannel) {
+        super(buf, fileChannel);
         setOffsets();
         this.thisCDF = this;
         IntBuffer ibuf = buf.asIntBuffer();
-        super.getRecord(0);
+        getRecord(0);
         ibuf.position(2); // skip magic numbers
         ibuf.get(); // Record Size
         ibuf.get(); // Record Size
@@ -35,7 +43,7 @@ final class CDF3Impl extends CDFImpl implements CDF3, java.io.Serializable {
         this.version = ibuf.get();
 
         if (this.version != CDF_VERSION) {
-            throw new Throwable("Version " + this.version + "is not accepted by this reader.");
+            throw new IllegalArgumentException("Version " + this.version + "is not accepted by this reader.");
         }
 
         this.release = ibuf.get();
@@ -52,7 +60,7 @@ final class CDF3Impl extends CDFImpl implements CDF3, java.io.Serializable {
         int x;
 
         if ((x = buf.getInt()) != GDR_RECORD) {
-            throw new Throwable("Bad GDR type " + x);
+            throw new IllegalArgumentException("Bad GDR type " + x);
         }
 
         this.rVDRHead = buf.getLong();
@@ -81,82 +89,34 @@ final class CDF3Impl extends CDFImpl implements CDF3, java.io.Serializable {
 
         buf.position(0);
         // if (ch == null) {
-        this.variableTable = variables();
-        this.attributeTable = attributes();
+        variables();
+        attributes();
         // }
     }
 
-    @Override
-    public String getString(long offset) {
+    CDF3Impl(final ByteBuffer buf, final CDFSource cdfSource) {
+        this(buf);
+        this.source = cdfSource;
+    }
 
-        if (this.fc == null) {
-            return getString(offset, MAX_STRING_SIZE);
-        }
-
-        ByteBuffer _buf;
-
-        try {
-            _buf = getRecord(offset, MAX_STRING_SIZE);
-        } catch (Throwable th) {
-            th.printStackTrace();
-            return null;
-        }
-
-        return getString(_buf, MAX_STRING_SIZE);
+    CDF3Impl(final ByteBuffer buf, final FileChannel ch, final CDFSource cdfSource) {
+        this(buf, ch);
+        this.source = cdfSource;
     }
 
     @Override
-    public long longInt(ByteBuffer buf) {
-        return buf.getLong();
+    public long longInt(final ByteBuffer byteBuffer) {
+        return byteBuffer.getLong();
     }
 
     @Override
-    public int lowOrderInt(ByteBuffer buf) {
-        return (int) buf.getLong();
+    public int lowOrderInt(final ByteBuffer byteBuffer) {
+        return (int) byteBuffer.getLong();
     }
 
     @Override
-    public int lowOrderInt(ByteBuffer buf, int offset) {
-        return (int) buf.getLong(offset);
-    }
-
-    @Override
-    protected ByteBuffer getRecord(long offset) {
-
-        if (this.fc == null) {
-            return super.getRecord(offset);
-        }
-
-        ByteBuffer lenBuf = ByteBuffer.allocate(4);
-
-        synchronized (this.fc) {
-
-            try {
-                this.fc.position(offset + 4);
-                this.fc.read(lenBuf);
-                int size = lenBuf.getInt(0);
-                return getRecord(offset, size);
-            } catch (Throwable ex) {
-                ex.printStackTrace();
-                return null;
-            }
-
-        }
-
-    }
-
-    protected ByteBuffer getRecord(long offset, int size) throws Throwable {
-        ByteBuffer bb = ByteBuffer.allocate(size);
-        this.fc.position(offset);
-        int got = this.fc.read(bb);
-
-        if (got != size) {
-            System.out.println("Needed " + size + " bytes. Got " + got);
-            return null;
-        }
-
-        bb.position(0);
-        return bb;
+    public int lowOrderInt(final ByteBuffer byteBuffer, final int offset) {
+        return (int) byteBuffer.getLong(offset);
     }
 
     void setOffsets() {

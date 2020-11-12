@@ -2,9 +2,12 @@ package gov.nasa.gsfc.spdf.cdfj;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
+ * The Class VDR.
  *
  * @author nand
  */
@@ -18,9 +21,7 @@ public class VDR {
 
     byte[] padValues;
 
-    /**
-     *
-     */
+    /** The position. */
     protected int position;
 
     String sname;
@@ -37,9 +38,7 @@ public class VDR {
 
     int sRecords = 0;
 
-    /**
-     *
-     */
+    /** The num elems. */
     protected int numElems = 1;
 
     int num;
@@ -54,70 +53,66 @@ public class VDR {
 
     ByteBuffer dimBuf;
 
-    /**
-     *
-     */
+    /** The items per point. */
     protected int itemsPerPoint = 1;
 
-    /**
-     *
-     */
-    protected Vector<Integer> efdim;
+    /** The efdim. */
+    protected final List<Integer> efdim;
 
     /**
+     * Instantiates a new vdr.
      *
-     * @param string
-     * @param i
-     * @param ints
-     * @param blns
-     *
-     * @throws Throwable
+     * @param name     the name
+     * @param dataType the data type
+     * @param dim      the dim
+     * @param varys    the varys
      */
-    public VDR(String name, int dataType, int[] dim, boolean[] varys) throws Throwable {
+    public VDR(final String name, final int dataType, final int[] dim, final boolean[] varys) {
         this(name, dataType, dim, varys, false);
     }
 
     /**
+     * Instantiates a new vdr.
      *
-     * @param string
-     * @param i
-     * @param ints
-     * @param blns
-     * @param bln
-     *
-     * @throws Throwable
+     * @param name       the name
+     * @param dataType   the data type
+     * @param dim        the dim
+     * @param varys      the varys
+     * @param compressed the compressed
      */
-    public VDR(String name, int dataType, int[] dim, boolean[] varys, boolean compressed) throws Throwable {
+    public VDR(final String name, final int dataType, final int[] dim, final boolean[] varys,
+            final boolean compressed) {
         this(name, dataType, dim, varys, true, compressed, null, 1, SparseRecordOption.NONE);
     }
 
     /**
+     * Instantiates a new vdr.
      *
-     * @param string
-     * @param i
-     * @param ints
-     * @param blns
-     * @param bln
-     * @param bln1
-     * @param o
-     * @param i1
-     * @param sro
-     *
-     * @throws Throwable
+     * @param name           the name
+     * @param dataType       the data type
+     * @param dim            the dim
+     * @param varys          the varys
+     * @param recordVariance the record variance
+     * @param compressed     the compressed
+     * @param pad            the pad
+     * @param size           the size
+     * @param option         the option
      */
-    public VDR(String name, int dataType, int[] dim, boolean[] varys, boolean recordVariance, boolean compressed,
-            Object pad, int size, SparseRecordOption option) throws Throwable {
+    public VDR(final String name, final int dataType, final int[] dim, final boolean[] varys,
+            final boolean recordVariance, final boolean compressed, final Object pad, final int size,
+            final SparseRecordOption option) {
         this.sname = name;
         setName(name);
         setDataType(dataType);
 
         if (dim.length != varys.length) {
-            throw new Throwable("Length of varys and dim arrays differ.");
+            throw new IllegalArgumentException(
+                    "Length of varys (" + varys.length + ") and dim arrays (" + dim.length + ") differ.");
         }
 
         this.numElems = size;
         this.itemsPerPoint = size;
-        setDimensions(dim, varys, dataType);
+        this.efdim = setDimensions(dim, varys, dataType);
 
         // setNumElems(dim, varys);
         if (compressed) {
@@ -131,10 +126,11 @@ public class VDR {
         setSparseRecordOption(option);
 
         if (pad != null) {
+
             Class<?> cl = pad.getClass();
 
             if (!cl.isArray()) {
-                throw new Throwable("Pad must be an array.");
+                throw new IllegalArgumentException("Pad must be an array.");
             }
 
             Number[] _pad = null;
@@ -175,6 +171,7 @@ public class VDR {
             if ((category == DataTypes.SIGNED_INTEGER) || (category == DataTypes.UNSIGNED_INTEGER)) {
 
                 if ((DataTypes.size[dataType] == 4) && (category == DataTypes.UNSIGNED_INTEGER)) {
+
                     long[] lvalues = new long[_pad.length];
 
                     for (int i = 0; i < lvalues.length; i++) {
@@ -189,7 +186,9 @@ public class VDR {
                     }
 
                     buf.position(0);
+
                 } else {
+
                     int[] values = new int[_pad.length];
 
                     for (int i = 0; i < values.length; i++) {
@@ -214,7 +213,8 @@ public class VDR {
                             }
 
                         } else {
-                            buf.asIntBuffer().put(values);
+                            buf.asIntBuffer()
+                                    .put(values);
                         }
 
                     }
@@ -232,7 +232,8 @@ public class VDR {
 
                     buf = ByteBuffer.allocate(4 * values.length);
                     buf.order(ByteOrder.LITTLE_ENDIAN);
-                    buf.asFloatBuffer().put(values);
+                    buf.asFloatBuffer()
+                            .put(values);
                 } else {
 
                     if (category == DataTypes.DOUBLE) {
@@ -244,7 +245,8 @@ public class VDR {
 
                         buf = ByteBuffer.allocate(8 * values.length);
                         buf.order(ByteOrder.LITTLE_ENDIAN);
-                        buf.asDoubleBuffer().put(values);
+                        buf.asDoubleBuffer()
+                                .put(values);
                     } else {
 
                         if (category == DataTypes.LONG) {
@@ -256,26 +258,23 @@ public class VDR {
 
                             buf = ByteBuffer.allocate(8 * values.length);
                             buf.order(ByteOrder.LITTLE_ENDIAN);
-                            buf.asLongBuffer().put(values);
+                            buf.asLongBuffer()
+                                    .put(values);
                         } else {
 
                             if (category != DataTypes.STRING) {
-                                throw new Throwable("Unrecognized type " + " pad value");
+                                throw new IllegalStateException("Unrecognized type pad value");
                             }
 
                             // String[] values = (String[])pad;
-                            String[] values = new String[] { ((String[]) pad)[0] };
+                            String[] values = { ((String[]) pad)[0] };
                             int len = values[0].length();
                             len *= values.length;
                             buf = ByteBuffer.allocate(len);
 
                             for (String value : values) {
 
-                                try {
-                                    buf.put(value.getBytes());
-                                } catch (Exception ex) {
-                                    throw new Throwable("encoding");
-                                }
+                                buf.put(value.getBytes());
 
                                 buf.position(0);
                             }
@@ -296,8 +295,9 @@ public class VDR {
     }
 
     /**
+     * Gets the.
      *
-     * @return
+     * @return the byte buffer
      */
     public ByteBuffer get() {
         int capacity = this.record.capacity();
@@ -346,24 +346,27 @@ public class VDR {
     }
 
     /**
+     * Gets the name.
      *
-     * @return
+     * @return the name
      */
     public String getName() {
         return this.sname;
     }
 
     /**
+     * Gets the num.
      *
-     * @return
+     * @return the num
      */
     public int getNum() {
         return this.num;
     }
 
     /**
+     * Gets the size.
      *
-     * @return
+     * @return the size
      */
     public int getSize() {
         int size = this.record.capacity();
@@ -380,44 +383,51 @@ public class VDR {
     }
 
     /**
+     * Checks if is compressed.
      *
-     * @return
+     * @return true, if is compressed
      */
     public boolean isCompressed() {
         return ((this.flags & 0x04) != 0);
     }
 
     /**
+     * Sets the blocking factor.
      *
-     * @param n
+     * @param n the new blocking factor
      */
-    public void setBlockingFactor(int n) {
+    public void setBlockingFactor(final int n) {
         this.blockingFactor = n;
     }
 
     /**
+     * Sets the CPR offset.
      *
-     * @param l
+     * @param l the new CPR offset
      */
-    public void setCPROffset(long l) {
+    public void setCPROffset(final long l) {
         this.cPROffset = l;
     }
 
     /**
+     * Sets the data type.
      *
-     * @param n
+     * @param n the new data type
      */
-    public void setDataType(int n) {
+    public void setDataType(final int n) {
         this.dataType = n;
     }
 
     /**
+     * Sets the dimensions.
      *
-     * @param dim
-     * @param varys
-     * @param dataType
+     * @param dim      the dim
+     * @param varys    the varys
+     * @param dataType the data type
+     *
+     * @return the list
      */
-    public void setDimensions(int[] dim, boolean[] varys, int dataType) {
+    private List<Integer> setDimensions(final int[] dim, final boolean[] varys, final int dataType) {
         this.zNumDims = dim.length;
 
         if (dataType == 32) {
@@ -425,10 +435,8 @@ public class VDR {
             this.zNumDims = 0;
         }
 
-        this.efdim = new Vector<>();
-
         if (this.zNumDims == 0) {
-            return;
+            return Collections.emptyList();
         }
 
         for (int i = 0; i < dim.length; i++) {
@@ -439,6 +447,7 @@ public class VDR {
 
         }
 
+        List<Integer> dimensions = new ArrayList<>();
         this.dimBuf = ByteBuffer.allocate(4 * this.zNumDims * 2);
 
         for (int i = 0; i < this.zNumDims; i++) {
@@ -449,35 +458,39 @@ public class VDR {
             this.dimBuf.putInt(varys[i] ? -1 : 0);
 
             if (varys[i]) {
-                this.efdim.add(dim[i]);
+                dimensions.add(dim[i]);
             }
 
         }
 
         this.dimBuf.position(0);
+        return Collections.unmodifiableList(dimensions);
     }
 
     /**
+     * Sets the flags.
      *
-     * @param n
+     * @param n the new flags
      */
-    public void setFlags(int n) {
+    public void setFlags(final int n) {
         this.flags = n;
     }
 
     /**
+     * Sets the max rec.
      *
-     * @param n
+     * @param n the new max rec
      */
-    public void setMaxRec(int n) {
+    public void setMaxRec(final int n) {
         this.maxRec = n;
     }
 
     /**
+     * Sets the name.
      *
-     * @param s
+     * @param s the new name
      */
-    public void setName(String s) {
+    public void setName(final String s) {
         byte[] bs = s.getBytes();
         int i = 0;
 
@@ -492,19 +505,21 @@ public class VDR {
     }
 
     /**
+     * Sets the num.
      *
-     * @param n
+     * @param n the new num
      */
-    public void setNum(int n) {
+    public void setNum(final int n) {
         this.num = n;
     }
 
     /**
+     * Sets the num elems.
      *
-     * @param dim
-     * @param varys
+     * @param dim   the dim
+     * @param varys the varys
      */
-    public void setNumElems(int[] dim, boolean[] varys) {
+    public void setNumElems(final int[] dim, final boolean[] varys) {
         this.numElems = 1;
         /*
          * This is always 1 for numeric data
@@ -515,34 +530,38 @@ public class VDR {
     }
 
     /**
+     * Sets the sparse record option.
      *
-     * @param option
+     * @param option the new sparse record option
      */
-    public void setSparseRecordOption(SparseRecordOption option) {
+    public void setSparseRecordOption(final SparseRecordOption option) {
         this.sRecords = option.getValue();
     }
 
     /**
+     * Sets the VDR next.
      *
-     * @param l
+     * @param l the new VDR next
      */
-    public void setVDRNext(long l) {
+    public void setVDRNext(final long l) {
         this.vDRNext = l;
     }
 
     /**
+     * Sets the VXR head.
      *
-     * @param l
+     * @param l the new VXR head
      */
-    public void setVXRHead(long l) {
+    public void setVXRHead(final long l) {
         this.vXRHead = l;
     }
 
     /**
+     * Sets the VXR tail.
      *
-     * @param l
+     * @param l the new VXR tail
      */
-    public void setVXRTail(long l) {
+    public void setVXRTail(final long l) {
         this.vXRTail = l;
     }
 }

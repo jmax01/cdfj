@@ -12,15 +12,17 @@ package gov.nasa.gsfc.spdf.cdfj;
 public interface TimeInstantModel extends java.lang.Cloneable {
 
     /**
+     * Clone.
      *
-     * @return
+     * @return the object
+     *
      */
-    Object clone();
+    TimeInstantModel clone();
 
     /**
      * Returns base time in base time units since Epoch 0.
      *
-     * @return
+     * @return the base time
      *
      * @see #getBaseTimeUnits()
      */
@@ -32,14 +34,14 @@ public interface TimeInstantModel extends java.lang.Cloneable {
      * Currently fixed as TimePrecision.MILLISECOND
      * </p>
      *
-     * @return
+     * @return the base time units
      */
     TimePrecision getBaseTimeUnits();
 
     /**
      * Returns time offset units.
      *
-     * @return
+     * @return the offset units
      */
     TimePrecision getOffsetUnits();
 
@@ -61,7 +63,7 @@ public interface TimeInstantModel extends java.lang.Cloneable {
      * microsecond, or nanosecond.</li>
      * </ul>
      *
-     * @param precision
+     * @param precision the new offset units
      */
     void setOffsetUnits(TimePrecision precision);
 }

@@ -4,70 +4,52 @@ import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 
 /**
+ * The Class ShortArray.
  *
  * @author nand
  */
 public class ShortArray extends AArray {
 
     /**
+     * Instantiates a new short array.
      *
-     * @param o
-     *
-     * @throws Throwable
+     * @param o the o
      */
-    public ShortArray(Object o) throws Throwable {
+    public ShortArray(final Object o) {
         super(o);
     }
 
     /**
+     * Instantiates a new short array.
      *
-     * @param o
-     * @param bln
-     *
-     * @throws Throwable
+     * @param o        the o
+     * @param majority the majority
      */
-    public ShortArray(Object o, boolean majority) throws Throwable {
+    public ShortArray(final Object o, final boolean majority) {
         super(o, majority);
     }
 
     /**
+     * Buffer.
      *
-     * @return
+     * @param cl     the cl
+     * @param ignore the ignore
+     *
+     * @return the byte buffer
      */
     @Override
-    public Object array() {
-
-        switch (this.dim) {
-            case 1:
-                return this.o;
-            case 2:
-                return this.o;
-            case 3:
-                return this.o;
-            case 4:
-                return this.o;
-        }
-
-        return null;
-    }
-
-    /**
-     * create a byte buffer of a compatible type.
-     *
-     * @param ignore
-     */
-    @Override
-    public ByteBuffer buffer(Class<?> cl, int ignore) throws Throwable {
+    public ByteBuffer buffer(final Class<?> cl, final int ignore) {
 
         if (((cl != Short.TYPE) && (cl != Byte.TYPE))) {
-            throw new Throwable("Only byte and short targets supported");
+            throw new IllegalArgumentException("Only byte and short targets supported");
         }
 
-        if (this.dim > 4) {
-            throw new Throwable("Rank > 4 not supported");
+        if (this.dimensions > 4) {
+            throw new IllegalStateException("Rank > 4 not supported");
         }
 
         int elementSize = (cl == Byte.TYPE) ? 1 : 2;
+
         ByteBuffer buf = allocate(elementSize);
 
         if (cl == Byte.TYPE) {
@@ -77,14 +59,17 @@ public class ShortArray extends AArray {
         return doShort(buf);
     }
 
-    ByteBuffer doByte(ByteBuffer buf) {
-        int[] _dim = this.aa.getDimensions();
+    ByteBuffer doByte(final ByteBuffer buf) {
+
+        int[] _dim = this.attributeArray.getDimensions();
+
         byte[] temp = null;
+
         ByteBuffer _buf = buf;
 
-        switch (this.dim) {
+        switch (this.dimensions) {
             case 1:
-                short[] data = (short[]) this.o;
+                short[] data = (short[]) this.data;
                 temp = new byte[data.length];
                 for (int i = 0; i < data.length; i++) {
                     temp[i] = (byte) data[i];
@@ -93,7 +78,7 @@ public class ShortArray extends AArray {
                 buf.flip();
                 return buf;
             case 2:
-                short[][] data2 = (short[][]) this.o;
+                short[][] data2 = (short[][]) this.data;
                 temp = new byte[_dim[1]];
                 for (int i = 0; i < _dim[0]; i++) {
                     short[] di = data2[i];
@@ -107,7 +92,7 @@ public class ShortArray extends AArray {
                 buf.flip();
                 return buf;
             case 3:
-                short[][][] data3 = (short[][][]) this.o;
+                short[][][] data3 = (short[][][]) this.data;
                 if (this.rowMajority) {
                     temp = new byte[_dim[2]];
 
@@ -143,7 +128,7 @@ public class ShortArray extends AArray {
                 buf.flip();
                 return buf;
             case 4:
-                short[][][][] data4 = (short[][][][]) this.o;
+                short[][][][] data4 = (short[][][][]) this.data;
                 if (this.rowMajority) {
                     temp = new byte[_dim[3]];
 
@@ -152,6 +137,7 @@ public class ShortArray extends AArray {
                         for (int j = 0; j < _dim[1]; j++) {
 
                             for (int k = 0; k < _dim[2]; k++) {
+
                                 short[] di = data4[i][j][k];
 
                                 for (int l = 0; l < _dim[3]; l++) {
@@ -186,28 +172,33 @@ public class ShortArray extends AArray {
                 }
                 buf.flip();
                 return buf;
+            default:
+                throw new IllegalStateException("Rank > 4 not supported");
         }
 
-        return null;
     }
 
-    ByteBuffer doShort(ByteBuffer buf) {
-        int[] _dim = this.aa.getDimensions();
+    ByteBuffer doShort(final ByteBuffer buf) {
+
+        int[] _dim = this.attributeArray.getDimensions();
+
         ShortBuffer _buf = buf.asShortBuffer();
 
-        switch (this.dim) {
+        switch (this.dimensions) {
+
             case 1:
-                short[] data = (short[]) this.o;
-                _buf.put(data);
+                short[] data1 = (short[]) this.data;
+                _buf.put(data1);
                 return buf;
+
             case 2:
-                short[][] data2 = (short[][]) this.o;
+                short[][] data2 = (short[][]) this.data;
                 for (int i = 0; i < _dim[0]; i++) {
                     _buf.put(data2[i]);
                 }
                 return buf;
             case 3:
-                short[][][] data3 = (short[][][]) this.o;
+                short[][][] data3 = (short[][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -235,7 +226,8 @@ public class ShortArray extends AArray {
                 }
                 return buf;
             case 4:
-                short[][][][] data4 = (short[][][][]) this.o;
+                short[][][][] data4 = (short[][][][]) this.data;
+
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -270,8 +262,9 @@ public class ShortArray extends AArray {
 
                 }
                 return buf;
+            default:
+                throw new IllegalStateException("Rank > 4 not supported");
         }
 
-        return null;
     }
 }

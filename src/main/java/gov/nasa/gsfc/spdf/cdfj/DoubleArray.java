@@ -5,51 +5,29 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
 /**
+ * The Class DoubleArray.
  *
  * @author nand
  */
 public class DoubleArray extends AArray {
 
     /**
+     * Instantiates a new double array.
      *
-     * @param o
-     *
-     * @throws Throwable
+     * @param o the o
      */
-    public DoubleArray(Object o) throws Throwable {
+    public DoubleArray(final Object o) {
         super(o);
     }
 
     /**
+     * Instantiates a new double array.
      *
-     * @param o
-     * @param bln
-     *
-     * @throws Throwable
+     * @param o           the o
+     * @param rowMajority the row majority
      */
-    public DoubleArray(Object o, boolean rowMajority) throws Throwable {
+    public DoubleArray(final Object o, final boolean rowMajority) {
         super(o, rowMajority);
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Override
-    public Object array() {
-
-        switch (this.dim) {
-            case 1:
-                return this.o;
-            case 2:
-                return this.o;
-            case 3:
-                return this.o;
-            case 4:
-                return this.o;
-        }
-
-        return null;
     }
 
     /**
@@ -58,14 +36,14 @@ public class DoubleArray extends AArray {
      * @param ignore
      */
     @Override
-    public ByteBuffer buffer(Class<?> cl, int ignore) throws Throwable {
+    public ByteBuffer buffer(final Class<?> cl, final int ignore) {
 
         if (((cl != Double.TYPE) && (cl != Float.TYPE))) {
-            throw new Throwable("Only float and double targets supported");
+            throw new IllegalArgumentException("Only float and double targets supported");
         }
 
-        if (this.dim > 4) {
-            throw new Throwable("Rank > 4 not supported");
+        if (this.dimensions > 4) {
+            throw new IllegalStateException("Rank > 4 not supported");
         }
 
         int elementSize = (cl == Float.TYPE) ? 4 : 8;
@@ -78,23 +56,23 @@ public class DoubleArray extends AArray {
         return doDouble(buf);
     }
 
-    ByteBuffer doDouble(ByteBuffer buf) {
-        int[] _dim = this.aa.getDimensions();
+    ByteBuffer doDouble(final ByteBuffer buf) {
+        int[] _dim = this.attributeArray.getDimensions();
         DoubleBuffer _buf = buf.asDoubleBuffer();
 
-        switch (this.dim) {
+        switch (this.dimensions) {
             case 1:
-                double[] data = (double[]) this.o;
-                _buf.put(data);
+                double[] data1 = (double[]) this.data;
+                _buf.put(data1);
                 return buf;
             case 2:
-                double[][] data2 = (double[][]) this.o;
+                double[][] data2 = (double[][]) this.data;
                 for (int i = 0; i < _dim[0]; i++) {
                     _buf.put(data2[i]);
                 }
                 return buf;
             case 3:
-                double[][][] data3 = (double[][][]) this.o;
+                double[][][] data3 = (double[][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -122,7 +100,7 @@ public class DoubleArray extends AArray {
                 }
                 return buf;
             case 4:
-                double[][][][] data4 = (double[][][][]) this.o;
+                double[][][][] data4 = (double[][][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -157,27 +135,28 @@ public class DoubleArray extends AArray {
 
                 }
                 return buf;
+            default:
+                throw new IllegalStateException("Rank > 4 not supported");
         }
 
-        return null;
     }
 
-    ByteBuffer doFloat(ByteBuffer buf) {
-        int[] _dim = this.aa.getDimensions();
+    ByteBuffer doFloat(final ByteBuffer buf) {
+        int[] _dim = this.attributeArray.getDimensions();
         float[] temp = null;
         FloatBuffer _buf = buf.asFloatBuffer();
 
-        switch (this.dim) {
+        switch (this.dimensions) {
             case 1:
-                double[] data = (double[]) this.o;
-                temp = new float[data.length];
-                for (int i = 0; i < data.length; i++) {
-                    temp[i] = (float) data[i];
+                double[] data1 = (double[]) this.data;
+                temp = new float[data1.length];
+                for (int i = 0; i < data1.length; i++) {
+                    temp[i] = (float) data1[i];
                 }
                 _buf.put(temp);
                 return buf;
             case 2:
-                double[][] data2 = (double[][]) this.o;
+                double[][] data2 = (double[][]) this.data;
                 temp = new float[_dim[1]];
                 for (int i = 0; i < _dim[0]; i++) {
                     double[] di = data2[i];
@@ -190,7 +169,7 @@ public class DoubleArray extends AArray {
                 }
                 return buf;
             case 3:
-                double[][][] data3 = (double[][][]) this.o;
+                double[][][] data3 = (double[][][]) this.data;
                 if (this.rowMajority) {
                     temp = new float[_dim[2]];
 
@@ -225,7 +204,7 @@ public class DoubleArray extends AArray {
                 }
                 return buf;
             case 4:
-                double[][][][] data4 = (double[][][][]) this.o;
+                double[][][][] data4 = (double[][][][]) this.data;
                 if (this.rowMajority) {
                     temp = new float[_dim[3]];
 
@@ -267,8 +246,10 @@ public class DoubleArray extends AArray {
 
                 }
                 return buf;
+
+            default:
+                throw new IllegalStateException("Rank > 4 not supported");
         }
 
-        return null;
     }
 }

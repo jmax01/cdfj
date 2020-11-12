@@ -6,10 +6,13 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 /**
+ * The Class ByteBufferURLReader.
+ *
  * @author nand
  */
 public class ByteBufferURLReader {
@@ -18,15 +21,9 @@ public class ByteBufferURLReader {
 
     boolean eof = false;
 
-    /**
-     *
-     */
-    public int total;
+    private int total;
 
-    /**
-     *
-     */
-    public int len = -1;
+    private int len = -1;
 
     Chunk chunk = new Chunk();
 
@@ -37,12 +34,13 @@ public class ByteBufferURLReader {
     ByteBuffer buffer;
 
     /**
+     * Instantiates a new byte buffer URL reader.
      *
-     * @param url
+     * @param url the url
      *
-     * @throws IOException
+     * @throws IOException Signals that an I/O exception has occurred.
      */
-    public ByteBufferURLReader(URL url) throws IOException {
+    public ByteBufferURLReader(final URL url) throws IOException {
         URLConnection con = url.openConnection();
         con.connect();
         this.len = con.getContentLength();
@@ -52,7 +50,9 @@ public class ByteBufferURLReader {
         }
 
         this.is = con.getInputStream();
-        boolean gzipped = url.getPath().trim().endsWith(".gz");
+        boolean gzipped = url.getPath()
+                .trim()
+                .endsWith(".gz");
 
         if (gzipped) {
             this.is = new GZIPInputStream(this.is);
@@ -61,60 +61,66 @@ public class ByteBufferURLReader {
     }
 
     /**
+     * Instantiates a new byte buffer URL reader.
      *
-     * @param url
-     * @param chunk
+     * @param url   the url
+     * @param chunk the chunk
      *
-     * @throws IOException
+     * @throws IOException Signals that an I/O exception has occurred.
      */
-    public ByteBufferURLReader(URL url, Chunk chunk) throws IOException {
+    public ByteBufferURLReader(final URL url, final Chunk chunk) throws IOException {
         this(url);
         setChunk(chunk);
     }
 
     /**
+     * Instantiates a new byte buffer URL reader.
      *
-     * @param url
-     * @param fc
+     * @param url         the url
+     * @param fileChannel the file channel
      *
-     * @throws IOException
+     * @throws IOException Signals that an I/O exception has occurred.
      */
-    public ByteBufferURLReader(URL url, FileChannel fileChannel) throws IOException {
+    public ByteBufferURLReader(final URL url, final FileChannel fileChannel) throws IOException {
         this(url);
         this.cacheFileChannel = fileChannel;
         this.buffer = this.chunk.allocateBuffer();
     }
 
     /**
+     * Instantiates a new byte buffer URL reader.
      *
-     * @param url
-     * @param fc
-     * @param chunk
+     * @param url         the url
+     * @param fileChannel the file channel
+     * @param chunk       the chunk
      *
-     * @throws IOException
+     * @throws IOException Signals that an I/O exception has occurred.
      */
-    public ByteBufferURLReader(URL url, FileChannel fileChannel, Chunk chunk) throws IOException {
+    public ByteBufferURLReader(final URL url, final FileChannel fileChannel, final Chunk chunk) throws IOException {
         this(url, chunk);
         this.cacheFileChannel = fileChannel;
         this.buffer = chunk.allocateBuffer();
     }
 
     /**
+     * End of file.
      *
-     * @return
+     * @return true, if successful
      */
     public boolean endOfFile() {
         return this.eof;
     }
 
     /**
+     * Gets the buffer.
      *
-     * @return
+     * @return the buffer
      *
-     * @throws IOException
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public ByteBuffer getBuffer() throws IOException {
-        Vector<ByteBuffer> buffers = new Vector<>();
+
+        List<ByteBuffer> buffers = new ArrayList<>();
 
         while (!this.eof) {
 
@@ -154,10 +160,11 @@ public class ByteBufferURLReader {
     }
 
     /**
+     * Read.
      *
-     * @return
+     * @return the byte buffer
      *
-     * @throws IOException
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public ByteBuffer read() throws IOException {
         ByteBuffer buf = this.chunk.allocateBuffer();
@@ -166,56 +173,58 @@ public class ByteBufferURLReader {
     }
 
     /**
+     * Sets the chunk.
      *
-     * @param chunk
+     * @param chunk the new chunk
      */
-    public void setChunk(Chunk chunk) {
+    public void setChunk(final Chunk chunk) {
         this.chunk = chunk;
         this.block = chunk.getBlock();
     }
 
     /**
+     * Transfer.
      *
-     * @throws IOException
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public void transfer() throws IOException {
         _read(this.buffer);
         this.cacheFileChannel.write(this.buffer);
     }
 
-    private void _read(ByteBuffer buffer) throws IOException {
+    private void _read(final ByteBuffer buff) throws IOException {
         int count = 0;
         int n;
-        buffer.position(0);
-        buffer.limit(buffer.capacity());
+        buff.position(0);
+        buff.limit(buff.capacity());
 
-        if (buffer.capacity() < (2 * this.block.length)) {
+        if (buff.capacity() < (2 * this.block.length)) {
 
-            for (int i = 0; i < buffer.capacity(); i++) {
+            for (int i = 0; i < buff.capacity(); i++) {
                 n = this.is.read();
 
                 if (n == -1) {
                     throw new IOException("Premature end of data");
                 }
 
-                buffer.put((byte) n);
+                buff.put((byte) n);
             }
 
             if ((n = this.is.read(this.block)) != -1) {
                 throw new IOException("Unread data remains");
             }
 
-            count = buffer.capacity();
+            count = buff.capacity();
             this.total = count;
             this.eof = true;
         } else {
 
             while ((n = this.is.read(this.block)) != -1) {
-                buffer.put(this.block, 0, n);
+                buff.put(this.block, 0, n);
                 this.total += n;
                 count += n;
 
-                if (this.len == buffer.capacity()) {
+                if (this.len == buff.capacity()) {
                     continue;
                 }
 
@@ -237,40 +246,47 @@ public class ByteBufferURLReader {
 
             }
 
-            buffer.limit(buffer.position());
+            buff.limit(buff.position());
         }
 
-        buffer.position(0);
+        buff.position(0);
     }
 
     /**
-     *
+     * The Class Chunk.
      */
     public static class Chunk {
 
-        int chunkSize = 1_024 * 1_024;
+        private static final int DEFAULT_BLOCK_SIZE = 64 * 1_024;
 
-        int blockSize = 64 * 1_024;
+        private static final int DEFAULT_CHUNK_SIZE = 1_024 * 1_024;
+
+        final int chunkSize;
+
+        final int blockSize;
 
         int len = -1;
 
         /**
-         *
+         * Instantiates a new chunk.
          */
         public Chunk() {
+            this.chunkSize = DEFAULT_CHUNK_SIZE;
+            this.blockSize = DEFAULT_BLOCK_SIZE;
         }
 
         /**
+         * Instantiates a new chunk.
          *
-         * @param i
-         * @param i1
-         *
-         * @throws Throwable
+         * @param blockSize the block size
+         * @param chunkSize the chunk size must be greater that blockSize
          */
-        public Chunk(int blockSize, int chunkSize) throws Throwable {
+        public Chunk(final int blockSize, final int chunkSize) {
 
+            // FIXME: Message does not match logic
             if (chunkSize < blockSize) {
-                throw new Throwable("Chunk size must be >= block size");
+                throw new IllegalArgumentException(
+                        "chunkSize(" + chunkSize + ") must be >= blockSize(" + blockSize + ")");
             }
 
             this.blockSize = blockSize;
@@ -278,6 +294,7 @@ public class ByteBufferURLReader {
         }
 
         ByteBuffer allocateBuffer() {
+
             int bufsize = this.chunkSize + this.blockSize;
 
             if (this.len < 0) {
@@ -295,7 +312,7 @@ public class ByteBufferURLReader {
             return new byte[this.blockSize];
         }
 
-        void setLength(int length) {
+        void setLength(final int length) {
             this.len = length;
         }
     }

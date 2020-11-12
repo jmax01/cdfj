@@ -5,7 +5,10 @@ import java.lang.reflect.Method;
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
+
 /**
+ * The Class TSExtractor.
  *
  * @author nand
  */
@@ -14,14 +17,14 @@ public class TSExtractor extends Extractor {
     static {
 
         try {
-            Class variableClass = Class.forName("gov.nasa.gsfc.spdf.cdfj.Variable");
-            Class rdrClass = Class.forName("gov.nasa.gsfc.spdf.cdfj.MetaData");
-            Class cl = Class.forName("gov.nasa.gsfc.spdf.cdfj.TSExtractor");
-            Class timeSpecClass = Class.forName("gov.nasa.gsfc.spdf.cdfj.TimeInstantModel");
+            Class<?> variableClass = Class.forName("gov.nasa.gsfc.spdf.cdfj.Variable");
+            Class<?> rdrClass = Class.forName("gov.nasa.gsfc.spdf.cdfj.MetaData");
+            Class<?> cl = Class.forName("gov.nasa.gsfc.spdf.cdfj.TSExtractor");
+            Class<?> timeSpecClass = Class.forName("gov.nasa.gsfc.spdf.cdfj.TimeInstantModel");
             double[] da = new double[0];
             int[] ia = new int[0];
-            Class[][] arglist;
-            arglist = new Class[][] { new Class[] { rdrClass, variableClass, Boolean.class, da.getClass() },
+            Class<?>[][] arglist = new Class[][] {
+                    new Class[] { rdrClass, variableClass, Boolean.class, da.getClass() },
                     new Class[] { rdrClass, variableClass, Integer.class, Boolean.class, da.getClass() }, null, null };
             addFunction("TimeSeries", cl, arglist);
             arglist = new Class[][] {
@@ -45,16 +48,17 @@ public class TSExtractor extends Extractor {
     static Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
     /**
+     * Filter fill.
      *
-     * @param times
-     * @param vdata
-     * @param fill
-     * @param first
+     * @param times the times
+     * @param vdata the vdata
+     * @param fill  the fill
+     * @param first the first
      *
-     * @return
+     * @return the double[][]
      */
-    public static double[][] filterFill(double[] times, double[] vdata, double fill, int first) {
-        double[][] series;
+    public static double[][] filterFill(final double[] times, final double[] vdata, final double fill,
+            final int first) {
         int count = 0;
 
         for (double vdatum : vdata) {
@@ -65,7 +69,7 @@ public class TSExtractor extends Extractor {
 
         }
 
-        series = new double[2][count];
+        double[][] series = new double[2][count];
         int n = 0;
 
         for (int i = 0; i < vdata.length; i++) {
@@ -83,18 +87,20 @@ public class TSExtractor extends Extractor {
     }
 
     /**
+     * Filter fill.
      *
-     * @param times
-     * @param o
-     * @param fillValue
+     * @param times     the times
+     * @param o         the o
+     * @param fillValue the fill value
      *
-     * @return
+     * @return the double[][]
      */
-    public static double[][] filterFill(double[] times, Object o, Number fillValue) {
+    public static double[][] filterFill(final double[] times, final Object o, final Number fillValue) {
         double[][] series;
         int count = 0;
 
-        if (o.getClass().getComponentType() == Long.TYPE) {
+        if (o.getClass()
+                .getComponentType() == Long.TYPE) {
             long fill = fillValue.longValue();
             long[] ldata = (long[]) o;
 
@@ -122,7 +128,8 @@ public class TSExtractor extends Extractor {
 
         } else {
 
-            if (o.getClass().getComponentType() != Double.TYPE) {
+            if (o.getClass()
+                    .getComponentType() != Double.TYPE) {
                 return null;
             }
 
@@ -157,45 +164,47 @@ public class TSExtractor extends Extractor {
     }
 
     /**
+     * Gets the method.
      *
-     * @param var
-     * @param name
-     * @param rank
+     * @param var  the var
+     * @param name the name
+     * @param rank the rank
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the method
+     * @
      */
-    public static Method getMethod(Variable var, String name, int rank) throws Throwable {
+    public static Method getMethod(final Variable var, final String name, final int rank) {
         return getMethod(var, name, rank, false);
     }
 
     /**
+     * Gets the overlap.
      *
-     * @param rdr
-     * @param trange
-     * @param varName
-     * @param startTime
-     * @param stopTime
+     * @param rdr          the rdr
+     * @param trange       the trange
+     * @param variableName the var name
+     * @param startTime    the start time
+     * @param stopTime     the stop time
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the overlap
+     * @
      */
-    public static double[] getOverlap(MetaData rdr, double[] trange, String varName, int[] startTime, int[] stopTime)
-            throws Throwable {
-        double[] overlap = new double[] { Double.MIN_VALUE, Double.MAX_VALUE };
+    public static double[] getOverlap(final MetaData rdr, final double[] trange, final String variableName,
+            final int[] startTime, final int[] stopTime) {
+
+        double[] overlap = { Double.MIN_VALUE, Double.MAX_VALUE };
 
         if (startTime != null) {
 
             if (startTime.length < 3) {
-                throw new Throwable("incomplete start" + " time " + "definition.");
+                throw new IllegalArgumentException(
+                        "incomplete start time " + "definition, startTime length must be >=3, was " + startTime.length);
             }
 
-            double _start = getTime(rdr, varName, startTime);
+            double _start = getTime(rdr, variableName, startTime);
 
             if (_start > trange[1]) {
-                throw new Throwable("Start time is " + "beyond end of data");
+                throw new IllegalArgumentException("Start time is beyond end of data");
             }
 
             overlap[0] = Math.max(_start, trange[0]);
@@ -206,17 +215,17 @@ public class TSExtractor extends Extractor {
         if (stopTime != null) {
 
             if (stopTime.length < 3) {
-                throw new Throwable("incomplete stop" + " time " + "definition.");
+                throw new IllegalArgumentException("incomplete stop time definition.");
             }
 
-            double _stop = getTime(rdr, varName, stopTime);
+            double _stop = getTime(rdr, variableName, stopTime);
 
             if (_stop < trange[0]) {
-                throw new Throwable("Stop time is " + "before start of data");
+                throw new IllegalArgumentException("Stop time is before start of data");
             }
 
             if (_stop < overlap[0]) {
-                throw new Throwable("Stop time is " + "before start time");
+                throw new IllegalArgumentException("Stop time is before start time");
             }
 
             overlap[1] = /* (_stop > trange[1])?trange[1]: */_stop;
@@ -228,20 +237,20 @@ public class TSExtractor extends Extractor {
     }
 
     /**
+     * Gets the sampled time series.
      *
-     * @param rdr
-     * @param var
-     * @param which
-     * @param ignoreFill
-     * @param timeRange
-     * @param stride
+     * @param rdr        the rdr
+     * @param var        the var
+     * @param which      the which
+     * @param ignoreFill the ignore fill
+     * @param timeRange  the time range
+     * @param stride     the stride
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the sampled time series
+     * @
      */
-    public static double[][] getSampledTimeSeries(MetaData rdr, Variable var, Integer which, Boolean ignoreFill,
-            double[] timeRange, int[] stride) throws Throwable {
+    public static double[][] getSampledTimeSeries(final MetaData rdr, final Variable var, final Integer which,
+            final Boolean ignoreFill, final double[] timeRange, final int[] stride) {
 
         if (var.getNumberOfValues() == 0) {
             return null;
@@ -261,7 +270,7 @@ public class TSExtractor extends Extractor {
         Stride strideObject = new Stride(stride);
 
         if (timeRange == null) {
-            vdata = (double[]) (which == null ? getSeries0(rdr.thisCDF, var, strideObject)
+            vdata = (double[]) ((which == null) ? getSeries0(rdr.thisCDF, var, strideObject)
                     : getElement1(rdr.thisCDF, var, which, strideObject));
         } else {
             recordRange = getRecordRange(rdr, var, timeRange);
@@ -348,47 +357,48 @@ public class TSExtractor extends Extractor {
     }
 
     /**
+     * Gets the sampled time series 0.
      *
-     * @param rdr
-     * @param var
-     * @param ignoreFill
-     * @param timeRange
-     * @param stride
+     * @param rdr        the rdr
+     * @param var        the var
+     * @param ignoreFill the ignore fill
+     * @param timeRange  the time range
+     * @param stride     the stride
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the sampled time series 0
+     * @
      */
-    public static double[][] getSampledTimeSeries0(MetaData rdr, Variable var, Boolean ignoreFill, double[] timeRange,
-            int[] stride) throws Throwable {
+    public static double[][] getSampledTimeSeries0(final MetaData rdr, final Variable var, final Boolean ignoreFill,
+            final double[] timeRange, final int[] stride) {
         return getSampledTimeSeries(rdr, var, null, ignoreFill, timeRange, stride);
     }
 
     /**
+     * Gets the sampled time series 1.
      *
-     * @param rdr
-     * @param var
-     * @param which
-     * @param ignoreFill
-     * @param timeRange
-     * @param stride
+     * @param rdr        the rdr
+     * @param var        the var
+     * @param which      the which
+     * @param ignoreFill the ignore fill
+     * @param timeRange  the time range
+     * @param stride     the stride
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the sampled time series 1
+     * @
      */
-    public static double[][] getSampledTimeSeries1(MetaData rdr, Variable var, Integer which, Boolean ignoreFill,
-            double[] timeRange, int[] stride) throws Throwable {
+    public static double[][] getSampledTimeSeries1(final MetaData rdr, final Variable var, final Integer which,
+            final Boolean ignoreFill, final double[] timeRange, final int[] stride) {
         return getSampledTimeSeries(rdr, var, which, ignoreFill, timeRange, stride);
     }
 
     /**
+     * Gets the time.
      *
-     * @param time
+     * @param time the time
      *
-     * @return
+     * @return the time
      */
-    public static long getTime(int[] time) {
+    public static long getTime(final int[] time) {
         int[] t = new int[6];
         System.arraycopy(time, 0, t, 0, 3);
         t[1]--;
@@ -420,35 +430,36 @@ public class TSExtractor extends Extractor {
     }
 
     /**
+     * Gets the time.
      *
-     * @param rdr
-     * @param vname
-     * @param time
+     * @param rdr   the rdr
+     * @param vname the vname
+     * @param time  the time
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the time
+     * @
      */
-    public static double getTime(MetaData rdr, String vname, int[] time) throws Throwable {
-        boolean isTT2000 = TimeVariableFactory.getTimeVariable(rdr, vname).isTT2000();
+    public static double getTime(final MetaData rdr, final String vname, final int[] time) {
+        boolean isTT2000 = TimeVariableFactory.getTimeVariable(rdr, vname)
+                .isTT2000();
         long t = getTime(time);
         return (isTT2000) ? TimeUtil.milliSecondSince1970(t) : t;
     }
 
     /**
+     * Gets the time series.
      *
-     * @param rdr
-     * @param var
-     * @param which
-     * @param ignoreFill
-     * @param timeRange
+     * @param rdr        the rdr
+     * @param var        the var
+     * @param which      the which
+     * @param ignoreFill the ignore fill
+     * @param timeRange  the time range
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the time series
+     * @
      */
-    public static double[][] getTimeSeries(MetaData rdr, Variable var, Integer which, Boolean ignoreFill,
-            double[] timeRange) throws Throwable {
+    public static double[][] getTimeSeries(final MetaData rdr, final Variable var, final Integer which,
+            final Boolean ignoreFill, final double[] timeRange) {
 
         if (var.getNumberOfValues() == 0) {
             return null;
@@ -485,7 +496,8 @@ public class TSExtractor extends Extractor {
                     : Extractor.getElement1(rdr.thisCDF, var, which);
 
             if (var.isMissingRecords()) {
-                long[][] locations = var.getLocator().getLocations();
+                long[][] locations = var.getLocator()
+                        .getLocations();
                 oa = filterPad(o, times, pad, locations, 0);
             } else {
                 oa = new Object[] { times, o };
@@ -512,7 +524,8 @@ public class TSExtractor extends Extractor {
             }
 
             if (var.isMissingRecords()) {
-                long[][] locations = var.getLocator().getLocations();
+                long[][] locations = var.getLocator()
+                        .getLocations();
                 oa = filterPad(o, stimes, pad, locations, recordRange[0]);
             } else {
                 oa = new Object[] { stimes, o };
@@ -532,7 +545,8 @@ public class TSExtractor extends Extractor {
         boolean fillDefined = true;
         Number fillValue = null;
 
-        if (fill.getClass().getComponentType() == Double.TYPE) {
+        if (fill.getClass()
+                .getComponentType() == Double.TYPE) {
             fillDefined = (((double[]) fill)[0] == 0);
 
             if (fillDefined) {
@@ -557,85 +571,88 @@ public class TSExtractor extends Extractor {
     }
 
     /**
+     * Gets the time series 0.
      *
-     * @param rdr
-     * @param var
-     * @param ignoreFill
-     * @param timeRange
+     * @param rdr        the rdr
+     * @param var        the var
+     * @param ignoreFill the ignore fill
+     * @param timeRange  the time range
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the time series 0
+     * @
      */
-    public static double[][] getTimeSeries0(MetaData rdr, Variable var, Boolean ignoreFill, double[] timeRange)
-            throws Throwable {
+    public static double[][] getTimeSeries0(final MetaData rdr, final Variable var, final Boolean ignoreFill,
+            final double[] timeRange) {
         return getTimeSeries(rdr, var, null, ignoreFill, timeRange);
     }
 
     /**
+     * Gets the time series 1.
      *
-     * @param rdr
-     * @param var
-     * @param which
-     * @param ignoreFill
-     * @param timeRange
+     * @param rdr        the rdr
+     * @param var        the var
+     * @param which      the which
+     * @param ignoreFill the ignore fill
+     * @param timeRange  the time range
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the time series 1
+     * @
      */
-    public static double[][] getTimeSeries1(MetaData rdr, Variable var, Integer which, Boolean ignoreFill,
-            double[] timeRange) throws Throwable {
+    public static double[][] getTimeSeries1(final MetaData rdr, final Variable var, final Integer which,
+            final Boolean ignoreFill, final double[] timeRange) {
         return getTimeSeries(rdr, var, which, ignoreFill, timeRange);
     }
 
     /**
+     * Gets the time series object 0.
      *
-     * @param rdr
-     * @param var
-     * @param ignoreFill
-     * @param timeRange
-     * @param ts
+     * @param rdr        the rdr
+     * @param var        the var
+     * @param ignoreFill the ignore fill
+     * @param timeRange  the time range
+     * @param ts         the ts
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the time series object 0
+     * @
      */
-    public static TimeSeries getTimeSeriesObject0(MetaData rdr, Variable var, Boolean ignoreFill, double[] timeRange,
-            TimeInstantModel ts) throws Throwable {
+    public static TimeSeries getTimeSeriesObject0(final MetaData rdr, final Variable var, final Boolean ignoreFill,
+            final double[] timeRange, final TimeInstantModel ts) {
         return new GeneralTimeSeries(rdr, var, null, ignoreFill, timeRange, ts);
     }
 
     /**
+     * Gets the time series object 1.
      *
-     * @param rdr
-     * @param var
-     * @param which
-     * @param ignoreFill
-     * @param timeRange
-     * @param ts
+     * @param rdr        the rdr
+     * @param var        the var
+     * @param which      the which
+     * @param ignoreFill the ignore fill
+     * @param timeRange  the time range
+     * @param ts         the ts
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the time series object 1
+     * @
      */
-    public static TimeSeries getTimeSeriesObject1(MetaData rdr, Variable var, Integer which, Boolean ignoreFill,
-            double[] timeRange, TimeInstantModel ts) throws Throwable {
+    public static TimeSeries getTimeSeriesObject1(final MetaData rdr, final Variable var, final Integer which,
+            final Boolean ignoreFill, final double[] timeRange, final TimeInstantModel ts) {
         return new GeneralTimeSeries(rdr, var, which, ignoreFill, timeRange, ts);
     }
 
     /**
+     * Identifier.
      *
-     * @return
+     * @return the string
      */
     public static String identifier() {
         return "TSExtractor";
     }
 
-    static Object[] filterPad(Object o, double[] times, Number pad, long[][] locations, int first) {
+    static Object[] filterPad(final Object o, final double[] times, final Number pad, final long[][] locations,
+            final int first) {
         RecordSensor sensor = new RecordSensor(locations);
 
-        if (o.getClass().getComponentType() == Double.TYPE) {
+        if (o.getClass()
+                .getComponentType() == Double.TYPE) {
             double dpad = pad.doubleValue();
             double[] vdata = (double[]) o;
             int npad = 0;
@@ -673,7 +690,8 @@ public class TSExtractor extends Extractor {
             return new Object[] { _times, _data };
         }
 
-        if (o.getClass().getComponentType() != Long.TYPE) {
+        if (o.getClass()
+                .getComponentType() != Long.TYPE) {
             return null;
         }
 
@@ -714,16 +732,18 @@ public class TSExtractor extends Extractor {
         return new Object[] { _times, _data };
     }
 
-    static Method getMethod(Variable var, String name, int rank, boolean checkMissing) throws Throwable {
+    static Method getMethod(final Variable var, final String name, final int rank, final boolean checkMissing) {
 
         if (var == null) {
-            throw new Throwable("Internal error. Null variable " + "encountered in call to TSExtractor.getMethod()");
+            throw new IllegalArgumentException(
+                    "Internal error. Null variable encountered in call to TSExtractor.getMethod()");
         }
 
         int _rank = var.getEffectiveRank();
 
         if (_rank != rank) {
-            throw new Throwable("Called method is not appropriate for variables of " + "effective rank " + _rank);
+            throw new IllegalArgumentException(
+                    "Called method is not appropriate for variables of effective rank " + _rank);
         }
 
         if (checkMissing && (var.isMissingRecords())) {
@@ -736,23 +756,23 @@ public class TSExtractor extends Extractor {
         Method method = getMethod(var, name);
 
         if (method == null) {
-            throw new Throwable("get" + name + " not " + "implemented for " + var.getName());
+            throw new IllegalArgumentException("get" + name + " not implemented for " + var.getName());
         }
 
         return method;
     }
 
-    static int[] getRecordRange(MetaData rdr, Variable var, double[] timeRange) {
+    static int[] getRecordRange(final MetaData rdr, final Variable var, final double[] timeRange) {
         return getRecordRange(rdr, var, timeRange, null);
     }
 
-    static int[] getRecordRange(MetaData rdr, VariableMetaData var, double[] timeRange, TimeInstantModel ts) {
+    static int[] getRecordRange(final MetaData rdr, final VariableMetaData var, final double[] timeRange,
+            final TimeInstantModel ts) {
 
         try {
             TimeVariableX tvx = TimeVariableFactory.getTimeVariable(rdr, var.getName());
             return tvx.getRecordRange(timeRange);
-        } catch (Throwable t) {
-        }
+        } catch (Throwable t) {}
 
         return null;
     }
@@ -760,7 +780,7 @@ public class TSExtractor extends Extractor {
     /**
      * Loss of precision may occur if type of var is LONG
      * times obtained are millisecond since 1970 regardless of the
-     * precision of time variable corresponding to variable var
+     * precision of time variable corresponding to variable var.
      */
     public static class GeneralTimeSeries implements TimeSeries {
 
@@ -773,25 +793,25 @@ public class TSExtractor extends Extractor {
         double[][] filtered = null;
 
         /**
+         * Instantiates a new general time series.
          *
-         * @param rdr
-         * @param var
-         * @param which
-         * @param ignoreFill
-         * @param timeRange
-         * @param ts
-         *
-         * @throws Throwable
+         * @param rdr        the rdr
+         * @param var        the var
+         * @param which      the which
+         * @param ignoreFill the ignore fill
+         * @param timeRange  the time range
+         * @param ts         the ts
+         * @
          */
-        public GeneralTimeSeries(MetaData rdr, Variable var, Integer which, Boolean ignoreFill, double[] timeRange,
-                TimeInstantModel ts) throws Throwable {
+        public GeneralTimeSeries(final MetaData rdr, final Variable var, final Integer which, final Boolean ignoreFill,
+                final double[] timeRange, final TimeInstantModel ts) {
             boolean ignore = ignoreFill;
             int[] recordRange = null;
 
             if (ts != null) {
 
                 synchronized (ts) {
-                    this.tspec = (TimeInstantModel) ts.clone();
+                    this.tspec = ts.clone();
                 }
 
             }
@@ -800,7 +820,7 @@ public class TSExtractor extends Extractor {
             this.times = tv.getTimes(this.tspec);
 
             if (this.times == null) {
-                throw new Throwable("times not available for " + var.getName());
+                throw new IllegalArgumentException("times not available for " + var.getName());
             }
 
             double[] stimes;
@@ -819,7 +839,7 @@ public class TSExtractor extends Extractor {
                 recordRange = getRecordRange(rdr, var, timeRange, ts);
 
                 if (recordRange == null) {
-                    throw new Throwable("no record range");
+                    throw new IllegalStateException("no record range");
                 }
 
                 if (which == null) {
@@ -874,7 +894,7 @@ public class TSExtractor extends Extractor {
     }
 
     /**
-     *
+     * The Class GeneralTimeSeriesX.
      */
     public static class GeneralTimeSeriesX implements TimeSeriesX {
 
@@ -893,24 +913,24 @@ public class TSExtractor extends Extractor {
         final boolean columnMajor;
 
         /**
+         * Instantiates a new general time series X.
          *
-         * @param rdr
-         * @param var
-         * @param ignoreFill
-         * @param timeRange
-         * @param ts
-         * @param oned
-         * @param columnMajor
-         *
-         * @throws Throwable
+         * @param rdr         the rdr
+         * @param var         the var
+         * @param ignoreFill  the ignore fill
+         * @param timeRange   the time range
+         * @param ts          the ts
+         * @param oned        the oned
+         * @param columnMajor the column major
+         * @
          */
-        public GeneralTimeSeriesX(MetaData rdr, VariableMetaData var, Boolean ignoreFill, final double[] timeRange,
-                TimeInstantModel ts, boolean oned, boolean columnMajor) throws Throwable {
+        public GeneralTimeSeriesX(final MetaData rdr, final VariableMetaData var, final Boolean ignoreFill,
+                final double[] timeRange, final TimeInstantModel ts, final boolean oned, final boolean columnMajor) {
 
             if (ts != null) {
 
                 synchronized (ts) {
-                    this.tspec = (TimeInstantModel) ts.clone();
+                    this.tspec = ts.clone();
                 }
 
             } else {
@@ -940,14 +960,14 @@ public class TSExtractor extends Extractor {
                 }
 
                 return this.tv.getTimes(this.timeRange, this.tspec);
-            } catch (Throwable th) {
-                throw new CDFException.ReaderError(th.getMessage());
+            } catch (RuntimeException th) {
+                throw new CDFException.ReaderError(th);
             }
 
         }
 
         @Override
-        public Object getValues() throws CDFException.ReaderError {
+        public Object getValues() throws ReaderError {
 
             try {
 
@@ -967,25 +987,17 @@ public class TSExtractor extends Extractor {
                 }
 
                 return this.thisCDF.getRangeOneD(this.vname, recordRange[0], recordRange[1], this.columnMajor);
-            } catch (Throwable th) {
-                throw new CDFException.ReaderError(th.getMessage());
+            } catch (RuntimeException th) {
+                throw new CDFException.ReaderError(th);
             }
 
         }
 
-        /**
-         *
-         * @return
-         */
         @Override
         public boolean isColumnMajor() {
             return this.columnMajor;
         }
 
-        /**
-         *
-         * @return
-         */
         @Override
         public boolean isOneD() {
             return this.oned;
@@ -998,11 +1010,11 @@ public class TSExtractor extends Extractor {
 
         int last = 0;
 
-        RecordSensor(long[][] locations) {
+        RecordSensor(final long[][] locations) {
             this.locations = locations;
         }
 
-        boolean hasRecord(int number) {
+        boolean hasRecord(final int number) {
 
             for (int i = this.last; i < this.locations.length; i++) {
 

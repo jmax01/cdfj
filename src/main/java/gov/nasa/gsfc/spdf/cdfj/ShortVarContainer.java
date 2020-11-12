@@ -1,12 +1,12 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.lang.reflect.InvocationTargetException;
 // import gov.nasa.gsfc.spdf.common.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
 
 /**
+ * The Class ShortVarContainer.
  *
  * @author nand
  */
@@ -15,35 +15,29 @@ public final class ShortVarContainer extends BaseVarContainer implements VDataCo
     final short[] spad;
 
     /**
+     * Instantiates a new short var container.
      *
-     * @param cdfi
-     * @param vrbl
-     * @param ints
-     * @param bln
-     *
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws Throwable
+     * @param thisCDF  the this CDF
+     * @param var      the var
+     * @param pt       the pt
+     * @param preserve the preserve
      */
-    public ShortVarContainer(CDFImpl thisCDF, Variable var, int[] pt, boolean preserve)
-            throws IllegalAccessException, InvocationTargetException, Throwable {
+    public ShortVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt, final boolean preserve) {
         this(thisCDF, var, pt, preserve, ByteOrder.nativeOrder());
     }
 
     /**
+     * Instantiates a new short var container.
      *
-     * @param cdfi
-     * @param vrbl
-     * @param ints
-     * @param bln
-     * @param bo
+     * @param thisCDF  the this CDF
+     * @param var      the var
+     * @param pt       the pt
+     * @param preserve the preserve
+     * @param bo       the bo
      *
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws Throwable
      */
-    public ShortVarContainer(CDFImpl thisCDF, Variable var, int[] pt, boolean preserve, ByteOrder bo)
-            throws IllegalAccessException, InvocationTargetException, Throwable {
+    public ShortVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt, final boolean preserve,
+            final ByteOrder bo) {
         super(thisCDF, var, pt, preserve, bo, Short.TYPE);
         Object pad = this.thisCDF.getPadValue(var);
         double[] dpad = (double[]) pad;
@@ -56,27 +50,27 @@ public final class ShortVarContainer extends BaseVarContainer implements VDataCo
     }
 
     /**
+     * Checks if is compatible.
      *
-     * @param type
-     * @param preserve
+     * @param type     the type
+     * @param preserve the preserve
      *
-     * @return
+     * @return true, if is compatible
      */
-    public static boolean isCompatible(int type, boolean preserve) {
+    public static boolean isCompatible(final int type, final boolean preserve) {
         return isCompatible(type, preserve, Short.TYPE);
     }
 
     /**
+     * As array.
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the object
      */
-    public Object _asArray() throws Throwable {
+    public Object _asArray() {
         int rank = this.var.getEffectiveRank();
 
         if (rank > 4) {
-            throw new Throwable("Rank > 4 not supported yet.");
+            throw new IllegalStateException("Ranks > 4 are not supported at this time.");
         }
 
         ByteBuffer buf = getBuffer();
@@ -95,7 +89,8 @@ public final class ShortVarContainer extends BaseVarContainer implements VDataCo
                 _buf.get(_a0);
                 return (this.singlePoint) ? Short.valueOf(_a0[0]) : _a0;
             case 1:
-                int n = (((Integer) this.var.getElementCount().elementAt(0)));
+                int n = ((this.var.getDimensionElementCounts()
+                        .get(0)));
                 records = words / n;
                 short[][] _a1 = new short[records][n];
                 for (int r = 0; r < records; r++) {
@@ -103,8 +98,10 @@ public final class ShortVarContainer extends BaseVarContainer implements VDataCo
                 }
                 return (this.singlePoint) ? _a1[0] : _a1;
             case 2:
-                int n0 = (((Integer) this.var.getElementCount().elementAt(0)));
-                int n1 = (((Integer) this.var.getElementCount().elementAt(1)));
+                int n0 = ((this.var.getDimensionElementCounts()
+                        .get(0)));
+                int n1 = ((this.var.getDimensionElementCounts()
+                        .get(1)));
                 records = words / (n0 * n1);
                 short[][][] _a2 = new short[records][n0][n1];
                 if (this.var.rowMajority()) {
@@ -134,9 +131,12 @@ public final class ShortVarContainer extends BaseVarContainer implements VDataCo
                 }
                 return (this.singlePoint) ? _a2[0] : _a2;
             case 3:
-                n0 = (((Integer) this.var.getElementCount().elementAt(0)));
-                n1 = (((Integer) this.var.getElementCount().elementAt(1)));
-                int n2 = (((Integer) this.var.getElementCount().elementAt(2)));
+                n0 = ((this.var.getDimensionElementCounts()
+                        .get(0)));
+                n1 = ((this.var.getDimensionElementCounts()
+                        .get(1)));
+                int n2 = ((this.var.getDimensionElementCounts()
+                        .get(2)));
                 records = words / (n0 * n1 * n2);
                 short[][][][] _a3 = new short[records][n0][n1][n2];
                 if (this.var.rowMajority()) {
@@ -174,10 +174,14 @@ public final class ShortVarContainer extends BaseVarContainer implements VDataCo
                 }
                 return (this.singlePoint) ? _a3[0] : _a3;
             case 4:
-                n0 = (((Integer) this.var.getElementCount().elementAt(0)));
-                n1 = (((Integer) this.var.getElementCount().elementAt(1)));
-                n2 = (((Integer) this.var.getElementCount().elementAt(2)));
-                int n3 = (((Integer) this.var.getElementCount().elementAt(3)));
+                n0 = ((this.var.getDimensionElementCounts()
+                        .get(0)));
+                n1 = ((this.var.getDimensionElementCounts()
+                        .get(1)));
+                n2 = ((this.var.getDimensionElementCounts()
+                        .get(2)));
+                int n3 = ((this.var.getDimensionElementCounts()
+                        .get(3)));
                 records = words / (n0 * n1 * n2 * n3);
                 short[][][][][] _a4 = new short[records][n0][n1][n2][n3];
                 if (this.var.rowMajority()) {
@@ -223,19 +227,13 @@ public final class ShortVarContainer extends BaseVarContainer implements VDataCo
                 }
                 return (this.singlePoint) ? _a4[0] : _a4;
             default:
-                throw new Throwable("Internal error");
+                throw new IllegalStateException("Rank > 4 not supported yet.");
         }
 
     }
 
-    /**
-     *
-     * @param size
-     *
-     * @return
-     */
     @Override
-    public Object allocateDataArray(int size) {
+    public Object allocateDataArray(final int size) {
         return new short[size];
     }
 
@@ -245,61 +243,52 @@ public final class ShortVarContainer extends BaseVarContainer implements VDataCo
     }
 
     @Override
-    public ShortArray asArray() throws Throwable {
+    public ShortArray asArray() {
         return new ShortArray(_asArray());
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public short[] asOneDArray() {
         return (short[]) super.asOneDArray(true);
     }
 
-    /**
-     *
-     * @param cmtarget
-     *
-     * @return
-     */
     @Override
-    public short[] asOneDArray(boolean cmtarget) {
+    public short[] asOneDArray(final boolean cmtarget) {
         return (short[]) super.asOneDArray(cmtarget);
     }
 
     /**
+     * Fill array.
      *
-     * @param array
-     * @param offset
-     * @param first
-     * @param last
-     *
-     * @throws Throwable
+     * @param array  the array
+     * @param offset the offset
+     * @param first  the first
+     * @param last   the last
      */
-    public void fillArray(short[] array, int offset, int first, int last) throws Throwable {
+    public void fillArray(final short[] array, final int offset, final int first, final int last) {
 
-        if (this.buffers.size() == 0) {
-            throw new Throwable("buffer not available");
+        if (this.buffers.isEmpty()) {
+            throw new IllegalStateException("buffer not available");
         }
 
         int words = ((last - first) + 1) * this.elements;
         ByteBuffer b = getBuffer();
         int pos = (first - getRecordRange()[0]) * this.elements * getLength();
         b.position(pos);
-        b.asShortBuffer().get(array, offset, words);
+        b.asShortBuffer()
+                .get(array, offset, words);
     }
 
     @Override
-    ByteBuffer allocateBuffer(int words) {
+    ByteBuffer allocateBuffer(final int words) {
         ByteBuffer _buf = ByteBuffer.allocateDirect(2 * words);
         _buf.order(this.order);
         return _buf;
     }
 
     @Override
-    void doData(ByteBuffer bv, int type, int elements, int toprocess, ByteBuffer _buf, Object _data) throws Throwable {
+    void doData(final ByteBuffer bv, final int type, final int elements, final int toprocess, final ByteBuffer _buf,
+            final Object _data) {
         short[] data = (short[]) _data;
         int position = _buf.position();
         ShortBuffer sbuf = _buf.asShortBuffer();
@@ -327,7 +316,7 @@ public final class ShortVarContainer extends BaseVarContainer implements VDataCo
                     }
 
                     _buf.position(position);
-                    break;
+                    return;
                 }
                 if (type == 2) {
                     ipos = bv.position();
@@ -349,7 +338,7 @@ public final class ShortVarContainer extends BaseVarContainer implements VDataCo
 
                     bv.position(ipos);
                     _buf.position(position);
-                    break;
+                    return;
                 }
             case 3:
                 if (type == 11) {
@@ -372,7 +361,7 @@ public final class ShortVarContainer extends BaseVarContainer implements VDataCo
                     }
 
                     _buf.position(position);
-                    break;
+                    return;
                 }
                 if (type == 12) {
                     ipos = bv.position();
@@ -394,25 +383,18 @@ public final class ShortVarContainer extends BaseVarContainer implements VDataCo
 
                     bv.position(ipos);
                     _buf.position(position);
-                    break;
+                    return;
                 }
             default:
-                throw new Throwable("Unrecognized type " + type);
+                throw new IllegalArgumentException("Unrecognized type " + type);
         }
 
     }
 
     @Override
-    void doMissing(int records, ByteBuffer _buf, Object _data, int rec) {
+    void doMissing(final int records, final ByteBuffer _buf, final Object _data, final int rec) {
         short[] data = (short[]) _data;
-        short[] repl = null;
-
-        try {
-            repl = (rec < 0) ? this.spad : this.var.asShortArray(new int[] { rec });
-        } catch (Throwable th) {
-            th.printStackTrace();
-            System.out.println("Should not see this.");
-        }
+        short[] repl = (rec < 0) ? this.spad : this.var.asShortArray(new int[] { rec });
 
         int position = _buf.position();
         ShortBuffer sbuf = _buf.asShortBuffer();

@@ -2,7 +2,7 @@ package gov.nasa.gsfc.spdf.cdfj;
 
 /**
  * Interface that defines methods for getting attributes, variable
- * characteristics, and data from a generic CDF
+ * characteristics, and data from a generic CDF.
  */
 public interface CDFCore extends CDFMeta {
 
@@ -13,31 +13,27 @@ public interface CDFCore extends CDFMeta {
      * If pt is null, all available records are returned.
      * If pt.length is 1, only the pt[0] record is returned.
      *
-     * @param varName
-     * @param pt
+     * @param variableName the variable name
+     * @param pt           the pt
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the byte array
      */
-    byte[] getByteArray(String varName, int[] pt) throws Throwable;
+    byte[] getByteArray(String variableName, int[] pt);
 
     /**
      * Returns a double[] containing value of the given variable for the
      * specified range of records.
      * <p>
-     * same as getDoubleArray(varName, pt, true).
+     * same as getDoubleArray(variableName, pt, true).
      * If pt is null, all available records are returned.
      * If pt.length is 1, only the pt[0] record is returned.
      *
-     * @param varName
-     * @param pt
+     * @param variableName the variable name
+     * @param pt           the pt
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the double array
      */
-    double[] getDoubleArray(String varName, int[] pt) throws Throwable;
+    double[] getDoubleArray(String variableName, int[] pt);
 
     /**
      * Returns a double[] containing value of the given variable for the
@@ -46,32 +42,28 @@ public interface CDFCore extends CDFMeta {
      * If pt is null, all available records are returned.
      * If pt.length is 1, only the pt[0] record is returned.
      *
-     * @param varName
-     * @param preserve
-     * @param pt
+     * @param variableName the variable name
+     * @param pt           the pt
+     * @param preserve     the preserve
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the double array
      */
-    double[] getDoubleArray(String varName, int[] pt, boolean preserve) throws Throwable;
+    double[] getDoubleArray(String variableName, int[] pt, boolean preserve);
 
     /**
      * Returns a float[] containing value of the given variable for the
      * specified range of records.
      * <p>
-     * same as getFloatArray(varName, pt, true).
+     * same as getFloatArray(variableName, pt, true).
      * If pt is null, all available records are returned.
      * If pt.length is 1, only the pt[0] record is returned.
      *
-     * @param varName
-     * @param pt
+     * @param variableName the variable name
+     * @param pt           the pt
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the float array
      */
-    float[] getFloatArray(String varName, int[] pt) throws Throwable;
+    float[] getFloatArray(String variableName, int[] pt);
 
     /**
      * Returns a float[] containing value of the given variable for the
@@ -80,32 +72,28 @@ public interface CDFCore extends CDFMeta {
      * If pt is null, all available records are returned.
      * If pt.length is 1, only the pt[0] record is returned.
      *
-     * @param varName
-     * @param preserve
-     * @param pt
+     * @param variableName the variable name
+     * @param pt           the pt
+     * @param preserve     the preserve
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the float array
      */
-    float[] getFloatArray(String varName, int[] pt, boolean preserve) throws Throwable;
+    float[] getFloatArray(String variableName, int[] pt, boolean preserve);
 
     /**
      * returns a int[] containing value of the given variable for the
      * specified range of records.
      * <p>
-     * same as getIntArray(varName, pt, true).
+     * same as getIntArray(variableName, pt, true).
      * If pt is null, all available records are returned.
      * If pt.length is 1, only the pt[0] record is returned.
      *
-     * @param varName
-     * @param pt
+     * @param variableName the variable name
+     * @param pt           the pt
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the int array
      */
-    int[] getIntArray(String varName, int[] pt) throws Throwable;
+    int[] getIntArray(String variableName, int[] pt);
 
     /**
      * returns a int[] containing value of the given variable for the
@@ -114,15 +102,13 @@ public interface CDFCore extends CDFMeta {
      * If pt is null, all available records are returned.
      * If pt.length is 1, only the pt[0] record is returned.
      *
-     * @param varName
-     * @param preserve
-     * @param pt
+     * @param variableName the variable name
+     * @param pt           the pt
+     * @param preserve     the preserve
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the int array
      */
-    int[] getIntArray(String varName, int[] pt, boolean preserve) throws Throwable;
+    int[] getIntArray(String variableName, int[] pt, boolean preserve);
 
     /**
      * returns a long[] containing value of the given variable for the
@@ -131,55 +117,51 @@ public interface CDFCore extends CDFMeta {
      * If pt is null, all available records are returned.
      * If pt.length is 1, only the pt[0] record is returned.
      *
-     * @param varName
-     * @param pt
+     * @param variableName the variable name
+     * @param pt           the pt
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the long array
      */
-    long[] getLongArray(String varName, int[] pt) throws Throwable;
+    long[] getLongArray(String variableName, int[] pt);
 
     /**
+     * Gets the one D.
      *
-     * @param varName
-     * @param columnMajor
+     * @param variableName the variable name
+     * @param columnMajor  the column major
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the one D
+     * @
      */
-    Object getOneD(String varName, boolean columnMajor) throws Throwable;
+    Object getOneD(String variableName, boolean columnMajor);
 
     /**
+     * Gets the range one D.
      *
-     * @param varName
-     * @param first
-     * @param last
-     * @param columnMajor
+     * @param variableName the variable name
+     * @param first        the first
+     * @param last         the last
+     * @param columnMajor  the column major
      *
-     * @return
-     *
-     * @throws Throwable
+     * @return the range one D
+     * @
      */
-    Object getRangeOneD(String varName, int first, int last, boolean columnMajor) throws Throwable;
+    Object getRangeOneD(String variableName, int first, int last, boolean columnMajor);
 
     /**
      * returns a short[] containing value of the given variable for the
      * specified range of records.
      * <p>
-     * same as getShortArray(varName, pt, true).
+     * same as getShortArray(variableName, pt, true).
      * If pt is null, all available records are returned.
      * If pt.length is 1, only the pt[0] record is returned.
      *
-     * @param varName
-     * @param pt
+     * @param variableName the variable name
+     * @param pt           the pt
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the short array
      */
-    short[] getShortArray(String varName, int[] pt) throws Throwable;
+    short[] getShortArray(String variableName, int[] pt);
 
     /**
      * returns a short[] containing value of the given variable for the
@@ -188,22 +170,36 @@ public interface CDFCore extends CDFMeta {
      * If pt is null, all available records are returned.
      * If pt.length is 1, only the pt[0] record is returned.
      *
-     * @param varName
-     * @param preserve
-     * @param pt
+     * @param variableName the variable name
+     * @param pt           the pt
+     * @param preserve     the preserve
      *
-     * @return
-     *
-     * @throws java.lang.Throwable
+     * @return the short array
      */
-    short[] getShortArray(String varName, int[] pt, boolean preserve) throws Throwable;
+    short[] getShortArray(String variableName, int[] pt, boolean preserve);
 
     /**
+     * Gets the source.
      *
-     * @return
+     * @return the source
      */
     CDFFactory.CDFSource getSource();
 
+    /**
+     * Gets the variable.
+     *
+     * @param variableName the variable name
+     *
+     * @return the variable
+     */
     @Override
-    Variable getVariable(String varName);
+    Variable getVariable(String variableName);
+
+    /**
+     * Max string size.
+     *
+     * @return the int
+     */
+    int maxStringSize();
+
 }

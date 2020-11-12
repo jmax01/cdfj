@@ -3,6 +3,7 @@ package gov.nasa.gsfc.spdf.cdfj;
 import java.nio.ByteBuffer;
 
 /**
+ * The Class CPR.
  *
  * @author nand
  */
@@ -11,14 +12,13 @@ public class CPR {
     ByteBuffer record = ByteBuffer.allocate(
             8/* RecordSize */ + 4/* RecordType */ + 4/* cType */ + 4/* rfuA */ + 4/* pCount */ + 4/* cParms */);
 
-    /**
-     *
-     */
+    /** The position. */
     protected long position;
 
     /**
+     * Gets the.
      *
-     * @return
+     * @return the byte buffer
      */
     public ByteBuffer get() {
         this.record.position(0);
@@ -33,8 +33,9 @@ public class CPR {
     }
 
     /**
+     * Gets the size.
      *
-     * @return
+     * @return the size
      */
     public int getSize() {
         return this.record.capacity();

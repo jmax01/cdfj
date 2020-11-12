@@ -1,82 +1,70 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
- * Time Precision Definition class
+ * The Class TimePrecision.
  */
 public final class TimePrecision {
 
-    /**
-     *
-     */
+    /** The Constant MILLISECOND. */
     public static final TimePrecision MILLISECOND = new TimePrecision(0);
 
-    /**
-     *
-     */
     public static final TimePrecision MICROSECOND = new TimePrecision(1);
 
-    /**
-     *
-     */
     public static final TimePrecision NANOSECOND = new TimePrecision(2);
 
-    /**
-     *
-     */
     public static final TimePrecision PICOSECOND = new TimePrecision(3);
 
-    static Hashtable<String, TimePrecision> ht = new Hashtable<>();
-    static {
-        ht.put("millisecond", MILLISECOND);
-        ht.put("microsecond", MICROSECOND);
-        ht.put("nanosecond", NANOSECOND);
-        ht.put("picosecond", PICOSECOND);
+    static final Map<String, TimePrecision> TIME_PRECISIONS_BY_NAME = timePrecisionsByName();
+
+    private static Map<String, TimePrecision> timePrecisionsByName() {
+        Map<String, TimePrecision> _timePrecisionsByName = new HashMap<>();
+        _timePrecisionsByName.put("millisecond", MILLISECOND);
+        _timePrecisionsByName.put("microsecond", MICROSECOND);
+        _timePrecisionsByName.put("nanosecond", NANOSECOND);
+        _timePrecisionsByName.put("picosecond", PICOSECOND);
+        return _timePrecisionsByName;
     }
 
-    static final int MIN_LENGTH = 3;
+    static final int TIME_PRECISION_SHORT_NAME_MIN_LENGTH = 3;
 
     int precision;
 
-    private TimePrecision(int precision) {
+    private TimePrecision(final int precision) {
         this.precision = precision;
     }
 
     /**
+     * Gets the precision by logn or short name
      *
-     * @param s
+     * @param timePrecisionName the time precision name
      *
-     * @return
+     * @return the precision or null
      */
-    public static TimePrecision getPrecision(String s) {
-        String _s = s.toLowerCase();
-        int len = _s.length();
+    public static TimePrecision getPrecision(final String timePrecisionName) {
 
-        if (len < MIN_LENGTH) {
+        int len = timePrecisionName.length();
+
+        if (len < TIME_PRECISION_SHORT_NAME_MIN_LENGTH) {
             return null;
         }
 
-        Set keys = ht.keySet();
-        Iterator<String> it = keys.iterator();
-
-        while (it.hasNext()) {
-            String k = it.next();
-
-            if (k.substring(0, len).equals(_s)) {
-                return ht.get(k);
-            }
-
-        }
-
-        return null;
+        return TIME_PRECISIONS_BY_NAME.entrySet()
+                .stream()
+                .filter(e -> e.getKey()
+                        .startsWith(timePrecisionName))
+                .map(Entry::getValue)
+                .findFirst()
+                .orElse(null);
     }
 
     /**
+     * Gets the value.
      *
-     * @return
+     * @return the value
      */
     public int getValue() {
         return this.precision;

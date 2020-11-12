@@ -1,58 +1,64 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.Vector;
+import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
 
 /**
  * CDFReader extends GenericReader with access methods for time series
  * variables. Time series methods of this class do not require a detailed
  * knowledge of the internal structure of CDF.
  */
-public class CDFReader extends GenericReader {
+public class CDFReader extends GenericReader implements Closeable {
+
+    static final Logger LOGGER = CDFLogging.newLogger(CDFReader.class);
 
     Scalar scalar;
 
-    CDFVector vector;
-
-    /**
-     *
-     */
-    public CDFReader() {
-    }
+    final CDFVec cdfVec = new CDFVec();
 
     /**
      * Constructs a reader for the given CDF file.
      *
-     * @param cdfFile
+     * @param cdfFile the cdf file
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public CDFReader(String cdfFile) throws CDFException.ReaderError {
+    public CDFReader(final String cdfFile) throws CDFException.ReaderError {
         super(cdfFile);
         this.scalar = new Scalar();
         this.scalar.rdr = this;
-        this.vector = new CDFVector();
-        this.vector.rdr = this;
+        this.cdfVec.rdr = this;
     }
 
     /**
      * Constructs a reader for the given URL for CDF file.
      *
-     * @param url
+     * @param url the url
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public CDFReader(URL url) throws CDFException.ReaderError {
+    public CDFReader(final URL url) throws CDFException.ReaderError {
         super(url);
         this.scalar = new Scalar();
         this.scalar.rdr = this;
-        this.vector = new CDFVector();
-        this.vector.rdr = this;
+        this.cdfVec.rdr = this;
+    }
+
+    public CDFReader(final CDFImpl cdfImpl) {
+        super(cdfImpl);
     }
 
     /**
@@ -60,7 +66,7 @@ public class CDFReader extends GenericReader {
      * <p>
      * The base of default TimeInstantModel is January 1,1970 0:0:0
      *
-     * @return
+     * @return the time instant model
      */
     public static TimeInstantModel timeModelInstance() {
         return TimeVariableFactory.getDefaultTimeInstantModel();
@@ -72,11 +78,11 @@ public class CDFReader extends GenericReader {
      * <p>
      * The base of default TimeInstantModel is January 1,1970 0:0:0
      *
-     * @param offsetUnits
+     * @param offsetUnits the offset units
      *
-     * @return
+     * @return the time instant model
      */
-    public static TimeInstantModel timeModelInstance(String offsetUnits) {
+    public static TimeInstantModel timeModelInstance(final String offsetUnits) {
         TimeInstantModel tim = TimeVariableFactory.getDefaultTimeInstantModel();
         tim.setOffsetUnits(TimePrecision.getPrecision(offsetUnits));
         return tim;
@@ -86,42 +92,45 @@ public class CDFReader extends GenericReader {
      * Returns first available time for a variable.Returned time has millisecond
      * precision.
      *
-     * @param varName
+     * @param variableName the variable name
      *
      * @return int[7] containing year, month, day, hour, minute, second and
      *         millisecond, or null.
      *
-     * @throws CDFException.ReaderError if not a valid variable name.
+     * @throws ReaderError the reader error
      */
-    public int[] firstAvailableTime(String varName) throws CDFException.ReaderError {
-        return firstAvailableTime(varName, null);
+    public int[] firstAvailableTime(final String variableName) throws CDFException.ReaderError {
+        return firstAvailableTime(variableName, null);
     }
 
     /**
      * Returns first available time which is not before the given time for a
      * variable.Returned time has millisecond precision.
      *
-     * @param varName
-     * @param start   a 3 to 7 element int[], containing year,
-     *                month (January is 1), day, hour, minute, second and
-     *                millisecond.
+     * @param variableName the variable name
+     * @param start        a 3 to 7 element int[], containing year,
+     *                     month (January is 1), day, hour, minute, second and
+     *                     millisecond.
      *
      * @return int[7] containing year, month, day, hour, minute, second and
      *         millisecond, or null.
      *
-     * @throws CDFException.ReaderError if not a valid variable name.
+     * @throws ReaderError the reader error
      */
-    public int[] firstAvailableTime(String varName, int[] start) throws CDFException.ReaderError {
+    public int[] firstAvailableTime(final String variableName, final int[] start) throws CDFException.ReaderError {
 
         try {
-            TimeVariable tv = TimeVariableFactory.getTimeVariable(this, varName);
+            TimeVariable tv = TimeVariableFactory.getTimeVariable(this, variableName);
             double[] times = tv.getTimes();
-            double[] trange = new double[] { times[0], times[times.length - 1] };
+            double[] trange = { times[0], times[times.length - 1] };
             double[] tr;
 
             try {
-                tr = TSExtractor.getOverlap(this, trange, varName, start, null);
+                tr = TSExtractor.getOverlap(this, trange, variableName, start, null);
             } catch (Exception ex) {
+                LOGGER.log(Level.SEVERE, ex,
+                        () -> String.format("firstAvailableTime failed for variableName: %s start[]: %s", variableName,
+                                Arrays.toString(start)));
                 return null;
             }
 
@@ -130,7 +139,8 @@ public class CDFReader extends GenericReader {
                 c.setTimeInMillis((long) tr[0]);
 
                 if (tv.isTT2000()) {
-                    long l0 = c.getTime().getTime();
+                    long l0 = c.getTime()
+                            .getTime();
                     long l = (long) TimeUtil.getOffset(l0);
                     c.setTimeInMillis(((long) tr[0] - l) + l0);
                 }
@@ -139,8 +149,8 @@ public class CDFReader extends GenericReader {
             }
 
             return null;
-        } catch (Throwable th) {
-            throw new CDFException.ReaderError(th.getMessage());
+        } catch (RuntimeException th) {
+            throw new CDFException.ReaderError(th);
         }
 
     }
@@ -149,20 +159,247 @@ public class CDFReader extends GenericReader {
      * Returns available time range using default
      * {@link TimeInstantModel time instant model}.
      *
-     * @param varName variable name
+     * @param variableName variable name
      *
      * @return double[2] 0th element is the first available offset time;
      *         1st element is the last available offset time;
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
      */
-    public double[] getAvailableTimeRange(String varName) throws CDFException.ReaderError {
+    public double[] getAvailableTimeRange(final String variableName) {
+
+        TimeVariable tv = TimeVariableFactory.getTimeVariable(this, variableName);
+        double[] times = tv.getTimes();
+        return new double[] { times[0], times[times.length - 1] };
+
+    }
+
+    /**
+     * Returns the time series of the specified component of a 1 dimensional
+     * variable, ignoring points whose value equals fill value.
+     * <p>
+     * A double[2][] array is returned. The 0th element is the
+     * array containing times, and the 1st element is the array containing
+     * corresponding values. If a fill value has been specified for this
+     * variable via the FILLVAL attribute, then points where the value is
+     * equal to fill value are excluded.
+     * </p>
+     *
+     * @param variableName the variable name
+     * @param component    the component
+     *
+     * @return the copy on write array list time series
+     *
+     * @throws ReaderError the reader error
+     */
+    public double[][] getVectorTimeSeries(final String variableName, final int component)
+            throws CDFException.ReaderError {
 
         try {
-            TimeVariable tv = TimeVariableFactory.getTimeVariable(this, varName);
-            double[] times = tv.getTimes();
-            return new double[] { times[0], times[times.length - 1] };
-        } catch (Throwable th) {
+            return this.cdfVec.getTimeSeries(variableName, component);
+        } catch (RuntimeException e) {
+            throw new CDFException.ReaderError("getVectorTimeSeries failed", e);
+        }
+
+    }
+
+    /**
+     * Returns the time series of the specified component of a 1 dimensional
+     * variable, optionally ignoring points whose value equals fill value.
+     * <p>
+     * A double[2][] array is returned. The 0th element is the
+     * array containing times, and the 1st element is the array containing
+     * corresponding values. If a fill value has been specified for this
+     * variable via the FILLVAL attribute, then points where the value is
+     * equal to fill value are excluded if ignoreFill = true.
+     * </p>
+     *
+     * @param variableName the variable name
+     * @param component    the component
+     * @param ignoreFill   the ignore fill
+     *
+     * @return the copy on write array list time series
+     *
+     * @throws ReaderError the reader error
+     */
+    public double[][] getVectorTimeSeries(final String variableName, final int component, final boolean ignoreFill)
+            throws CDFException.ReaderError {
+
+        try {
+            return this.cdfVec.getTimeSeries(variableName, component, ignoreFill);
+        } catch (RuntimeException th) {
+            throw new CDFException.ReaderError(th.getMessage());
+        }
+
+    }
+
+    /**
+     * Returns the time series of the specified component of 1 dimensional
+     * variable in the specified time range, optionally ignoring points whose
+     * value equals fill value.
+     * <p>
+     * A double[2][] array is returned. The 0th element is the
+     * array containing times, and the 1st element is the array containing
+     * corresponding values. If a fill value has been specified for this
+     * variable via the FILLVAL attribute, then points where the value is
+     * equal to fill value are excluded if ignoreFill = true.
+     * </p>
+     *
+     * @param variableName the variable name
+     * @param component    the component
+     * @param ignoreFill   the ignore fill
+     * @param startTime    a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond.
+     * @param stopTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the stop time is assumed to be later than the last
+     *                     available time.
+     *
+     * @return the copy on write array list time series
+     *
+     * @throws ReaderError the reader error
+     */
+    public double[][] getVectorTimeSeries(final String variableName, final int component, final boolean ignoreFill,
+            final int[] startTime, final int[] stopTime) throws CDFException.ReaderError {
+
+        try {
+            return this.cdfVec.getTimeSeries(variableName, component, ignoreFill, startTime, stopTime);
+        } catch (RuntimeException th) {
+            throw new CDFException.ReaderError(th.getMessage());
+        }
+
+    }
+
+    /**
+     * Returns the {@link TimeSeries time series} of the specified component
+     * of 1 dimensional variable in the specified time range using the given
+     * {@link TimeInstantModel time instant model}, optionally ignoring points
+     * whose
+     * value
+     * equals fill value.
+     * <p>
+     * If a fill value has been specified for this variable via the FILLVAL
+     * attribute, then if ignoreFill has the value true, points where the
+     * value is equal to fill value are excluded if ignoreFill = true.
+     * </p>
+     *
+     * @param variableName variable name
+     * @param component    the component
+     * @param ignoreFill   the ignore fill
+     * @param startTime    a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the first available time is used.
+     * @param stopTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the stop time is assumed to be later than the last
+     *                     available time.
+     * @param tspec        {@link TimeInstantModel time instant model}, May be
+     *                     null, in which case the default model is used.
+     *
+     * @return the copy on write array list time series
+     *
+     * @throws ReaderError the reader error
+     */
+    public TimeSeries getVectorTimeSeries(final String variableName, final int component, final boolean ignoreFill,
+            final int[] startTime, final int[] stopTime, final TimeInstantModel tspec) throws CDFException.ReaderError {
+
+        try {
+            return this.cdfVec.getTimeSeries(variableName, component, ignoreFill, startTime, stopTime, tspec);
+        } catch (RuntimeException th) {
+            throw new CDFException.ReaderError(th.getMessage());
+        }
+
+    }
+
+    /**
+     * Returns the time series of the specified component of 1 dimensional
+     * variable in the specified time range, ignoring points whose
+     * value equals fill value.
+     * <p>
+     * A double[2][] array is returned. The 0th element is the
+     * array containing times, and the 1st element is the array containing
+     * corresponding values. If a fill value has been specified for this
+     * variable via the FILLVAL attribute, then points where the value is
+     * equal to fill value are excluded.
+     * </p>
+     *
+     * @param variableName the variable name
+     * @param component    the component
+     * @param startTime    a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the first available time is used.
+     * @param stopTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the stop time is assumed to be later than the last
+     *                     available
+     *                     time.
+     *
+     * @return the copy on write array list time series
+     *
+     * @throws ReaderError the reader error
+     */
+    public double[][] getVectorTimeSeries(final String variableName, final int component, final int[] startTime,
+            final int[] stopTime) throws CDFException.ReaderError {
+
+        try {
+            return this.cdfVec.getTimeSeries(variableName, component, startTime, stopTime);
+        } catch (RuntimeException th) {
+            throw new CDFException.ReaderError(th.getMessage());
+        }
+
+    }
+
+    /**
+     * Returns the time series as a {@link TimeSeries TimeSeries}, of the
+     * specified component of a CopyOnWriteArrayList variable in the specified time
+     * range
+     * using the given {@link TimeInstantModel time instant model}, ignoring
+     * points
+     * whose value
+     * equals fill value.
+     * <p>
+     * If a fill value has been specified for this variable via the FILLVAL
+     * attribute, then points where the value is equal to fill value are
+     * excluded.
+     * </p>
+     *
+     * @param variableName variable name
+     * @param component    index of the CopyOnWriteArrayList component
+     * @param startTime    a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the first available time is used.
+     * @param stopTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the stop time is assumed to be later than the last
+     *                     available
+     *                     time.
+     * @param tspec        {@link TimeInstantModel time instant model}, May be
+     *                     null, in which case the default model is used.
+     *
+     * @return the copy on write array list time series
+     *
+     * @throws ReaderError the reader error
+     */
+    public TimeSeries getVectorTimeSeries(final String variableName, final int component, final int[] startTime,
+            final int[] stopTime, final TimeInstantModel tspec) throws CDFException.ReaderError {
+
+        try {
+            return this.cdfVec.getTimeSeries(variableName, component, startTime, stopTime, tspec);
+        } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
         }
 
@@ -171,62 +408,58 @@ public class CDFReader extends GenericReader {
     /**
      * Returns names of variables that the specified variable depends on.
      *
-     * @param varName
+     * @param variableName the variable name
      *
      * @return String[]
      */
-    public String[] getDependent(String varName) {
-        String[] anames = this.thisCDF.variableAttributeNames(varName);
+    public String[] getDependent(final String variableName) {
 
-        if (anames == null) {
+        String[] variableAttributeNames = this.thisCDF.variableAttributeNames(variableName);
+
+        if (variableAttributeNames == null) {
             return new String[0];
         }
 
-        List dependent = new Vector();
+        return Arrays.stream(variableAttributeNames)
+                .filter(variableAttributeName -> variableAttributeName.startsWith("DEPEND_"))
+                .map(variableAttributeName -> this.thisCDF.getAttribute(variableName, variableAttributeName))
+                .filter(List.class::isInstance)
+                .map(List.class::cast)
+                .filter(Predicate.not(List::isEmpty))
+                .map(attributes -> attributes.get(0))
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .toArray(String[]::new);
 
-        for (String aname : anames) {
-
-            if (!aname.startsWith("DEPEND_")) {
-                continue;
-            }
-
-            dependent.add(((List) this.thisCDF.getAttribute(varName, aname)).get(0));
-        }
-
-        String[] sa = new String[dependent.size()];
-        dependent.toArray(sa);
-        return sa;
     }
 
     /**
      * Returns the name of the specified index of a multi-dimensional
-     * variable
+     * variable.
      *
-     * @param varName variable name
-     * @param index   index whose name is required
+     * @param variableName variable name
+     * @param index        index whose name is required
      *
      * @return String
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public String getIndexName(String varName, int index) throws CDFException.ReaderError {
+    public String getIndexName(final String variableName, final int index) throws CDFException.ReaderError {
 
-        try {
-            int[] dim = getDimensions(varName);
+        int[] dim = getDimensions(variableName);
 
-            if (dim.length == 0) {
-                return null;
-            }
-
-            if (index >= dim.length) {
-                return null;
-            }
-
-            Vector attr = (Vector) getAttribute(varName, "DEPEND_" + (1 + index));
-            return (String) attr.get(0);
-        } catch (CDFException.ReaderError th) {
-            throw new CDFException.ReaderError(th.getMessage());
+        if (dim.length == 0) {
+            return null;
         }
+
+        if (index >= dim.length) {
+            return null;
+        }
+
+        @SuppressWarnings("unchecked")
+        List<String> attr = (List<String>) getAttribute(variableName, "DEPEND_" + (1 + index));
+
+        return attr.get(0);
 
     }
 
@@ -241,19 +474,18 @@ public class CDFReader extends GenericReader {
      * equal to fill value are excluded.
      * </p>
      *
-     * @param varName
+     * @param variableName the variable name
      *
-     * @return
+     * @return the scalar time series
      *
-     * @throws CDFException.ReaderError if variables is non-numeric, or
-     *                                  is not a scalar.
+     * @throws ReaderError the reader error
      */
-    public double[][] getScalarTimeSeries(String varName) throws CDFException.ReaderError {
+    public double[][] getScalarTimeSeries(final String variableName) throws CDFException.ReaderError {
 
         try {
-            return this.scalar.getTimeSeries(varName);
-        } catch (Throwable th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            return this.scalar.getTimeSeries(variableName);
+        } catch (RuntimeException th) {
+            throw new CDFException.ReaderError(th);
         }
 
     }
@@ -269,19 +501,19 @@ public class CDFReader extends GenericReader {
      * equal to fill value are excluded if ignoreFill = true.
      * </p>
      *
-     * @param varName
-     * @param ignoreFill
+     * @param variableName the variable name
+     * @param ignoreFill   the ignore fill
      *
-     * @return
+     * @return the scalar time series
      *
-     * @throws CDFException.ReaderError if variables is non-numeric, or
-     *                                  is not a scalar.
+     * @throws ReaderError the reader error
      */
-    public double[][] getScalarTimeSeries(String varName, boolean ignoreFill) throws CDFException.ReaderError {
+    public double[][] getScalarTimeSeries(final String variableName, final boolean ignoreFill)
+            throws CDFException.ReaderError {
 
         try {
-            return this.scalar.getTimeSeries(varName, ignoreFill);
-        } catch (Throwable th) {
+            return this.scalar.getTimeSeries(variableName, ignoreFill);
+        } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
         }
 
@@ -300,31 +532,30 @@ public class CDFReader extends GenericReader {
      * value is equal to fill value are excluded if ignoreFill = true.
      * </p>
      *
-     * @param varName
-     * @param startTime  a 3 to 7 element int[], containing year,
-     *                   month (January is 1),
-     *                   day,hour, minute, second and millisecond. May be null, in
-     *                   which case
-     *                   the first available time is used.
-     * @param ignoreFill
-     * @param stopTime   a 3 to 7 element int[], containing year,
-     *                   month (January is 1),
-     *                   day,hour, minute, second and millisecond. May be null, in
-     *                   which case
-     *                   the stop time is assumed to be later than the last
-     *                   available time.
+     * @param variableName the variable name
+     * @param ignoreFill   the ignore fill
+     * @param startTime    a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the first available time is used.
+     * @param stopTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the stop time is assumed to be later than the last
+     *                     available time.
      *
-     * @return
+     * @return the scalar time series
      *
-     * @throws CDFException.ReaderError if variables is non-numeric, or
-     *                                  is not a scalar.
+     * @throws ReaderError the reader error
      */
-    public double[][] getScalarTimeSeries(String varName, boolean ignoreFill, int[] startTime, int[] stopTime)
-            throws CDFException.ReaderError {
+    public double[][] getScalarTimeSeries(final String variableName, final boolean ignoreFill, final int[] startTime,
+            final int[] stopTime) throws CDFException.ReaderError {
 
         try {
-            return this.scalar.getTimeSeries(varName, ignoreFill, startTime, stopTime);
-        } catch (Throwable th) {
+            return this.scalar.getTimeSeries(variableName, ignoreFill, startTime, stopTime);
+        } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
         }
 
@@ -342,34 +573,33 @@ public class CDFReader extends GenericReader {
      * value is equal to fill value are excluded if ignoreFill = true.
      * </p>
      *
-     * @param varName
-     * @param startTime  a 3 to 7 element int[], containing year,
-     *                   month (January is 1),
-     *                   day,hour, minute, second and millisecond. May be null, in
-     *                   which case
-     *                   the first available time is used.
-     * @param ignoreFill
-     * @param stopTime   a 3 to 7 element int[], containing year,
-     *                   month (January is 1),
-     *                   day,hour, minute, second and millisecond. May be null, in
-     *                   which case
-     *                   the stop time is assumed to be later than the last
-     *                   available time.
-     * @param tspec      {@link TimeInstantModel time instant model}, May be
-     *                   null, in which case the default model is used.
+     * @param variableName the variable name
+     * @param ignoreFill   the ignore fill
+     * @param startTime    a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the first available time is used.
+     * @param stopTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the stop time is assumed to be later than the last
+     *                     available time.
+     * @param tspec        {@link TimeInstantModel time instant model}, May be
+     *                     null, in which case the default model is used.
      *
-     * @return
+     * @return the scalar time series
      *
-     * @throws CDFException.ReaderError if variables is non-numeric, or
-     *                                  is not a scalar.
+     * @throws ReaderError the reader error
      */
-    public TimeSeries getScalarTimeSeries(String varName, boolean ignoreFill, int[] startTime, int[] stopTime,
-            TimeInstantModel tspec) throws CDFException.ReaderError {
+    public TimeSeries getScalarTimeSeries(final String variableName, final boolean ignoreFill, final int[] startTime,
+            final int[] stopTime, final TimeInstantModel tspec) throws CDFException.ReaderError {
 
         try {
-            return this.scalar.getTimeSeries(varName, ignoreFill, startTime, stopTime, tspec);
-        } catch (Throwable th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            return this.scalar.getTimeSeries(variableName, ignoreFill, startTime, stopTime, tspec);
+        } catch (RuntimeException th) {
+            throw new CDFException.ReaderError("getScalarTimeSeries failed", th);
         }
 
     }
@@ -389,30 +619,30 @@ public class CDFReader extends GenericReader {
      * For numeric variables of dimension other than 0, and for
      * character string variables an exception is thrown.
      *
-     * @param varName
-     * @param startTime a 3 to 7 element int[], containing year,
-     *                  month (January is 1),
-     *                  day,hour, minute, second and millisecond. May be null, in
-     *                  which case
-     *                  the first available time is used.
-     * @param stopTime  a 3 to 7 element int[], containing year,
-     *                  month (January is 1),
-     *                  day,hour, minute, second and millisecond. May be null, in
-     *                  which case
-     *                  the stop time is assumed to be later than the last available
-     *                  time.
+     * @param variableName the variable name
+     * @param startTime    a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the first available time is used.
+     * @param stopTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the stop time is assumed to be later than the last
+     *                     available
+     *                     time.
      *
-     * @return
+     * @return the scalar time series
      *
-     * @throws CDFException.ReaderError if variables is non-numeric, or
-     *                                  is not a scalar.
+     * @throws ReaderError the reader error
      */
-    public double[][] getScalarTimeSeries(String varName, int[] startTime, int[] stopTime)
+    public double[][] getScalarTimeSeries(final String variableName, final int[] startTime, final int[] stopTime)
             throws CDFException.ReaderError {
 
         try {
-            return this.scalar.getTimeSeries(varName, startTime, stopTime);
-        } catch (Throwable th) {
+            return this.scalar.getTimeSeries(variableName, startTime, stopTime);
+        } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
         }
 
@@ -429,32 +659,32 @@ public class CDFReader extends GenericReader {
      * excluded.
      * </p>
      *
-     * @param varName
-     * @param startTime a 3 to 7 element int[], containing year,
-     *                  month (January is 1),
-     *                  day,hour, minute, second and millisecond. May be null, in
-     *                  which case
-     *                  the first available time is used.
-     * @param stopTime  a 3 to 7 element int[], containing year,
-     *                  month (January is 1),
-     *                  day,hour, minute, second and millisecond. May be null, in
-     *                  which case
-     *                  the stop time is assumed to be later than the last available
-     *                  time.
-     * @param tspec     {@link TimeInstantModel time instant model}, May be
-     *                  null, in which case the default model is used.
+     * @param variableName the variable name
+     * @param startTime    a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the first available time is used.
+     * @param stopTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the stop time is assumed to be later than the last
+     *                     available
+     *                     time.
+     * @param tspec        {@link TimeInstantModel time instant model}, May be
+     *                     null, in which case the default model is used.
      *
-     * @return
+     * @return the scalar time series
      *
-     * @throws CDFException.ReaderError if variables is non-numeric, or
-     *                                  is not a scalar.
+     * @throws ReaderError the reader error
      */
-    public TimeSeries getScalarTimeSeries(String varName, int[] startTime, int[] stopTime, TimeInstantModel tspec)
-            throws CDFException.ReaderError {
+    public TimeSeries getScalarTimeSeries(final String variableName, final int[] startTime, final int[] stopTime,
+            final TimeInstantModel tspec) throws CDFException.ReaderError {
 
         try {
-            return this.scalar.getTimeSeries(varName, startTime, stopTime, tspec);
-        } catch (Throwable th) {
+            return this.scalar.getTimeSeries(variableName, startTime, stopTime, tspec);
+        } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
         }
 
@@ -464,14 +694,14 @@ public class CDFReader extends GenericReader {
      * Returns {@link TimeSeries TimeSeries} of the specified variable
      * using the default {@link TimeInstantModel time instant model}.
      *
-     * @param varName
+     * @param variableName the variable name
      *
-     * @return
+     * @return the time series
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public TimeSeries getTimeSeries(String varName) throws CDFException.ReaderError {
-        return getTimeSeries(varName, null, timeModelInstance());
+    public TimeSeries getTimeSeries(final String variableName) throws CDFException.ReaderError {
+        return getTimeSeries(variableName, null, timeModelInstance());
     }
 
     /**
@@ -479,25 +709,27 @@ public class CDFReader extends GenericReader {
      * in the specified time range using the default
      * {@link TimeInstantModel time instant model}.
      *
-     * @param varName   variable name
-     * @param startTime a 3 to 7 element int[], containing year,
-     *                  month (January is 1),
-     *                  day,hour, minute, second and millisecond. May be null, in
-     *                  which case
-     *                  the first available time is used.
-     * @param stopTime  a 3 to 7 element int[], containing year,
-     *                  month (January is 1),
-     *                  day,hour, minute, second and millisecond. May be null, in
-     *                  which case
-     *                  the stop time is assumed to be later than the last available
-     *                  time.
+     * @param variableName variable name
+     * @param startTime    a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the first available time is used.
+     * @param stopTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the stop time is assumed to be later than the last
+     *                     available
+     *                     time.
      *
-     * @return
+     * @return the time series
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public TimeSeries getTimeSeries(String varName, int[] startTime, int[] stopTime) throws CDFException.ReaderError {
-        return getTimeSeries(varName, startTime, stopTime, null);
+    public TimeSeries getTimeSeries(final String variableName, final int[] startTime, final int[] stopTime)
+            throws CDFException.ReaderError {
+        return getTimeSeries(variableName, startTime, stopTime, null);
     }
 
     /**
@@ -505,31 +737,32 @@ public class CDFReader extends GenericReader {
      * the specified time range using the given
      * {@link TimeInstantModel time instant model}.
      *
-     * @param varName   variable name
-     * @param startTime a 3 to 7 element int[], containing year,
-     *                  month (January is 1),
-     *                  day,hour, minute, second and millisecond. May be null, in
-     *                  which case
-     *                  the first available time is used.
-     * @param stopTime  a 3 to 7 element int[], containing year,
-     *                  month (January is 1),
-     *                  day,hour, minute, second and millisecond. May be null, in
-     *                  which case
-     *                  the stop time is assumed to be later than the last available
-     *                  time.
-     * @param tspec     {@link TimeInstantModel time instant model}, May be
-     *                  null, in which case the default model is used.
+     * @param variableName variable name
+     * @param startTime    a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the first available time is used.
+     * @param stopTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the stop time is assumed to be later than the last
+     *                     available
+     *                     time.
+     * @param tspec        {@link TimeInstantModel time instant model}, May be
+     *                     null, in which case the default model is used.
      *
      * @return {@link TimeSeries time series}
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public TimeSeries getTimeSeries(String varName, int[] startTime, int[] stopTime, TimeInstantModel tspec)
-            throws CDFException.ReaderError {
+    public TimeSeries getTimeSeries(final String variableName, final int[] startTime, final int[] stopTime,
+            final TimeInstantModel tspec) throws CDFException.ReaderError {
         TimeVariable tv = null;
 
         try {
-            tv = TimeVariableFactory.getTimeVariable(this, varName);
+            tv = TimeVariableFactory.getTimeVariable(this, variableName);
             TimeInstantModel _tspec = tspec;
 
             if (_tspec == null) {
@@ -537,13 +770,13 @@ public class CDFReader extends GenericReader {
             }
 
             if (!tv.canSupportPrecision(_tspec.getOffsetUnits())) {
-                throw new CDFException.ReaderError(varName + " has lower time precision than " + "requested.");
+                throw new CDFException.ReaderError(variableName + " has lower time precision than requested.");
             }
 
-            double[] trange = getAvailableTimeRange(varName);
-            double[] tr = TSExtractor.getOverlap(this, trange, varName, startTime, stopTime);
-            return getTimeSeries(varName, tr, tspec);
-        } catch (Throwable th) {
+            double[] trange = getAvailableTimeRange(variableName);
+            double[] tr = TSExtractor.getOverlap(this, trange, variableName, startTime, stopTime);
+            return getTimeSeries(variableName, tr, tspec);
+        } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
         }
 
@@ -553,17 +786,18 @@ public class CDFReader extends GenericReader {
      * Returns {@link TimeSeries TimeSeries} of the specified variable
      * using the specified {@link TimeInstantModel time instant model}.
      *
-     * @param varName variable name
-     * @param tspec   {@link TimeInstantModel time instant model}, May be
-     *                null, in which case the default model is used.
+     * @param variableName variable name
+     * @param tspec        {@link TimeInstantModel time instant model}, May be
+     *                     null, in which case the default model is used.
      *
-     * @return
+     * @return the time series
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public TimeSeries getTimeSeries(String varName, TimeInstantModel tspec) throws CDFException.ReaderError {
+    public TimeSeries getTimeSeries(final String variableName, final TimeInstantModel tspec)
+            throws CDFException.ReaderError {
         TimeInstantModel _tspec = (tspec == null) ? timeModelInstance() : tspec;
-        return getTimeSeries(varName, null, _tspec);
+        return getTimeSeries(variableName, null, _tspec);
     }
 
     /**
@@ -571,32 +805,32 @@ public class CDFReader extends GenericReader {
      * in the specified time range using the given
      * {@link TimeInstantModel time instant model}.
      *
-     * @param varName     variable name
-     * @param startTime   a 3 to 7 element int[], containing year,
-     *                    month (January is 1),
-     *                    day,hour, minute, second and millisecond. May be null, in
-     *                    which case
-     *                    the first available time is used.
-     * @param stopTime    a 3 to 7 element int[], containing year,
-     *                    month (January is 1),
-     *                    day,hour, minute, second and millisecond. May be null, in
-     *                    which case
-     *                    the stop time is assumed to be later than the last
-     *                    available time.
-     * @param tspec       {@link TimeInstantModel time instant model}, May be
-     *                    null, in which case the default model is used.
-     * @param columnMajor specifies whether the first index of the
-     *                    variable dimension varies the fastest, i.e. IDL like.
+     * @param variableName variable name
+     * @param startTime    a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the first available time is used.
+     * @param stopTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond. May be null, in
+     *                     which case
+     *                     the stop time is assumed to be later than the last
+     *                     available time.
+     * @param tspec        {@link TimeInstantModel time instant model}, May be
+     *                     null, in which case the default model is used.
+     * @param columnMajor  specifies whether the first index of the
+     *                     variable dimension varies the fastest, i.e. IDL like.
      *
      * @return {@link TimeSeriesOneD time series}
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public TimeSeriesOneD getTimeSeriesOneD(String varName, int[] startTime, int[] stopTime, TimeInstantModel tspec,
-            boolean columnMajor) throws CDFException.ReaderError {
+    public TimeSeriesOneD getTimeSeriesOneD(final String variableName, final int[] startTime, final int[] stopTime,
+            final TimeInstantModel tspec, final boolean columnMajor) throws CDFException.ReaderError {
 
         try {
-            TimeVariable tv = TimeVariableFactory.getTimeVariable(this, varName);
+            TimeVariable tv = TimeVariableFactory.getTimeVariable(this, variableName);
             TimeInstantModel _tspec = tspec;
 
             if (_tspec == null) {
@@ -604,254 +838,19 @@ public class CDFReader extends GenericReader {
             }
 
             if (!tv.canSupportPrecision(_tspec.getOffsetUnits())) {
-                System.out.println("cannot support");
-                throw new Throwable(varName + " has lower time precision than " + "requested.");
+                // System.out.println("cannot support");
+                throw new IllegalArgumentException(variableName + " has lower time precision than requested.");
             }
 
-            double[] trange = getAvailableTimeRange(varName);
-            double[] tr = TSExtractor.getOverlap(this, trange, varName, startTime, stopTime);
-            return getTimeSeries(varName, tr, _tspec, columnMajor);
-        } catch (Throwable th) {
-            System.out.println(th.getMessage());
-            th.printStackTrace();
-            throw new CDFException.ReaderError(th.getMessage());
-        }
+            double[] trange = getAvailableTimeRange(variableName);
 
-    }
+            double[] tr = TSExtractor.getOverlap(this, trange, variableName, startTime, stopTime);
 
-    /**
-     * Returns the time series of the specified component of a 1 dimensional
-     * variable, ignoring points whose value equals fill value.
-     * <p>
-     * A double[2][] array is returned. The 0th element is the
-     * array containing times, and the 1st element is the array containing
-     * corresponding values. If a fill value has been specified for this
-     * variable via the FILLVAL attribute, then points where the value is
-     * equal to fill value are excluded.
-     * </p>
-     *
-     * @param varName
-     * @param component
-     *
-     * @return
-     *
-     * @throws CDFException.ReaderError if variables is non-numeric, or is
-     *                                  not a vector.
-     */
-    public double[][] getVectorTimeSeries(String varName, int component) throws CDFException.ReaderError {
+            return getTimeSeries(variableName, tr, _tspec, columnMajor);
 
-        try {
-            return this.vector.getTimeSeries(varName, component);
-        } catch (Throwable th) {
-            throw new CDFException.ReaderError(th.getMessage());
-        }
+        } catch (RuntimeException th) {
 
-    }
-
-    /**
-     * Returns the time series of the specified component of a 1 dimensional
-     * variable, optionally ignoring points whose value equals fill value.
-     * <p>
-     * A double[2][] array is returned. The 0th element is the
-     * array containing times, and the 1st element is the array containing
-     * corresponding values. If a fill value has been specified for this
-     * variable via the FILLVAL attribute, then points where the value is
-     * equal to fill value are excluded if ignoreFill = true.
-     * </p>
-     *
-     * @param varName
-     * @param ignoreFill
-     * @param component
-     *
-     * @return
-     *
-     * @throws CDFException.ReaderError if variables is non-numeric, or is
-     *                                  not a vector.
-     */
-    public double[][] getVectorTimeSeries(String varName, int component, boolean ignoreFill)
-            throws CDFException.ReaderError {
-
-        try {
-            return this.vector.getTimeSeries(varName, component, ignoreFill);
-        } catch (Throwable th) {
-            throw new CDFException.ReaderError(th.getMessage());
-        }
-
-    }
-
-    /**
-     * Returns the time series of the specified component of 1 dimensional
-     * variable in the specified time range, optionally ignoring points whose
-     * value equals fill value.
-     * <p>
-     * A double[2][] array is returned. The 0th element is the
-     * array containing times, and the 1st element is the array containing
-     * corresponding values. If a fill value has been specified for this
-     * variable via the FILLVAL attribute, then points where the value is
-     * equal to fill value are excluded if ignoreFill = true.
-     * </p>
-     *
-     * @param varName
-     * @param startTime  a 3 to 7 element int[], containing year,
-     *                   month (January is 1),
-     *                   day,hour, minute, second and millisecond.
-     * @param component
-     * @param stopTime   a 3 to 7 element int[], containing year,
-     *                   month (January is 1),
-     *                   day,hour, minute, second and millisecond. May be null, in
-     *                   which case
-     *                   the stop time is assumed to be later than the last
-     *                   available time.
-     * @param ignoreFill
-     *
-     * @return
-     *
-     * @throws CDFException.ReaderError if variables is non-numeric, or is
-     *                                  not a vector.
-     */
-    public double[][] getVectorTimeSeries(String varName, int component, boolean ignoreFill, int[] startTime,
-            int[] stopTime) throws CDFException.ReaderError {
-
-        try {
-            return this.vector.getTimeSeries(varName, component, ignoreFill, startTime, stopTime);
-        } catch (Throwable th) {
-            throw new CDFException.ReaderError(th.getMessage());
-        }
-
-    }
-
-    /**
-     * Returns the {@link TimeSeries time series} of the specified component
-     * of 1 dimensional variable in the specified time range using the given
-     * {@link TimeInstantModel time instant model}, optionally ignoring points
-     * whose
-     * value
-     * equals fill value.
-     * <p>
-     * If a fill value has been specified for this variable via the FILLVAL
-     * attribute, then if ignoreFill has the value true, points where the
-     * value is equal to fill value are excluded if ignoreFill = true.
-     * </p>
-     *
-     * @param varName    variable name
-     * @param component
-     * @param startTime  a 3 to 7 element int[], containing year,
-     *                   month (January is 1),
-     *                   day,hour, minute, second and millisecond. May be null, in
-     *                   which case
-     *                   the first available time is used.
-     * @param ignoreFill
-     * @param stopTime   a 3 to 7 element int[], containing year,
-     *                   month (January is 1),
-     *                   day,hour, minute, second and millisecond. May be null, in
-     *                   which case
-     *                   the stop time is assumed to be later than the last
-     *                   available time.
-     * @param tspec      {@link TimeInstantModel time instant model}, May be
-     *                   null, in which case the default model is used.
-     *
-     * @return
-     *
-     * @throws CDFException.ReaderError if variables is non-numeric, or
-     *                                  is not a vector.
-     *                                  Use {@link #getTimeSeries(String varName)
-     *                                  getTimeSeries(
-     *                                  String varName)} for string type.
-     */
-    public TimeSeries getVectorTimeSeries(String varName, int component, boolean ignoreFill, int[] startTime,
-            int[] stopTime, TimeInstantModel tspec) throws CDFException.ReaderError {
-
-        try {
-            return this.vector.getTimeSeries(varName, component, ignoreFill, startTime, stopTime, tspec);
-        } catch (Throwable th) {
-            throw new CDFException.ReaderError(th.getMessage());
-        }
-
-    }
-
-    /**
-     * Returns the time series of the specified component of 1 dimensional
-     * variable in the specified time range, ignoring points whose
-     * value equals fill value.
-     * <p>
-     * A double[2][] array is returned. The 0th element is the
-     * array containing times, and the 1st element is the array containing
-     * corresponding values. If a fill value has been specified for this
-     * variable via the FILLVAL attribute, then points where the value is
-     * equal to fill value are excluded.
-     * </p>
-     *
-     * @param varName
-     * @param startTime a 3 to 7 element int[], containing year,
-     *                  month (January is 1),
-     *                  day,hour, minute, second and millisecond. May be null, in
-     *                  which case
-     *                  the first available time is used.
-     * @param component
-     * @param stopTime  a 3 to 7 element int[], containing year,
-     *                  month (January is 1),
-     *                  day,hour, minute, second and millisecond. May be null, in
-     *                  which case
-     *                  the stop time is assumed to be later than the last available
-     *                  time.
-     *
-     * @return
-     *
-     * @throws CDFException.ReaderError if variables is non-numeric, or is
-     *                                  not a vector.
-     */
-    public double[][] getVectorTimeSeries(String varName, int component, int[] startTime, int[] stopTime)
-            throws CDFException.ReaderError {
-
-        try {
-            return this.vector.getTimeSeries(varName, component, startTime, stopTime);
-        } catch (Throwable th) {
-            throw new CDFException.ReaderError(th.getMessage());
-        }
-
-    }
-
-    /**
-     * Returns the time series as a {@link TimeSeries TimeSeries}, of the
-     * specified component of a vector variable in the specified time range
-     * using the given {@link TimeInstantModel time instant model}, ignoring
-     * points
-     * whose value
-     * equals fill value.
-     * <p>
-     * If a fill value has been specified for this variable via the FILLVAL
-     * attribute, then points where the value is equal to fill value are
-     * excluded.
-     * </p>
-     *
-     * @param varName   variable name
-     * @param component index of the vector component
-     * @param startTime a 3 to 7 element int[], containing year,
-     *                  month (January is 1),
-     *                  day,hour, minute, second and millisecond. May be null, in
-     *                  which case
-     *                  the first available time is used.
-     * @param stopTime  a 3 to 7 element int[], containing year,
-     *                  month (January is 1),
-     *                  day,hour, minute, second and millisecond. May be null, in
-     *                  which case
-     *                  the stop time is assumed to be later than the last available
-     *                  time.
-     * @param tspec     {@link TimeInstantModel time instant model}, May be
-     *                  null, in which case the default model is used.
-     *
-     * @return
-     *
-     * @throws CDFException.ReaderError if variables is non-numeric, or is
-     *                                  not a vector.
-     */
-    public TimeSeries getVectorTimeSeries(String varName, int component, int[] startTime, int[] stopTime,
-            TimeInstantModel tspec) throws CDFException.ReaderError {
-
-        try {
-            return this.vector.getTimeSeries(varName, component, startTime, stopTime, tspec);
-        } catch (Throwable th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getTimeSeriesOneD failed", th);
         }
 
     }
@@ -860,51 +859,46 @@ public class CDFReader extends GenericReader {
      * Returns last available time for a variable.Returned time has millisecond
      * precision.
      *
-     * @param varName
+     * @param variableName the variable name
      *
      * @return int[7] containing year, month, day, hour, minute, second and
      *         millisecond, or null.
      *
-     * @throws CDFException.ReaderError if not a valid variable name.
+     * @throws ReaderError the reader error
      */
-    public int[] lastAvailableTime(String varName) throws CDFException.ReaderError {
-        return lastAvailableTime(varName, null);
+    public int[] lastAvailableTime(final String variableName) throws CDFException.ReaderError {
+        return lastAvailableTime(variableName, null);
     }
 
     /**
      * Returns last available time which is not later than the given time
      * for a variable.Returned time has millisecond precision.
      *
-     * @param varName
-     * @param stop    a 3 to 7 element int[], containing year,
-     *                month (January is 1), day, hour, minute, second and
-     *                millisecond.
+     * @param variableName the variable name
+     * @param stop         a 3 to 7 element int[], containing year,
+     *                     month (January is 1), day, hour, minute, second and
+     *                     millisecond.
      *
      * @return int[7] containing year, month, day, hour, minute, second and
      *         millisecond, or null.
      *
-     * @throws CDFException.ReaderError if not a valid variable name.
+     * @throws ReaderError the reader error
      */
-    public int[] lastAvailableTime(String varName, int[] stop) throws CDFException.ReaderError {
+    public int[] lastAvailableTime(final String variableName, final int[] stop) throws CDFException.ReaderError {
 
         try {
-            TimeVariable tv = TimeVariableFactory.getTimeVariable(this, varName);
+            TimeVariable tv = TimeVariableFactory.getTimeVariable(this, variableName);
             double[] times = tv.getTimes();
-            double[] trange = new double[] { times[0], times[times.length - 1] };
-            double[] tr;
-
-            try {
-                tr = TSExtractor.getOverlap(this, trange, varName, null, stop);
-            } catch (Exception ex) {
-                return null;
-            }
+            double[] trange = { times[0], times[times.length - 1] };
+            double[] tr = TSExtractor.getOverlap(this, trange, variableName, null, stop);
 
             if (tr[1] != Double.MAX_VALUE) {
                 Calendar c = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
                 c.setTimeInMillis((long) tr[1]);
 
                 if (tv.isTT2000()) {
-                    long l0 = c.getTime().getTime();
+                    long l0 = c.getTime()
+                            .getTime();
                     long l = (long) TimeUtil.getOffset(l0);
                     c.setTimeInMillis(((long) tr[1] - l) + l0);
                 }
@@ -913,8 +907,8 @@ public class CDFReader extends GenericReader {
             }
 
             return null;
-        } catch (Throwable th) {
-            throw new CDFException.ReaderError(th.getMessage());
+        } catch (RuntimeException th) {
+            throw new CDFException.ReaderError(th.getMessage(), th);
         }
 
     }
@@ -923,28 +917,30 @@ public class CDFReader extends GenericReader {
      * Returns {@link TimeInstantModel time instant model} with specified base
      * time and default offset units (millisecond) for a variable.
      *
-     * @param varName  variable name
-     * @param baseTime a 3 to 7 element int[], containing year,
-     *                 month (January is 1),
-     *                 day,hour, minute, second and millisecond.
+     * @param variableName variable name
+     * @param baseTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond.
      *
-     * @return
+     * @return the time instant model
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public TimeInstantModel timeModelInstance(String varName, int[] baseTime) throws CDFException.ReaderError {
+    public TimeInstantModel timeModelInstance(final String variableName, final int[] baseTime)
+            throws CDFException.ReaderError {
 
         if (baseTime.length < 3) {
-            throw new CDFException.ReaderError("incomplete base time " + "definition.");
+            throw new CDFException.ReaderError("incomplete base time definition.");
         }
 
         try {
-            boolean isTT2000 = TimeVariableFactory.getTimeVariable(this, varName).isTT2000();
+            boolean isTT2000 = TimeVariableFactory.getTimeVariable(this, variableName)
+                    .isTT2000();
             long l = TSExtractor.getTime(baseTime);
             double msec = (isTT2000) ? TimeUtil.milliSecondSince1970(l) : l;
             msec += TimeVariableFactory.JANUARY_1_1970_LONG;
             return getTimeInstantModel(msec);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
         }
 
@@ -954,199 +950,233 @@ public class CDFReader extends GenericReader {
      * Returns {@link TimeInstantModel time instant model} with specified base
      * time and specified offset units (millisecond) for a variable.
      *
-     * @param varName     variable name
-     * @param baseTime    a 3 to 7 element int[], containing year,
-     *                    month (January is 1),
-     *                    day,hour, minute, second and millisecond.
-     * @param offsetUnits
+     * @param variableName variable name
+     * @param baseTime     a 3 to 7 element int[], containing year,
+     *                     month (January is 1),
+     *                     day,hour, minute, second and millisecond.
+     * @param offsetUnits  the offset units
      *
-     * @return
+     * @return the time instant model
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
-    public TimeInstantModel timeModelInstance(String varName, int[] baseTime, TimePrecision offsetUnits)
-            throws CDFException.ReaderError {
-        TimeInstantModel model = timeModelInstance(varName, baseTime);
+    public TimeInstantModel timeModelInstance(final String variableName, final int[] baseTime,
+            final TimePrecision offsetUnits) throws CDFException.ReaderError {
+        TimeInstantModel model = timeModelInstance(variableName, baseTime);
         model.setOffsetUnits(offsetUnits);
         return model;
     }
 
-    int[] GMT(Calendar c) {
+    int[] GMT(final Calendar c) {
         return new int[] { c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH),
                 c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), c.get(Calendar.SECOND),
                 c.get(Calendar.MILLISECOND) };
     }
 
-    boolean overlaps(double[] t) {
+    boolean overlaps(final double[] t) {
         return (t[0] != Double.MIN_VALUE) && (t[0] != Double.MAX_VALUE);
     }
 
-    private TimeInstantModel getTimeInstantModel(double msec) {
+    private TimeInstantModel getTimeInstantModel(final double msec) {
         TimeInstantModel tspec = TimeVariableFactory.getDefaultTimeInstantModel(msec);
         return tspec;
     }
 
-    private TimeSeries getTimeSeries(String varName, double[] timeRange, TimeInstantModel tspec)
+    private TimeSeries getTimeSeries(final String variableName, final double[] timeRange, final TimeInstantModel tspec)
             throws CDFException.ReaderError {
-        Variable var = this.thisCDF.getVariable(varName);
+        Variable var = this.thisCDF.getVariable(variableName);
         TimeSeriesX ts = null;
 
         try {
             ts = new TSExtractor.GeneralTimeSeriesX(this, var, false, timeRange, tspec, false, true);
             return new TimeSeriesImpl(ts);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
         }
 
     }
 
-    private TimeSeriesOneD getTimeSeries(String varName, double[] timeRange, TimeInstantModel tspec,
-            boolean columnMajor) throws CDFException.ReaderError {
-        Variable var = this.thisCDF.getVariable(varName);
+    private TimeSeriesOneD getTimeSeries(final String variableName, final double[] timeRange,
+            final TimeInstantModel tspec, final boolean columnMajor) throws CDFException.ReaderError {
+        Variable var = this.thisCDF.getVariable(variableName);
         TimeSeriesX ts = null;
 
         try {
             ts = new TSExtractor.GeneralTimeSeriesX(this, var, false, timeRange, tspec, true, columnMajor);
             return new TimeSeriesOneDImpl(ts);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
         }
 
     }
 
-    class CDFVector {
+    class CDFVec {
 
         MetaData rdr;
 
-        public double[][] getTimeSeries(String varName, int component) throws Throwable {
-            Variable var = CDFReader.this.thisCDF.getVariable(varName);
+        public double[][] getTimeSeries(final String variableName, final int component) throws ReaderError {
+            Variable var = CDFReader.this.thisCDF.getVariable(variableName);
 
             if (var.getEffectiveRank() != 1) {
-                throw new Throwable(varName + " is not a vector.");
+                throw new IllegalArgumentException(variableName + " is not a CopyOnWriteArrayList.");
             }
 
             int dim = var.getEffectiveDimensions()[0];
 
             if ((component < 0) || (component > dim)) {
-                throw new Throwable("component exceeds dimension of " + varName + " (" + dim + ")");
+                throw new IllegalArgumentException("component exceeds dimension of " + variableName + " (" + dim + ")");
             }
 
-            return _getTimeSeries(varName, component, true, null);
+            return _getTimeSeries(variableName, component, true, null);
         }
 
-        public double[][] getTimeSeries(String varName, int component, boolean ignoreFill) throws Throwable {
+        public double[][] getTimeSeries(final String variableName, final int component, final boolean ignoreFill)
+                throws ReaderError {
 
-            if (CDFReader.this.thisCDF.getVariable(varName).getEffectiveRank() != 1) {
-                throw new Throwable(varName + " is not a vector.");
+            if (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getEffectiveRank() != 1) {
+                throw new IllegalArgumentException(variableName + " is not a CopyOnWriteArrayList.");
             }
 
-            Integer dim = (Integer) (CDFReader.this.thisCDF.getVariable(varName).getElementCount().get(0));
+            Integer dim = (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getDimensionElementCounts()
+                    .get(0));
 
             if ((component < 0) || (component > dim)) {
-                throw new Throwable("Invalid component " + component + " for " + varName);
+                throw new IllegalArgumentException("Invalid component " + component + " for " + variableName);
             }
 
-            return _getTimeSeries(varName, component, ignoreFill, null);
+            return _getTimeSeries(variableName, component, ignoreFill, null);
         }
 
-        public double[][] getTimeSeries(String varName, int component, boolean ignoreFill, int[] startTime,
-                int[] stopTime) throws Throwable {
+        public double[][] getTimeSeries(final String variableName, final int component, final boolean ignoreFill,
+                final int[] startTime, final int[] stopTime) throws ReaderError {
 
-            if (CDFReader.this.thisCDF.getVariable(varName).getEffectiveRank() != 1) {
-                throw new Throwable(varName + " is not a vector.");
+            if (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getEffectiveRank() != 1) {
+                throw new IllegalArgumentException(variableName + " is not a CopyOnWriteArrayList.");
             }
 
-            Integer dim = (Integer) (CDFReader.this.thisCDF.getVariable(varName).getElementCount().get(0));
+            Integer dim = (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getDimensionElementCounts()
+                    .get(0));
 
             if ((component < 0) || (component > dim)) {
-                throw new Throwable("Invalid component " + component + " for " + varName);
+                throw new IllegalArgumentException("Invalid component " + component + " for " + variableName);
             }
 
-            double[] trange = getAvailableTimeRange(varName);
-            double[] tr = TSExtractor.getOverlap(this.rdr, trange, varName, startTime, stopTime);
-            return _getTimeSeries(varName, component, ignoreFill, tr);
+            double[] trange = getAvailableTimeRange(variableName);
+            double[] tr = TSExtractor.getOverlap(this.rdr, trange, variableName, startTime, stopTime);
+            return _getTimeSeries(variableName, component, ignoreFill, tr);
         }
 
-        public TimeSeries getTimeSeries(String varName, int component, boolean ignoreFill, int[] startTime,
-                int[] stopTime, TimeInstantModel tspec) throws Throwable {
+        public TimeSeries getTimeSeries(final String variableName, final int component, final boolean ignoreFill,
+                final int[] startTime, final int[] stopTime, final TimeInstantModel tspec) throws ReaderError {
 
-            if (CDFReader.this.thisCDF.getVariable(varName).getEffectiveRank() != 1) {
-                throw new Throwable(varName + " is not a vector.");
+            if (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getEffectiveRank() != 1) {
+                throw new IllegalArgumentException(variableName + " is not a CopyOnWriteArrayList.");
             }
 
-            Integer dim = (Integer) (CDFReader.this.thisCDF.getVariable(varName).getElementCount().get(0));
+            Integer dim = (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getDimensionElementCounts()
+                    .get(0));
 
             if ((component < 0) || (component > dim)) {
-                throw new Throwable("Invalid component " + component + " for " + varName);
+                throw new IllegalArgumentException("Invalid component " + component + " for " + variableName);
             }
 
-            double[] trange = getAvailableTimeRange(varName);
-            double[] tr = TSExtractor.getOverlap(this.rdr, trange, varName, startTime, stopTime);
-            return _getTimeSeries(varName, component, ignoreFill, tr, tspec);
+            double[] trange = getAvailableTimeRange(variableName);
+            double[] tr = TSExtractor.getOverlap(this.rdr, trange, variableName, startTime, stopTime);
+            return _getTimeSeries(variableName, component, ignoreFill, tr, tspec);
         }
 
-        public double[][] getTimeSeries(String varName, int component, int[] startTime, int[] stopTime)
-                throws Throwable {
+        public double[][] getTimeSeries(final String variableName, final int component, final int[] startTime,
+                final int[] stopTime) throws ReaderError {
 
-            if (CDFReader.this.thisCDF.getVariable(varName).getEffectiveRank() != 1) {
-                throw new Throwable(varName + " is not a vector.");
+            if (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getEffectiveRank() != 1) {
+                throw new IllegalArgumentException(variableName + " is not a CopyOnWriteArrayList.");
             }
 
-            Integer dim = (Integer) (CDFReader.this.thisCDF.getVariable(varName).getElementCount().get(0));
+            Integer dim = (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getDimensionElementCounts()
+                    .get(0));
 
             if ((component < 0) || (component > dim)) {
-                throw new Throwable("Invalid component " + component + " for " + varName);
+                throw new IllegalArgumentException("Invalid component " + component + " for " + variableName);
             }
 
-            double[] trange = getAvailableTimeRange(varName);
-            double[] tr = TSExtractor.getOverlap(this.rdr, trange, varName, startTime, stopTime);
-            return _getTimeSeries(varName, component, true, tr);
+            double[] trange = getAvailableTimeRange(variableName);
+            double[] tr = TSExtractor.getOverlap(this.rdr, trange, variableName, startTime, stopTime);
+            return _getTimeSeries(variableName, component, true, tr);
         }
 
-        public TimeSeries getTimeSeries(String varName, int component, int[] startTime, int[] stopTime,
-                TimeInstantModel tspec) throws Throwable {
+        public TimeSeries getTimeSeries(final String variableName, final int component, final int[] startTime,
+                final int[] stopTime, final TimeInstantModel tspec) throws ReaderError {
 
-            if (CDFReader.this.thisCDF.getVariable(varName).getEffectiveRank() != 1) {
-                throw new Throwable(varName + " is not a vector.");
+            if (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getEffectiveRank() != 1) {
+                throw new IllegalArgumentException(variableName + " is not a CopyOnWriteArrayList.");
             }
 
-            Integer dim = (Integer) (CDFReader.this.thisCDF.getVariable(varName).getElementCount().get(0));
+            Integer dim = (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getDimensionElementCounts()
+                    .get(0));
 
             if ((component < 0) || (component > dim)) {
-                throw new Throwable("Invalid component " + component + " for " + varName);
+                throw new IllegalArgumentException("Invalid component " + component + " for " + variableName);
             }
 
-            double[] trange = getAvailableTimeRange(varName);
-            double[] tr = TSExtractor.getOverlap(this.rdr, trange, varName, startTime, stopTime);
-            return _getTimeSeries(varName, component, true, tr, tspec);
+            double[] trange = getAvailableTimeRange(variableName);
+            double[] tr = TSExtractor.getOverlap(this.rdr, trange, variableName, startTime, stopTime);
+            return _getTimeSeries(variableName, component, true, tr, tspec);
         }
 
-        private double[][] _getTimeSeries(String varName, int component, boolean ignoreFill, double[] timeRange)
-                throws Throwable {
-            checkType(varName);
-            Variable var = CDFReader.this.thisCDF.getVariable(varName);
+        private double[][] _getTimeSeries(final String variableName, final int component, final boolean ignoreFill,
+                final double[] timeRange) throws ReaderError {
+
+            checkType(variableName);
+
+            Variable var = CDFReader.this.thisCDF.getVariable(variableName);
+
             Method method = TSExtractor.getMethod(var, "TimeSeries", 1);
-            return (double[][]) method.invoke(null, this.rdr, var, component, ignoreFill, timeRange);
+
+            try {
+                return (double[][]) method.invoke(null, this.rdr, var, component, ignoreFill, timeRange);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new ReaderError("getTimeSeries failed", e);
+            }
+
         }
 
-        private TimeSeries _getTimeSeries(String varName, int component, boolean ignoreFill, double[] timeRange,
-                TimeInstantModel tspec) throws Throwable {
-            checkType(varName);
-            Variable var = CDFReader.this.thisCDF.getVariable(varName);
+        private TimeSeries _getTimeSeries(final String variableName, final int component, final boolean ignoreFill,
+                final double[] timeRange, final TimeInstantModel tspec) throws ReaderError {
+
+            checkType(variableName);
+
+            Variable var = CDFReader.this.thisCDF.getVariable(variableName);
+
             Method method = TSExtractor.getMethod(var, "TimeSeriesObject", 1);
-            TimeSeries ts = (TimeSeries) method.invoke(null, this.rdr, var, component, ignoreFill, timeRange, tspec);
-            return new TimeSeriesImpl(ts);
+
+            try {
+                return new TimeSeriesImpl(
+                        (TimeSeries) method.invoke(null, this.rdr, var, component, ignoreFill, timeRange, tspec));
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new ReaderError("getTimeSeries failed", e);
+            }
+
         }
     }
 
     /*
-     * void checkType(String varName) throws Throwable {
-     * Variable var = thisCDF.getVariable(varName);
+     * void checkType(String variableName) {
+     * Variable var = thisCDF.getVariable(variableName);
      * int type = var.getType();
      * if (DataTypes.typeCategory[type] == DataTypes.LONG) {
      * throw new Throwable("This method cannot be used for " +
      * "variables of type long. Use the get methods for the " +
-     * "variable " + "and the associated time variable. ");
+     * "variable and the associated time variable. ");
      * }
      * }
      */
@@ -1154,90 +1184,109 @@ public class CDFReader extends GenericReader {
 
         MetaData rdr;
 
-        public double[][] getTimeSeries(String varName) throws Throwable {
-            Variable var = CDFReader.this.thisCDF.getVariable(varName);
+        public double[][] getTimeSeries(final String variableName) throws ReaderError {
+            Variable var = CDFReader.this.thisCDF.getVariable(variableName);
 
             if (var.getEffectiveRank() != 0) {
-                throw new Throwable(varName + " is not a scalar.");
+                throw new IllegalArgumentException(variableName + " is not a scalar.");
             }
 
-            return _getTimeSeries(varName, true, null);
+            return _getTimeSeries(variableName, true, null);
         }
 
-        public double[][] getTimeSeries(String varName, boolean ignoreFill) throws Throwable {
+        public double[][] getTimeSeries(final String variableName, final boolean ignoreFill) throws ReaderError {
 
-            if (CDFReader.this.thisCDF.getVariable(varName).getEffectiveRank() != 0) {
-                throw new Throwable(varName + " is not a scalar.");
+            if (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getEffectiveRank() != 0) {
+                throw new IllegalArgumentException(variableName + " is not a scalar.");
             }
 
-            return _getTimeSeries(varName, ignoreFill, null);
+            return _getTimeSeries(variableName, ignoreFill, null);
         }
 
-        public double[][] getTimeSeries(String varName, boolean ignoreFill, int[] startTime, int[] stopTime)
-                throws Throwable {
+        public double[][] getTimeSeries(final String variableName, final boolean ignoreFill, final int[] startTime,
+                final int[] stopTime) throws ReaderError {
 
-            if (CDFReader.this.thisCDF.getVariable(varName).getEffectiveRank() != 0) {
-                throw new Throwable(varName + " is not a scalar.");
+            if (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getEffectiveRank() != 0) {
+                throw new IllegalArgumentException(variableName + " is not a scalar.");
             }
 
-            double[] trange = getAvailableTimeRange(varName);
-            double[] tr = TSExtractor.getOverlap(this.rdr, trange, varName, startTime, stopTime);
-            return _getTimeSeries(varName, ignoreFill, tr);
+            double[] trange = getAvailableTimeRange(variableName);
+            double[] tr = TSExtractor.getOverlap(this.rdr, trange, variableName, startTime, stopTime);
+            return _getTimeSeries(variableName, ignoreFill, tr);
         }
 
-        public TimeSeries getTimeSeries(String varName, boolean ignoreFill, int[] startTime, int[] stopTime,
-                TimeInstantModel tspec) throws Throwable {
+        public TimeSeries getTimeSeries(final String variableName, final boolean ignoreFill, final int[] startTime,
+                final int[] stopTime, final TimeInstantModel tspec) throws ReaderError {
 
-            if (CDFReader.this.thisCDF.getVariable(varName).getEffectiveRank() != 0) {
-                throw new Throwable(varName + " is not a scalar.");
+            if (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getEffectiveRank() != 0) {
+                throw new IllegalArgumentException(variableName + " is not a scalar.");
             }
 
-            double[] trange = getAvailableTimeRange(varName);
-            double[] tr = TSExtractor.getOverlap(this.rdr, trange, varName, startTime, stopTime);
-            return _getTimeSeries(varName, ignoreFill, tr, tspec);
+            double[] trange = getAvailableTimeRange(variableName);
+            double[] tr = TSExtractor.getOverlap(this.rdr, trange, variableName, startTime, stopTime);
+            return _getTimeSeries(variableName, ignoreFill, tr, tspec);
         }
 
-        public double[][] getTimeSeries(String varName, int[] startTime, int[] stopTime) throws Throwable {
+        public double[][] getTimeSeries(final String variableName, final int[] startTime, final int[] stopTime)
+                throws ReaderError {
 
-            if (CDFReader.this.thisCDF.getVariable(varName).getEffectiveRank() != 0) {
-                throw new Throwable(varName + " is not a scalar.");
+            if (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getEffectiveRank() != 0) {
+                throw new IllegalArgumentException(variableName + " is not a scalar.");
             }
 
-            double[] trange = getAvailableTimeRange(varName);
-            double[] tr = TSExtractor.getOverlap(this.rdr, trange, varName, startTime, stopTime);
-            return _getTimeSeries(varName, true, tr);
+            double[] trange = getAvailableTimeRange(variableName);
+            double[] tr = TSExtractor.getOverlap(this.rdr, trange, variableName, startTime, stopTime);
+            return _getTimeSeries(variableName, true, tr);
         }
 
-        public TimeSeries getTimeSeries(String varName, int[] startTime, int[] stopTime, TimeInstantModel tspec)
-                throws Throwable {
+        public TimeSeries getTimeSeries(final String variableName, final int[] startTime, final int[] stopTime,
+                final TimeInstantModel tspec) throws ReaderError {
 
-            if (CDFReader.this.thisCDF.getVariable(varName).getEffectiveRank() != 0) {
-                throw new Throwable(varName + " is not a scalar.");
+            if (CDFReader.this.thisCDF.getVariable(variableName)
+                    .getEffectiveRank() != 0) {
+                throw new IllegalArgumentException(variableName + " is not a scalar.");
             }
 
-            double[] trange = getAvailableTimeRange(varName);
-            double[] tr = TSExtractor.getOverlap(this.rdr, trange, varName, startTime, stopTime);
-            return _getTimeSeries(varName, true, tr, tspec);
+            double[] trange = getAvailableTimeRange(variableName);
+            double[] tr = TSExtractor.getOverlap(this.rdr, trange, variableName, startTime, stopTime);
+            return _getTimeSeries(variableName, true, tr, tspec);
         }
 
-        double[][] _getTimeSeries(String varName, boolean ignoreFill, double[] timeRange) throws Throwable {
-            checkType(varName);
-            Variable var = CDFReader.this.thisCDF.getVariable(varName);
+        double[][] _getTimeSeries(final String variableName, final boolean ignoreFill, final double[] timeRange)
+                throws ReaderError {
+            checkType(variableName);
+            Variable var = CDFReader.this.thisCDF.getVariable(variableName);
             Method method = TSExtractor.getMethod(var, "TimeSeries", 0);
-            return (double[][]) method.invoke(null, this.rdr, var, ignoreFill, timeRange);
+
+            try {
+                return (double[][]) method.invoke(null, this.rdr, var, ignoreFill, timeRange);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new ReaderError("getTimeSeries failed", e);
+            }
+
         }
 
-        TimeSeries _getTimeSeries(String varName, boolean ignoreFill, double[] timeRange, TimeInstantModel tspec)
-                throws Throwable {
-            checkType(varName);
-            Variable var = CDFReader.this.thisCDF.getVariable(varName);
+        TimeSeries _getTimeSeries(final String variableName, final boolean ignoreFill, final double[] timeRange,
+                final TimeInstantModel tspec) throws ReaderError {
+            checkType(variableName);
+            Variable var = CDFReader.this.thisCDF.getVariable(variableName);
             Method method = TSExtractor.getMethod(var, "TimeSeriesObject", 0);
-            TimeSeries ts = (TimeSeries) method.invoke(null, this.rdr, var, ignoreFill, timeRange, tspec);
-            return new TimeSeriesImpl(ts);
+
+            try {
+                return new TimeSeriesImpl(
+                        (TimeSeries) method.invoke(null, this.rdr, var, ignoreFill, timeRange, tspec));
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new ReaderError("getTimeSeries failed", e);
+            }
+
         }
     }
 
-    class TimeSeriesImpl implements TimeSeries {
+    static class TimeSeriesImpl implements TimeSeries {
 
         double[] times;
 
@@ -1245,7 +1294,7 @@ public class CDFReader extends GenericReader {
 
         TimeInstantModel tspec;
 
-        public TimeSeriesImpl(TimeSeries ts) throws CDFException.ReaderError {
+        TimeSeriesImpl(final TimeSeries ts) throws CDFException.ReaderError {
             this.times = ts.getTimes();
             this.values = ts.getValues();
             this.tspec = ts.getTimeInstantModel();
@@ -1262,7 +1311,7 @@ public class CDFReader extends GenericReader {
         }
 
         @Override
-        public Object getValues() throws CDFException.ReaderError {
+        public Object getValues() {
             return this.values;
         }
     }
@@ -1271,7 +1320,7 @@ public class CDFReader extends GenericReader {
 
         boolean columnMajor;
 
-        TimeSeriesOneDImpl(TimeSeriesX ts) throws CDFException.ReaderError {
+        TimeSeriesOneDImpl(final TimeSeriesX ts) throws CDFException.ReaderError {
             super(ts);
 
             if (!ts.isOneD()) {
@@ -1282,11 +1331,11 @@ public class CDFReader extends GenericReader {
         }
 
         @Override
-        public double[] getValues() throws CDFException.ReaderError {
+        public double[] getValues() {
             return (double[]) this.values;
         }
 
-        public double[] getValuesOneD() throws CDFException.ReaderError {
+        public double[] getValuesOneD() {
             return (double[]) this.values;
         }
 
@@ -1294,5 +1343,11 @@ public class CDFReader extends GenericReader {
         public boolean isColumnMajor() {
             return this.columnMajor;
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        this.thisCDF.close();
+
     }
 }

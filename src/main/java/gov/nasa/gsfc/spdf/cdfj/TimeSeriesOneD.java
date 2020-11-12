@@ -1,5 +1,7 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
+import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
+
 /**
  * Time series specification for one-dimensional representation of values.
  * TimeSeriesOneD objects are returned by the getTimeSeriesOneD method of
@@ -16,7 +18,7 @@ public interface TimeSeriesOneD {
      * Returns time instant model used to derive times returned
      * by {@link #getTimes() getTimes()}.
      *
-     * @return
+     * @return the time instant model
      */
     TimeInstantModel getTimeInstantModel();
 
@@ -25,9 +27,9 @@ public interface TimeSeriesOneD {
      * {@link TimeInstantModel time instant model}
      * returned by {@link #getTimeInstantModel() getTimeInstantModel()}.
      *
-     * @return
+     * @return the times
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      *
      * @see CDFReader#timeModelInstance()
      */
@@ -42,18 +44,18 @@ public interface TimeSeriesOneD {
      * isColumnMajor()} method.
      * </p>
      *
-     * @return
+     * @return the values
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError
+     * @throws ReaderError the reader error
      */
     double[] getValues() throws CDFException.ReaderError;
 
     /**
      * Returns whether the array returned by getValues() is to be
      * interpreted as having the first index of variable's dimension varying
-     * the fastest, as in IDL
+     * the fastest, as in IDL.
      *
-     * @return
+     * @return true, if is column major
      */
     boolean isColumnMajor();
 }

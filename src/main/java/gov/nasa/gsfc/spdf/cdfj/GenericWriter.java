@@ -15,7 +15,9 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError;
 
 /**
  * Base class for creating a version 3.6 CDF.
@@ -26,19 +28,17 @@ public class GenericWriter {
 
     LinkedHashMap<String, ADR> attributes = new LinkedHashMap<>();
 
-    LinkedHashMap<String, Vector<AEDR>> attributeEntries = new LinkedHashMap<>();
+    LinkedHashMap<String, CopyOnWriteArrayList<AEDR>> attributeEntries = new LinkedHashMap<>();
 
     LinkedHashMap<String, VDR> variableDescriptors = new LinkedHashMap<>();
 
-    int lastLeapSecondId = -1;
+    int leapSecondLastUpdated = -1;
 
     CDR cdr = new CDR();
 
     GDR gdr = new GDR();
 
-    /**
-     *
-     */
+    /** The row majority. */
     public final boolean rowMajority;
 
     LinkedHashMap<String, DataContainer> dataContainers = new LinkedHashMap<>();
@@ -46,33 +46,32 @@ public class GenericWriter {
     boolean needDigest = false;
 
     /**
-     * Constructs a column major GenericWriter
+     * Constructs a column major GenericWriter.
      */
     public GenericWriter() {
         this(true);
     }
 
     /**
-     * Constructs a GenericWriter of specified row majority
+     * Constructs a GenericWriter of specified row majority.
      *
-     * @param bln
+     * @param rowMajority the row majority
      */
-    public GenericWriter(boolean rowMajority) {
+    public GenericWriter(final boolean rowMajority) {
         this.rowMajority = rowMajority;
     }
 
     /**
      * Adds data to a variable.same as addData(String name, Object data, false)
      *
-     * @param name
-     * @param data
+     * @param name the name
+     * @param data the data
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      *
-     * @see
-     *      #addData(String name, Object data, boolean relax)
+     * @see #addData(String name, Object data, boolean relax)
      */
-    public void addData(String name, Object data) throws CDFException.WriterError {
+    public void addData(final String name, final Object data) throws CDFException.WriterError {
         DataContainer container = this.dataContainers.get(name);
 
         if (container == null) {
@@ -81,7 +80,7 @@ public class GenericWriter {
 
         try {
             container.addData(data, null, false, false);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
@@ -96,13 +95,12 @@ public class GenericWriter {
      *              CDF_UINT2 and CDF_UINT4 only,specifies that values in
      *              data array can be interpreted as unsigned.
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      *
-     * @see
-     *      #addData(String name, Object data, int[] recordRange, boolean relax)
+     * @see #addData(String name, Object data, int[] recordRange, boolean relax)
      *      for more details.
      */
-    public void addData(String name, Object data, boolean relax) throws CDFException.WriterError {
+    public void addData(final String name, final Object data, final boolean relax) throws CDFException.WriterError {
         DataContainer container = this.dataContainers.get(name);
 
         if (container == null) {
@@ -111,7 +109,7 @@ public class GenericWriter {
 
         try {
             container.addData(data, null, false, relax);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
@@ -130,12 +128,11 @@ public class GenericWriter {
      *                    in which case range is assumed to be follow last record
      *                    added.
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      *
-     * @see
-     *      #addData(String name, Object data, int[] recordRange, boolean relax)
+     * @see #addData(String name, Object data, int[] recordRange, boolean relax)
      */
-    public void addData(String name, Object data, int[] recordRange) throws CDFException.WriterError {
+    public void addData(final String name, final Object data, final int[] recordRange) throws CDFException.WriterError {
         DataContainer container = this.dataContainers.get(name);
 
         if (container == null) {
@@ -144,7 +141,7 @@ public class GenericWriter {
 
         try {
             container.addData(data, recordRange, false, false);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
@@ -225,10 +222,11 @@ public class GenericWriter {
      *                    range must
      *                    be specified.
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
 
-    public void addData(String name, Object data, int[] recordRange, boolean relax) throws CDFException.WriterError {
+    public void addData(final String name, final Object data, final int[] recordRange, final boolean relax)
+            throws CDFException.WriterError {
         DataContainer container = this.dataContainers.get(name);
 
         if (container == null) {
@@ -237,7 +235,7 @@ public class GenericWriter {
 
         try {
             container.addData(data, recordRange, false, relax);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
@@ -250,15 +248,15 @@ public class GenericWriter {
      * @param dataType {@link CDFDataType CDFDataType} desired
      * @param value    array or wrapped scalar value to assign to attribute
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void addGlobalAttributeEntry(String name, CDFDataType dataType, Object value)
+    public void addGlobalAttributeEntry(final String name, final CDFDataType dataType, final Object value)
             throws CDFException.WriterError {
         ADR adr = getAttribute(name, true);
-        Vector<AEDR> values = this.attributeEntries.get(name);
+        CopyOnWriteArrayList<AEDR> values = this.attributeEntries.get(name);
 
         if (values == null) {
-            values = new Vector<>();
+            values = new CopyOnWriteArrayList<>();
             this.attributeEntries.put(name, values);
         }
 
@@ -267,7 +265,7 @@ public class GenericWriter {
 
         try {
             gae = new GlobalAttributeEntry(adr, type, value);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
@@ -283,51 +281,53 @@ public class GenericWriter {
      * @param name  name of the attribute
      * @param value array or wrapped scalar value to assign to attribute
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void addGlobalAttributeEntry(String name, Object value) throws CDFException.WriterError {
+    public void addGlobalAttributeEntry(final String name, final Object value) throws CDFException.WriterError {
         addGlobalAttributeEntry(name, null, value);
     }
 
     /**
      * Adds an NRV record of string type.
      *
-     * @param name
-     * @param value
+     * @param name  the name
+     * @param value the value
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void addNRVString(String name, CharSequence value) throws CDFException.WriterError {
+    public void addNRVString(final String name, final CharSequence value) throws CDFException.WriterError {
         addNRVVariable(name, CDFDataType.CHAR, new int[0], value.length(), value);
     }
 
     /**
      * Adds a NRV record of the given type and dimensions.
      *
-     * @param name
-     * @param value
-     * @param dataType
-     * @param size
-     * @param dim
+     * @param name     the name
+     * @param dataType the data type
+     * @param dim      the dim
+     * @param size     the size
+     * @param value    the value
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void addNRVVariable(String name, CDFDataType dataType, int[] dim, int size, Object value)
-            throws CDFException.WriterError {
+    public void addNRVVariable(final String name, final CDFDataType dataType, final int[] dim, final int size,
+            final Object value) throws CDFException.WriterError {
 
         if ((dataType != CDFDataType.CHAR) && (size > 1)) {
             throw new CDFException.WriterError("incompatible size for type " + dataType);
         }
 
         boolean[] varys = new boolean[dim.length];
+
         Arrays.fill(varys, true);
+
         defineVariable(name, dataType, dim, varys, false, false, null, size);
 
         if ((dim.length > 0) || (dataType == CDFDataType.EPOCH16)) {
 
             try {
                 addData(name, AArray.getPoint(value));
-            } catch (Throwable th) {
+            } catch (RuntimeException th) {
                 throw new CDFException.WriterError(th.getMessage());
             }
 
@@ -340,19 +340,19 @@ public class GenericWriter {
     /**
      * Adds a NRV record of the given numeric type and dimension.
      *
-     * @param name
-     * @param value
-     * @param dataType
-     * @param dim
+     * @param name     the name
+     * @param dataType the data type
+     * @param dim      the dim
+     * @param value    the value
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void addNRVVariable(String name, CDFDataType dataType, int[] dim, Object value)
+    public void addNRVVariable(final String name, final CDFDataType dataType, final int[] dim, final Object value)
             throws CDFException.WriterError {
 
         if (dataType == CDFDataType.CHAR) {
             throw new CDFException.WriterError(
-                    "Invalid method for string type. Use " + "addNRVVariable(name, dataType, dim, size, value)");
+                    "Invalid method for string type. Use addNRVVariable(name, dataType, dim, size, value)");
         }
 
         addNRVVariable(name, dataType, dim, 1, value);
@@ -361,13 +361,14 @@ public class GenericWriter {
     /**
      * Adds a scalar NRV record of the given numeric type.
      *
-     * @param name
-     * @param value
-     * @param dataType
+     * @param name     the name
+     * @param dataType the data type
+     * @param value    the value
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void addNRVVariable(String name, CDFDataType dataType, Object value) throws CDFException.WriterError {
+    public void addNRVVariable(final String name, final CDFDataType dataType, final Object value)
+            throws CDFException.WriterError {
         addNRVVariable(name, dataType, new int[0], 1, value);
     }
 
@@ -375,20 +376,19 @@ public class GenericWriter {
      * Adds data (represented as a one dimensional array) to a variable.same as
      * addOneD(String name, Object data, null, false)
      *
-     * @param name
-     * @param data
+     * @param name the name
+     * @param data the data
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      *
-     * @see
-     *      #addOneD(String name, Object data, int[] recordRange, boolean relax)
+     * @see #addOneD(String name, Object data, int[] recordRange, boolean relax)
      */
-    public void addOneD(String name, Object data) throws CDFException.WriterError {
+    public void addOneD(final String name, final Object data) throws CDFException.WriterError {
         DataContainer container = getContainer(name, data);
 
         try {
             container.addData(data, null, true, false);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
@@ -398,21 +398,20 @@ public class GenericWriter {
      * Adds data (represented as a one dimensional array) to a variable.same as
      * addOneD(String name, Object data, null, boolean relax)
      *
-     * @param name
-     * @param relax
-     * @param data
+     * @param name  the name
+     * @param data  the data
+     * @param relax the relax
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      *
-     * @see
-     *      #addOneD(String name, Object data, int[] recordRange, boolean relax)
+     * @see #addOneD(String name, Object data, int[] recordRange, boolean relax)
      */
-    public void addOneD(String name, Object data, boolean relax) throws CDFException.WriterError {
+    public void addOneD(final String name, final Object data, final boolean relax) throws CDFException.WriterError {
         DataContainer container = getContainer(name, data);
 
         try {
             container.addData(data, null, true, relax);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
@@ -423,21 +422,20 @@ public class GenericWriter {
      * for a specified record range to a variable.same as addOneD(String name,
      * Object data, int[] recordRange, false)
      *
-     * @param name
-     * @param recordRange
-     * @param data
+     * @param name        the name
+     * @param data        the data
+     * @param recordRange the record range
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      *
-     * @see
-     *      #addOneD(String name, Object data, int[] recordRange, boolean relax)
+     * @see #addOneD(String name, Object data, int[] recordRange, boolean relax)
      */
-    public void addOneD(String name, Object data, int[] recordRange) throws CDFException.WriterError {
+    public void addOneD(final String name, final Object data, final int[] recordRange) throws CDFException.WriterError {
         DataContainer container = getContainer(name, data);
 
         try {
             container.addData(data, recordRange, true, false);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
@@ -506,14 +504,15 @@ public class GenericWriter {
      *                    contents must conform to the row majority
      *                    of this GenericWriter.
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void addOneD(String name, Object data, int[] recordRange, boolean relax) throws CDFException.WriterError {
+    public void addOneD(final String name, final Object data, final int[] recordRange, final boolean relax)
+            throws CDFException.WriterError {
         DataContainer container = getContainer(name, data);
 
         try {
             container.addData(data, recordRange, true, relax);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
@@ -531,10 +530,10 @@ public class GenericWriter {
      * @param value    array of primitives, or String value to assign to
      *                 attribute
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void addVariableAttributeEntry(String vname, String aname, CDFDataType dataType, Object value)
-            throws CDFException.WriterError {
+    public void addVariableAttributeEntry(final String vname, final String aname, final CDFDataType dataType,
+            final Object value) throws CDFException.WriterError {
 
         VDR vdesc = this.variableDescriptors.get(vname);
 
@@ -542,13 +541,12 @@ public class GenericWriter {
             throw new CDFException.WriterError("Variable " + vname + " has not been defined.");
         }
 
-        List<VariableAttributeEntry> currentEntries;
-        currentEntries = findVariableAttributeEntries(vname, aname);
+        List<VariableAttributeEntry> currentEntries = findVariableAttributeEntries(vname, aname);
 
-        if (currentEntries.size() == 0) {
+        if (currentEntries.isEmpty()) {
 
             if (!this.attributeEntries.containsKey(aname)) {
-                this.attributeEntries.put(aname, new Vector<>());
+                this.attributeEntries.put(aname, new CopyOnWriteArrayList<>());
             }
 
         } else {
@@ -570,12 +568,13 @@ public class GenericWriter {
 
         try {
             vae = new VariableAttributeEntry(adr, type, value);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
         vae.setNum(vdesc.getNum());
-        this.attributeEntries.get(aname).add(vae);
+        this.attributeEntries.get(aname)
+                .add(vae);
 
         if (vdesc.getNum() > adr.mAXzEntry) {
             adr.mAXzEntry = vdesc.getNum();
@@ -595,22 +594,24 @@ public class GenericWriter {
      * @param value array of primitives, or String value to assign to
      *              attribute
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void addVariableAttributeEntry(String vname, String aname, Object value) throws CDFException.WriterError {
+    public void addVariableAttributeEntry(final String vname, final String aname, final Object value)
+            throws CDFException.WriterError {
         addVariableAttributeEntry(vname, aname, null, value);
     }
 
     /**
      * Defines a compressed variable of string type with given dimensions.
      *
-     * @param name
-     * @param size
-     * @param dim
+     * @param name the name
+     * @param dim  the dim
+     * @param size the size
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineCompressedStringVariable(String name, int[] dim, int size) throws CDFException.WriterError {
+    public void defineCompressedStringVariable(final String name, final int[] dim, final int size)
+            throws CDFException.WriterError {
         defineCompressedVariable(name, CDFDataType.CHAR, dim, size);
     }
 
@@ -619,16 +620,16 @@ public class GenericWriter {
      * the time variable of specified name and type.Variable's data is compressed
      * before it is stored
      *
-     * @param name
-     * @param timeType
-     * @param dataType
-     * @param tname
-     * @param dim
+     * @param name     the name
+     * @param dataType the data type
+     * @param dim      the dim
+     * @param tname    the tname
+     * @param timeType the time type
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineCompressedTimeSeries(String name, CDFDataType dataType, int[] dim, String tname,
-            CDFTimeType timeType) throws CDFException.WriterError {
+    public void defineCompressedTimeSeries(final String name, final CDFDataType dataType, final int[] dim,
+            final String tname, final CDFTimeType timeType) throws CDFException.WriterError {
         defineTimeSeries(name, dataType, dim, tname, timeType, true);
     }
 
@@ -636,13 +637,14 @@ public class GenericWriter {
      * Defines a compressed variable of specified numeric data type and
      * dimensions.
      *
-     * @param name
-     * @param dim
-     * @param dataType
+     * @param name     the name
+     * @param dataType the data type
+     * @param dim      the dim
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineCompressedVariable(String name, CDFDataType dataType, int[] dim) throws CDFException.WriterError {
+    public void defineCompressedVariable(final String name, final CDFDataType dataType, final int[] dim)
+            throws CDFException.WriterError {
         boolean[] varys = new boolean[dim.length];
         Arrays.fill(varys, true);
         defineCompressedVariable(name, dataType, dim, 1);
@@ -651,14 +653,14 @@ public class GenericWriter {
     /**
      * Defines a compressed variable of string type with given dimensions.
      *
-     * @param name
-     * @param size
-     * @param dataType
-     * @param dim
+     * @param name     the name
+     * @param dataType the data type
+     * @param dim      the dim
+     * @param size     the size
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineCompressedVariable(String name, CDFDataType dataType, int[] dim, int size)
+    public void defineCompressedVariable(final String name, final CDFDataType dataType, final int[] dim, final int size)
             throws CDFException.WriterError {
         boolean[] varys = new boolean[dim.length];
         Arrays.fill(varys, true);
@@ -669,14 +671,14 @@ public class GenericWriter {
      * Defines a NRV record of the given type and dimensions.Parameter size is
      * ignored for variables of numeric types.
      *
-     * @param name
-     * @param size
-     * @param dataType
-     * @param dim
+     * @param name     the name
+     * @param dataType the data type
+     * @param dim      the dim
+     * @param size     the size
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineNRVVariable(String name, CDFDataType dataType, int[] dim, int size)
+    public void defineNRVVariable(final String name, final CDFDataType dataType, final int[] dim, final int size)
             throws CDFException.WriterError {
         boolean[] varys = new boolean[dim.length];
         Arrays.fill(varys, true);
@@ -691,23 +693,23 @@ public class GenericWriter {
      * boolean[] varys, boolean recordVariance, boolean compressed,
      * Object pad, int size, SparseRecordOption.NONE)
      *
-     * @param name
-     * @param dim
-     * @param size
-     * @param pad
-     * @param varys
-     * @param compressed
-     * @param recordVariance
+     * @param name           the name
+     * @param dim            the dim
+     * @param varys          the varys
+     * @param recordVariance the record variance
+     * @param compressed     the compressed
+     * @param pad            the pad
+     * @param size           the size
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      *
-     * @see
-     *      #defineStringVariable(String name, int[] dim,
+     * @see #defineStringVariable(String name, int[] dim,
      *      boolean[] varys, boolean recordVariance, boolean compressed,
      *      Object pad, int size, SparseRecordOption option)
      */
-    public void defineStringVariable(String name, int[] dim, boolean[] varys, boolean recordVariance,
-            boolean compressed, Object pad, int size) throws CDFException.WriterError {
+    public void defineStringVariable(final String name, final int[] dim, final boolean[] varys,
+            final boolean recordVariance, final boolean compressed, final Object pad, final int size)
+            throws CDFException.WriterError {
         defineVariable(name, CDFDataType.CHAR, dim, varys, recordVariance, compressed, pad, size,
                 SparseRecordOption.NONE);
     }
@@ -716,32 +718,34 @@ public class GenericWriter {
      * Defines a variable of string type using given
      * sparse record option.
      *
-     * @param name
+     * @param name           the name
      * @param dim            dimensions
      * @param varys          dimension variance
-     * @param recordVariance
+     * @param recordVariance the record variance
      * @param compressed     whether the values will be saved in compressed form
      * @param pad            array or wrapped scalar value to assign to use as pad
      * @param size           length of character string
      * @param option         {@link SparseRecordOption sparse record option}
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineStringVariable(String name, int[] dim, boolean[] varys, boolean recordVariance,
-            boolean compressed, Object pad, int size, SparseRecordOption option) throws CDFException.WriterError {
+    public void defineStringVariable(final String name, final int[] dim, final boolean[] varys,
+            final boolean recordVariance, final boolean compressed, final Object pad, final int size,
+            final SparseRecordOption option) throws CDFException.WriterError {
         defineVariable(name, CDFDataType.CHAR, dim, varys, recordVariance, compressed, pad, size, option);
     }
 
     /**
-     * Defines a named variable of string data type
+     * Defines a named variable of string data type.
      *
-     * @param name
-     * @param size
-     * @param dim
+     * @param name the name
+     * @param dim  the dim
+     * @param size the size
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineStringVariable(String name, int[] dim, int size) throws CDFException.WriterError {
+    public void defineStringVariable(final String name, final int[] dim, final int size)
+            throws CDFException.WriterError {
         defineVariable(name, CDFDataType.CHAR, dim, size);
     }
 
@@ -750,13 +754,14 @@ public class GenericWriter {
      * times are contained in a time variable named Epoch which
      * must have been created before this method is called.
      *
-     * @param name
-     * @param dim
-     * @param dataType
+     * @param name     the name
+     * @param dataType the data type
+     * @param dim      the dim
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineTimeSeries(String name, CDFDataType dataType, int[] dim) throws CDFException.WriterError {
+    public void defineTimeSeries(final String name, final CDFDataType dataType, final int[] dim)
+            throws CDFException.WriterError {
         defineTimeSeries(name, dataType, dim, "Epoch");
     }
 
@@ -767,14 +772,14 @@ public class GenericWriter {
      * is called.Name of the time variable is assigned to the DEPEND_0
      * attribute.
      *
-     * @param name
-     * @param tname
-     * @param dataType
-     * @param dim
+     * @param name     the name
+     * @param dataType the data type
+     * @param dim      the dim
+     * @param tname    the tname
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineTimeSeries(String name, CDFDataType dataType, int[] dim, String tname)
+    public void defineTimeSeries(final String name, final CDFDataType dataType, final int[] dim, final String tname)
             throws CDFException.WriterError {
         defineVariable(name, dataType, dim);
         this.variableDescriptors.get(name);
@@ -791,17 +796,17 @@ public class GenericWriter {
      * Defines a time series of a new named variable of specified data type
      * and the time variable of specified name and type.
      *
-     * @param name
-     * @param compressed
-     * @param dataType
-     * @param timeType
-     * @param dim
-     * @param tname
+     * @param name       the name
+     * @param dataType   the data type
+     * @param dim        the dim
+     * @param tname      the tname
+     * @param timeType   the time type
+     * @param compressed the compressed
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineTimeSeries(String name, CDFDataType dataType, int[] dim, String tname, CDFTimeType timeType,
-            boolean compressed) throws CDFException.WriterError {
+    public void defineTimeSeries(final String name, final CDFDataType dataType, final int[] dim, final String tname,
+            final CDFTimeType timeType, final boolean compressed) throws CDFException.WriterError {
 
         if (!compressed) {
             defineVariable(name, dataType, dim);
@@ -825,25 +830,26 @@ public class GenericWriter {
     /**
      * Defines a time variable of the specified {@link CDFTimeType time type}.
      *
-     * @param name
-     * @param timeType
+     * @param name     the name
+     * @param timeType the time type
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineTimeVariable(String name, CDFTimeType timeType) throws CDFException.WriterError {
+    public void defineTimeVariable(final String name, final CDFTimeType timeType) throws CDFException.WriterError {
         defineVariable(name, CDFDataType.getType(timeType), new int[0]);
     }
 
     /**
-     * Defines a named variable of specified numeric data type
+     * Defines a named variable of specified numeric data type.
      *
-     * @param name
-     * @param dim
-     * @param dataType
+     * @param name     the name
+     * @param dataType the data type
+     * @param dim      the dim
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineVariable(String name, CDFDataType dataType, int[] dim) throws CDFException.WriterError {
+    public void defineVariable(final String name, final CDFDataType dataType, final int[] dim)
+            throws CDFException.WriterError {
         boolean[] varys = new boolean[dim.length];
         Arrays.fill(varys, true);
         defineVariable(name, dataType, dim, 1);
@@ -853,18 +859,18 @@ public class GenericWriter {
      * Defines a variable of specified numeric data type using default
      * sparse record option.
      *
-     * @param name
+     * @param name           the name
      * @param dataType       {@link CDFDataType data tpe}
      * @param dim            dimensions
      * @param varys          dimension variance
-     * @param recordVariance
+     * @param recordVariance the record variance
      * @param compressed     whether the values will be saved in compressed form
      * @param pad            array or wrapped scalar value to assign to use as pad
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineVariable(String name, CDFDataType dataType, int[] dim, boolean[] varys, boolean recordVariance,
-            boolean compressed, Object pad) throws CDFException.WriterError {
+    public void defineVariable(final String name, final CDFDataType dataType, final int[] dim, final boolean[] varys,
+            final boolean recordVariance, final boolean compressed, final Object pad) throws CDFException.WriterError {
         defineVariable(name, dataType, dim, varys, recordVariance, compressed, pad, 1, SparseRecordOption.NONE);
     }
 
@@ -872,30 +878,32 @@ public class GenericWriter {
      * Defines a variable of string type using given
      * sparse record option.
      *
-     * @param name
-     * @param dataType
+     * @param name           the name
+     * @param dataType       the data type
      * @param dim            dimensions
      * @param varys          dimension variance
-     * @param recordVariance
+     * @param recordVariance the record variance
      * @param compressed     whether the values will be saved in compressed form
      * @param pad            array or wrapped scalar value to assign to use as pad
      * @param size           length of character string
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineVariable(String name, CDFDataType dataType, int[] dim, boolean[] varys, boolean recordVariance,
-            boolean compressed, Object pad, int size) throws CDFException.WriterError {
+    public void defineVariable(final String name, final CDFDataType dataType, final int[] dim, final boolean[] varys,
+            final boolean recordVariance, final boolean compressed, final Object pad, final int size)
+            throws CDFException.WriterError {
+
         defineVariable(name, dataType, dim, varys, recordVariance, compressed, pad, size, SparseRecordOption.NONE);
     }
 
     /**
-     * Defines a new variable
+     * Defines a new variable.
      *
      * @param name           Variable name
      * @param dataType       {@link CDFDataType data type} of the variable
      * @param dim            dimension
-     * @param varys
-     * @param recordVariance
+     * @param varys          the varys
+     * @param recordVariance the record variance
      * @param compressed     whether the variable data appears in compressed
      *                       form in the CDF
      * @param pad            Object to use as a pad value - a Number object
@@ -905,12 +913,14 @@ public class GenericWriter {
      *                       Must be 1 for numeric type variable
      * @param option         {@link SparseRecordOption sparse record option}
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
-     *
+     * @throws WriterError the writer error
      */
-    public void defineVariable(String name, CDFDataType dataType, int[] dim, boolean[] varys, boolean recordVariance,
-            boolean compressed, Object pad, int size, SparseRecordOption option) throws CDFException.WriterError {
+    public void defineVariable(final String name, final CDFDataType dataType, final int[] dim, final boolean[] varys,
+            final boolean recordVariance, final boolean compressed, final Object pad, final int size,
+            final SparseRecordOption option) throws CDFException.WriterError {
+
         int[] _dim;
+
         boolean[] _varys;
 
         synchronized (dim) {
@@ -953,7 +963,7 @@ public class GenericWriter {
 
         try {
             vdr = new VDR(name, dataType.getValue(), dim, varys, recordVariance, compressed, _pad, size, option);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
@@ -967,33 +977,35 @@ public class GenericWriter {
      * Defines a variable of specified numeric data type using given
      * sparse record option.
      *
-     * @param name
+     * @param name           the name
      * @param dataType       {@link CDFDataType data tpe}
      * @param dim            dimensions
      * @param varys          dimension variance
-     * @param recordVariance
+     * @param recordVariance the record variance
      * @param compressed     whether the values will be saved in compressed form
      * @param pad            array or wrapped scalar value to assign to use as pad
      * @param option         {@link SparseRecordOption sparse record option}
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineVariable(String name, CDFDataType dataType, int[] dim, boolean[] varys, boolean recordVariance,
-            boolean compressed, Object pad, SparseRecordOption option) throws CDFException.WriterError {
+    public void defineVariable(final String name, final CDFDataType dataType, final int[] dim, final boolean[] varys,
+            final boolean recordVariance, final boolean compressed, final Object pad, final SparseRecordOption option)
+            throws CDFException.WriterError {
         defineVariable(name, dataType, dim, varys, recordVariance, compressed, pad, 1, option);
     }
 
     /**
      * Defines a named variable of specified numeric data type and dimensions.
      *
-     * @param name
-     * @param size
-     * @param dataType
-     * @param dim
+     * @param name     the name
+     * @param dataType the data type
+     * @param dim      the dim
+     * @param size     the size
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void defineVariable(String name, CDFDataType dataType, int[] dim, int size) throws CDFException.WriterError {
+    public void defineVariable(final String name, final CDFDataType dataType, final int[] dim, final int size)
+            throws CDFException.WriterError {
 
         if ((dataType != CDFDataType.CHAR) && (size > 1)) {
             throw new CDFException.WriterError("incompatible size for type " + dataType);
@@ -1007,20 +1019,20 @@ public class GenericWriter {
     /**
      * Returns whether the time variable has been defined for a variable.
      *
-     * @param name
+     * @param name the name
      *
-     * @return
+     * @return true, if successful
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public boolean hasTimeVariable(String name) throws CDFException.WriterError {
+    public boolean hasTimeVariable(final String name) throws CDFException.WriterError {
         VDR vdr = this.variableDescriptors.get(name);
 
         if (vdr == null) {
             throw new CDFException.WriterError("Variable " + name + " has not been defined yet.");
         }
 
-        return (findVariableAttributeEntries(name, "DEPEND_0").size() == 0);
+        return (findVariableAttributeEntries(name, "DEPEND_0").isEmpty());
     }
 
     /**
@@ -1034,17 +1046,17 @@ public class GenericWriter {
      *          validity of TT2000 times. n = -1 implies lastLeapSecondId=20120701,
      *          which is the default for CDF versions prior to 3.6.
      */
-    public void setLastLeapSecondId(int n) {
-        this.lastLeapSecondId = n;
+    public void setLastLeapSecondId(final int n) {
+        this.leapSecondLastUpdated = n;
     }
 
     /**
      * Prescribes whether an MD5 digest is to be included in
      * the output file.
      *
-     * @param need
+     * @param need the new MD 5 needed
      */
-    public void setMD5Needed(boolean need) {
+    public void setMD5Needed(final boolean need) {
         this.needDigest = need;
     }
 
@@ -1058,16 +1070,16 @@ public class GenericWriter {
      *                 attribute
      *                 Overwrites previous value, if any
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void setVariableAttributeEntry(String vname, String aname, CDFDataType dataType, Object value)
-            throws CDFException.WriterError {
-        List<VariableAttributeEntry> entries;
-        entries = findVariableAttributeEntries(vname, aname);
+    public void setVariableAttributeEntry(final String vname, final String aname, final CDFDataType dataType,
+            final Object value) throws CDFException.WriterError {
+        List<VariableAttributeEntry> entries = findVariableAttributeEntries(vname, aname);
 
-        if (entries.size() > 0) {
+        if (!entries.isEmpty()) {
 
-            if (!(value.getClass().isArray())) {
+            if (!(value.getClass()
+                    .isArray())) {
 
                 // attributeEntries.get(aname).remove(entries.get(0));
                 // } else {
@@ -1078,7 +1090,8 @@ public class GenericWriter {
             }
 
             for (VariableAttributeEntry entry : entries) {
-                this.attributeEntries.get(aname).remove(entry);
+                this.attributeEntries.get(aname)
+                        .remove(entry);
             }
 
             ADR adr = getAttribute(aname, false);
@@ -1096,20 +1109,21 @@ public class GenericWriter {
      * @param value array of primitives, or String value to assign to
      *              attribute
      *
-     * @throws gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError
+     * @throws WriterError the writer error
      */
-    public void setVariableAttributeEntry(String vname, String aname, Object value) throws CDFException.WriterError {
+    public void setVariableAttributeEntry(final String vname, final String aname, final Object value)
+            throws CDFException.WriterError {
         setVariableAttributeEntry(vname, aname, null, value);
     }
 
     /**
      * Writes CDF to a file.
      *
-     * @param fname
+     * @param fname the fname
      *
-     * @throws java.io.IOException
+     * @throws IOException Signals that an I/O exception has occurred.
      */
-    public void write(String fname) throws IOException {
+    public void write(final String fname) throws IOException {
         List<AEDR> vec = this.attributeEntries.get("cdfj_source");
 
         if (vec != null) {
@@ -1126,18 +1140,19 @@ public class GenericWriter {
     }
 
     /**
+     * Write.
      *
-     * @param fname
-     * @param overwrite
+     * @param fname     the fname
+     * @param overwrite the overwrite
      *
-     * @return
+     * @return true, if successful
      *
-     * @throws IOException
+     * @throws IOException Signals that an I/O exception has occurred.
      */
-    public boolean write(String fname, boolean overwrite) throws IOException {
+    public boolean write(final String fname, final boolean overwrite) throws IOException {
 
-        if (this.lastLeapSecondId != -1) {
-            this.gdr.setLastLeapSecondId(this.lastLeapSecondId);
+        if (this.leapSecondLastUpdated != -1) {
+            this.gdr.setLeapSecondLastUpdated(this.leapSecondLastUpdated);
         }
 
         long len = getSize();
@@ -1146,15 +1161,14 @@ public class GenericWriter {
             len += 32;
         }
 
-        RandomAccessFile raf = null;
-        FileChannel channel = null;
-
         if (len > Integer.MAX_VALUE) {
-            raf = new RandomAccessFile(new File(fname), "rw");
-            channel = raf.getChannel();
-            write(channel, len);
-            raf.close();
-            return true;
+
+            try (RandomAccessFile raf = new RandomAccessFile(new File(fname), "rw");
+                    FileChannel channel = raf.getChannel()) {
+                write(channel, len);
+                return true;
+            }
+
         }
 
         ByteBuffer obuf;
@@ -1166,9 +1180,12 @@ public class GenericWriter {
             if (overwrite) {
                 obuf = ByteBuffer.allocateDirect((int) len);
             } else {
-                raf = new RandomAccessFile(new File(fname), "rw");
-                channel = raf.getChannel();
-                obuf = channel.map(FileChannel.MapMode.READ_WRITE, 0L, len);
+
+                try (RandomAccessFile raf = new RandomAccessFile(new File(fname), "rw");
+                        FileChannel channel = raf.getChannel()) {
+                    obuf = channel.map(FileChannel.MapMode.READ_WRITE, 0L, len);
+                }
+
             }
 
         }
@@ -1191,7 +1208,7 @@ public class GenericWriter {
             // if (adr.scope != 1) continue;
             adr.position = obuf.position();
             obuf.position((int) (adr.position + adr.getSize()));
-            Vector<AEDR> vec = this.attributeEntries.get(name);
+            CopyOnWriteArrayList<AEDR> vec = this.attributeEntries.get(name);
 
             for (int i = 0; i < vec.size(); i++) {
                 AEDR ae = vec.get(i);
@@ -1206,7 +1223,8 @@ public class GenericWriter {
                     }
 
                 } else {
-                    vec.get(i - 1).setAEDRNext(ae.position);
+                    vec.get(i - 1)
+                            .setAEDRNext(ae.position);
                 }
 
                 obuf.position(obuf.position() + ae.getSize());
@@ -1274,20 +1292,22 @@ public class GenericWriter {
         } else {
 
             if (overwrite) {
-                raf = new RandomAccessFile(new File(fname), "rw");
-                channel = raf.getChannel();
-                obuf.position(0);
-                channel.write(obuf);
+
+                try (RandomAccessFile raf = new RandomAccessFile(new File(fname), "rw");
+                        FileChannel channel = raf.getChannel()) {
+                    obuf.position(0);
+                    channel.write(obuf);
+                    channel.force(true);
+                }
+
             }
 
-            channel.force(true);
-            raf.close();
         }
 
         return true;
     }
 
-    void addBuffer(String name, VariableDataBuffer data) throws CDFException.WriterError {
+    void addBuffer(final String name, final VariableDataBuffer data) throws CDFException.WriterError {
         DataContainer container = this.dataContainers.get(name);
 
         if (container == null) {
@@ -1297,13 +1317,13 @@ public class GenericWriter {
         try {
             container.addData(data.getBuffer(), new int[] { data.getFirstRecord(), data.getLastRecord() }, false,
                     false);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
     }
 
-    void dispatch(String name, Object value) throws CDFException.WriterError {
+    void dispatch(final String name, final Object value) throws CDFException.WriterError {
         Class<?> cl = value.getClass();
 
         if (cl == String.class) {
@@ -1353,7 +1373,7 @@ public class GenericWriter {
      * @param vname name of the variable
      * @param aname name of the attribute
      */
-    Vector<VariableAttributeEntry> findVariableAttributeEntries(String vname, String aname)
+    CopyOnWriteArrayList<VariableAttributeEntry> findVariableAttributeEntries(final String vname, final String aname)
             throws CDFException.WriterError {
         VDR vdesc = this.variableDescriptors.get(vname);
 
@@ -1361,7 +1381,7 @@ public class GenericWriter {
             throw new CDFException.WriterError("Variable " + vname + " has not been defined.");
         }
 
-        Vector<VariableAttributeEntry> result = new Vector<>();
+        CopyOnWriteArrayList<VariableAttributeEntry> result = new CopyOnWriteArrayList<>();
         Iterable<AEDR> entries = this.attributeEntries.get(aname);
 
         if (entries == null) {
@@ -1386,11 +1406,11 @@ public class GenericWriter {
         return result;
     }
 
-    ADR getAttribute(String name, boolean global) {
+    ADR getAttribute(final String name, final boolean global) {
         return getAttribute(name, global, true);
     }
 
-    ADR getAttribute(String name, boolean global, boolean create) {
+    ADR getAttribute(final String name, final boolean global, final boolean create) {
         ADR adr = this.attributes.get(name);
 
         if (adr != null) {
@@ -1410,12 +1430,12 @@ public class GenericWriter {
         return adr;
     }
 
-    DataContainer getContainer(String name, Object data) throws CDFException.WriterError {
+    DataContainer getContainer(final String name, final Object data) throws CDFException.WriterError {
         ArrayAttribute aa = null;
 
         try {
             aa = new ArrayAttribute(data);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             throw new CDFException.WriterError(th.getMessage());
         }
 
@@ -1432,7 +1452,7 @@ public class GenericWriter {
         return container;
     }
 
-    ByteBuffer getDigest(ByteBuffer obuf) {
+    ByteBuffer getDigest(final ByteBuffer obuf) {
         MessageDigest md = null;
 
         try {
@@ -1460,7 +1480,7 @@ public class GenericWriter {
         return ByteBuffer.wrap(md.digest());
     }
 
-    void getDigest(SeekableByteChannel channel) throws IOException {
+    void getDigest(final SeekableByteChannel channel) throws IOException {
         MessageDigest md = null;
 
         try {
@@ -1537,7 +1557,8 @@ public class GenericWriter {
                 this.gdr.setZVDRHead(size);
                 first = false;
             } else {
-                lastContainer.getVDR().setVDRNext(dc.position);
+                lastContainer.getVDR()
+                        .setVDRNext(dc.position);
             }
 
             lastContainer = dc;
@@ -1566,10 +1587,12 @@ public class GenericWriter {
      * static int chunkSize = 64*1024;
      */
     boolean isWindows() {
-        return (System.getProperty("os.name").toLowerCase().startsWith("win"));
+        return (System.getProperty("os.name")
+                .toLowerCase()
+                .startsWith("win"));
     }
 
-    void write(FileChannel channel, long len) throws IOException {
+    void write(final FileChannel channel, final long len) throws IOException {
         this.cdr.setRowMajority(this.rowMajority);
         this.cdr.setMD5Needed(this.needDigest);
         channel.write(this.cdr.get());
@@ -1588,7 +1611,7 @@ public class GenericWriter {
             // if (adr.scope != 1) continue;
             adr.position = channel.position();
             channel.position(adr.position + adr.getSize());
-            Vector<AEDR> vec = this.attributeEntries.get(name);
+            CopyOnWriteArrayList<AEDR> vec = this.attributeEntries.get(name);
 
             for (int i = 0; i < vec.size(); i++) {
                 AEDR ae = vec.get(i);
@@ -1603,7 +1626,8 @@ public class GenericWriter {
                     }
 
                 } else {
-                    vec.get(i - 1).setAEDRNext(ae.position);
+                    vec.get(i - 1)
+                            .setAEDRNext(ae.position);
                 }
 
                 channel.position(channel.position() + ae.getSize());
@@ -1662,7 +1686,7 @@ public class GenericWriter {
 
     }
 
-    void writeWin(String fname, ByteBuffer buf) throws IOException {
+    void writeWin(final String fname, final ByteBuffer buf) throws IOException {
 
         try (FileOutputStream fos = new FileOutputStream(fname)) {
             byte[] ba = buf.array();

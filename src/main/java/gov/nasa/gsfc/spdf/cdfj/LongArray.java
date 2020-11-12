@@ -5,67 +5,42 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 
 /**
+ * The Class LongArray.
  *
  * @author nand
  */
 public class LongArray extends AArray {
 
     /**
+     * Instantiates a new long array.
      *
-     * @param o
-     *
-     * @throws Throwable
+     * @param o the o
+     * @
      */
-    public LongArray(Object o) throws Throwable {
+    public LongArray(final Object o) {
         super(o);
     }
 
     /**
+     * Instantiates a new long array.
      *
-     * @param o
-     * @param bln
-     *
-     * @throws Throwable
+     * @param o        the o
+     * @param majority the majority
+     * @
      */
-    public LongArray(Object o, boolean majority) throws Throwable {
+    public LongArray(final Object o, final boolean majority) {
         super(o, majority);
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
-    public Object array() {
-
-        switch (this.dim) {
-            case 1:
-                return this.o;
-            case 2:
-                return this.o;
-            case 3:
-                return this.o;
-            case 4:
-                return this.o;
-        }
-
-        return null;
-    }
-
-    /**
-     * create a byte buffer of a compatible type.
-     *
-     * @param ignore
-     */
-    @Override
-    public ByteBuffer buffer(Class<?> cl, int ignore) throws Throwable {
+    public ByteBuffer buffer(final Class<?> cl, final int ignore) {
 
         if (((cl != Long.TYPE) && (cl != Integer.TYPE))) {
-            throw new Throwable("Only int and long targets supported");
+            throw new IllegalArgumentException("Only int and long targets supported");
         }
 
-        if (this.dim > 4) {
-            throw new Throwable("Rank > 4 not supported");
+        if (this.dimensions > 4) {
+            throw new IllegalStateException("Rank > 4 not supported");
         }
 
         int elementSize = (cl == Integer.TYPE) ? 4 : 8;
@@ -78,14 +53,14 @@ public class LongArray extends AArray {
         return doLong(buf);
     }
 
-    ByteBuffer doInt(ByteBuffer buf) {
-        int[] _dim = this.aa.getDimensions();
+    ByteBuffer doInt(final ByteBuffer buf) {
+        int[] _dim = this.attributeArray.getDimensions();
         int[] temp = null;
         IntBuffer _buf = buf.asIntBuffer();
 
-        switch (this.dim) {
+        switch (this.dimensions) {
             case 1:
-                long[] data = (long[]) this.o;
+                long[] data = (long[]) this.data;
                 temp = new int[data.length];
                 for (int i = 0; i < data.length; i++) {
                     temp[i] = (int) data[i];
@@ -93,7 +68,7 @@ public class LongArray extends AArray {
                 _buf.put(temp);
                 return buf;
             case 2:
-                long[][] data2 = (long[][]) this.o;
+                long[][] data2 = (long[][]) this.data;
                 temp = new int[_dim[1]];
                 for (int i = 0; i < _dim[0]; i++) {
                     long[] di = data2[i];
@@ -106,7 +81,7 @@ public class LongArray extends AArray {
                 }
                 return buf;
             case 3:
-                long[][][] data3 = (long[][][]) this.o;
+                long[][][] data3 = (long[][][]) this.data;
                 if (this.rowMajority) {
                     temp = new int[_dim[2]];
 
@@ -141,7 +116,7 @@ public class LongArray extends AArray {
                 }
                 return buf;
             case 4:
-                long[][][][] data4 = (long[][][][]) this.o;
+                long[][][][] data4 = (long[][][][]) this.data;
                 if (this.rowMajority) {
                     temp = new int[_dim[3]];
 
@@ -183,28 +158,31 @@ public class LongArray extends AArray {
 
                 }
                 return buf;
+            default:
+                throw new IllegalStateException("Rank > 4 not supported");
         }
 
-        return null;
     }
 
-    ByteBuffer doLong(ByteBuffer buf) {
-        int[] _dim = this.aa.getDimensions();
+    ByteBuffer doLong(final ByteBuffer buf) {
+
+        int[] _dim = this.attributeArray.getDimensions();
+
         LongBuffer _buf = buf.asLongBuffer();
 
-        switch (this.dim) {
+        switch (this.dimensions) {
             case 1:
-                long[] data = (long[]) this.o;
+                long[] data = (long[]) this.data;
                 _buf.put(data);
                 return buf;
             case 2:
-                long[][] data2 = (long[][]) this.o;
+                long[][] data2 = (long[][]) this.data;
                 for (int i = 0; i < _dim[0]; i++) {
                     _buf.put(data2[i]);
                 }
                 return buf;
             case 3:
-                long[][][] data3 = (long[][][]) this.o;
+                long[][][] data3 = (long[][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -232,7 +210,7 @@ public class LongArray extends AArray {
                 }
                 return buf;
             case 4:
-                long[][][][] data4 = (long[][][][]) this.o;
+                long[][][][] data4 = (long[][][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -267,8 +245,10 @@ public class LongArray extends AArray {
 
                 }
                 return buf;
+
+            default:
+                throw new IllegalStateException("Rank > 4 not supported");
         }
 
-        return null;
     }
 }

@@ -1,81 +1,85 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * The Class ArrayAttribute.
  *
  * @author nand
  */
 public class ArrayAttribute {
 
-    Vector<Integer> dim = new Vector<>();
+    final CopyOnWriteArrayList<Integer> dim = new CopyOnWriteArrayList<>();
 
-    Class<?> cl;
+    final Class<?> cl;
 
-    Object o;
+    Object data;
 
     /**
+     * Instantiates a new array attribute.
      *
-     * @param o
-     *
-     * @throws Throwable
+     * @param data the data must be an array
      */
-    public ArrayAttribute(Object data) throws Throwable {
-        this.cl = data.getClass();
+    public ArrayAttribute(final Object data) {
 
-        if (!this.cl.isArray()) {
-            throw new Throwable("AArray: Object " + data + " is not an array");
+        Class<?> clazz = data.getClass();
+
+        if (!clazz.isArray()) {
+            throw new IllegalArgumentException("AArray: Object " + data + " is not an array");
         }
 
-        this.o = data;
+        this.data = data;
 
-        while (this.cl.isArray()) {
-            this.cl = this.cl.getComponentType();
+        while (clazz.isArray()) {
 
-            if (this.cl.isPrimitive()) {
+            clazz = clazz.getComponentType();
 
-                if (this.cl == Double.TYPE) {
-                    this.dim.add(((double[]) this.o).length);
+            if (clazz.isPrimitive()) {
+
+                if (Double.TYPE.equals(clazz)) {
+                    this.dim.add(((double[]) this.data).length);
                     break;
                 }
 
-                if (this.cl == Float.TYPE) {
-                    this.dim.add(((float[]) this.o).length);
+                if (Float.TYPE.equals(clazz)) {
+                    this.dim.add(((float[]) this.data).length);
                     break;
                 }
 
-                if (this.cl == Integer.TYPE) {
-                    this.dim.add(((int[]) this.o).length);
+                if (Integer.TYPE.equals(clazz)) {
+                    this.dim.add(((int[]) this.data).length);
                     break;
                 }
 
-                if (this.cl == Byte.TYPE) {
-                    this.dim.add(((byte[]) this.o).length);
+                if (Byte.TYPE.equals(clazz)) {
+                    this.dim.add(((byte[]) this.data).length);
                     break;
                 }
 
-                if (this.cl == Short.TYPE) {
-                    this.dim.add(((short[]) this.o).length);
+                if (Short.TYPE.equals(clazz)) {
+                    this.dim.add(((short[]) this.data).length);
                     break;
                 }
 
-                if (this.cl == Long.TYPE) {
-                    this.dim.add(((long[]) this.o).length);
+                if (Long.TYPE.equals(clazz)) {
+                    this.dim.add(((long[]) this.data).length);
                     break;
                 }
 
             }
 
-            Object[] _o = (Object[]) this.o;
-            this.o = _o[0];
+            Object[] _o = (Object[]) this.data;
+            this.data = _o[0];
             this.dim.add(_o.length);
         }
 
+        this.cl = clazz;
     }
 
     /**
+     * Gets the dimensions.
      *
-     * @return
+     * @return the dimensions
      */
     public int[] getDimensions() {
         int[] ia = new int[this.dim.size()];
@@ -88,76 +92,75 @@ public class ArrayAttribute {
     }
 
     /**
+     * Gets the type.
      *
-     * @return
+     * @return the type
      */
     public Class<?> getType() {
         return this.cl;
     }
 
     /**
+     * To double array.
      *
-     * @param da
-     *
-     * @throws Throwable
+     * @param arrayToPopulate the da
      */
-    public void toDoubleArray(double[] da) throws Throwable {
+    public void toDoubleArray(final double[] arrayToPopulate) {
 
         if (this.cl == Double.TYPE) {
-            double[] din = (double[]) this.o;
 
-            if (da.length == din.length) {
-                System.arraycopy(din, 0, da, 0, din.length);
+            double[] din = (double[]) this.data;
+
+            if (arrayToPopulate.length == din.length) {
+                System.arraycopy(din, 0, arrayToPopulate, 0, din.length);
                 return;
             }
 
-            throw new Throwable("Length of the receiver array does not " + "match length.");
+            throw new IllegalArgumentException("Length of the receiver array does not match length.");
         }
 
-        throw new Throwable("Method not appropriate for objects of type " + this.cl);
+        throw new IllegalArgumentException("Method not appropriate for objects of type " + this.cl);
     }
 
     /**
+     * To long array.
      *
-     * @param la
-     *
-     * @throws Throwable
+     * @param arrayToPopulate the array to populate
      */
-    public void toLongArray(long[] la) throws Throwable {
+    public void toLongArray(final long[] arrayToPopulate) {
 
         if (this.cl == Long.TYPE) {
-            long[] lin = (long[]) this.o;
+            long[] lin = (long[]) this.data;
 
-            if (la.length == lin.length) {
-                System.arraycopy(lin, 0, la, 0, lin.length);
+            if (arrayToPopulate.length == lin.length) {
+                System.arraycopy(lin, 0, arrayToPopulate, 0, lin.length);
                 return;
             }
 
-            throw new Throwable("Length of the receiver array does not " + "match length.");
+            throw new IllegalArgumentException("Length of the receiver array does not match length.");
         }
 
-        throw new Throwable("Method not appropriate for objects of type " + this.cl);
+        throw new IllegalArgumentException("Method not appropriate for objects of type " + this.cl);
     }
 
     /**
+     * To string array.
      *
-     * @param sa
-     *
-     * @throws Throwable
+     * @param arrayToPopulate the array to populate
      */
-    public void toStringArray(String[] sa) throws Throwable {
+    public void toStringArray(final String[] arrayToPopulate) {
 
         if (this.cl == String.class) {
-            String[] sin = (String[]) this.o;
+            String[] sin = (String[]) this.data;
 
-            if (sa.length == sin.length) {
-                System.arraycopy(sin, 0, sa, 0, sin.length);
+            if (arrayToPopulate.length == sin.length) {
+                System.arraycopy(sin, 0, arrayToPopulate, 0, sin.length);
                 return;
             }
 
-            throw new Throwable("Length of the receiver array does not " + "match length.");
+            throw new IllegalArgumentException("Length of the receiver array does not match length.");
         }
 
-        throw new Throwable("Method not appropriate for objects of type " + this.cl);
+        throw new IllegalArgumentException("Method not appropriate for objects of type " + this.cl);
     }
 }

@@ -4,28 +4,36 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 
-final class CDF2Impl extends CDFImpl implements CDF2, java.io.Serializable {
+import gov.nasa.gsfc.spdf.cdfj.CDFFactory.CDFSource;
 
-    /**
-     *
-     */
+final class CDF2Impl extends CDFImpl implements CDF2 {
+
     private static final long serialVersionUID = 9104124634870941614L;
 
+    /** The GDR offset. */
     public int GDROffset;
 
+    /** The var offset name. */
     public int VAR_OFFSET_NAME;
 
+    /** The OFFSE T z num dims. */
     public int OFFSET_zNumDims;
 
+    /** The var offset num elements. */
     public int VAR_OFFSET_NUM_ELEMENTS;
 
+    /** The offset num. */
     public int OFFSET_NUM;
 
-    final FileChannel fc;
-
-    public CDF2Impl(ByteBuffer buf, int release, FileChannel ch) throws Throwable {
-        super(buf);
-        this.fc = ch;
+    /**
+     * Instantiates a new CDF 2 impl.
+     *
+     * @param buf     the buf
+     * @param release the release
+     * @param ch      the ch
+     */
+    CDF2Impl(final ByteBuffer buf, final int release, final FileChannel ch) {
+        super(buf, ch);
 
         if (release < 5) {
             this.VAR_OFFSET_NAME = 192;
@@ -50,16 +58,21 @@ final class CDF2Impl extends CDFImpl implements CDF2, java.io.Serializable {
         this.version = ibuf.get();
 
         if (this.version != CDF_VERSION) {
-            throw new Throwable("Version " + this.version + "is not accepted by this reader.");
+            throw new IllegalArgumentException("Version " + this.version + "is not accepted by this reader.");
         }
 
-        release = ibuf.get();
+        // read release field
+        ibuf.get();
         this.encoding = ibuf.get();
         this.byteOrder = DataTypes.getByteOrder(this.encoding);
         setByteOrder(this.byteOrder);
         this.flags = ibuf.get();
+
+        // rfuA
         ibuf.get();
+        // rfuB
         ibuf.get();
+
         this.increment = ibuf.get();
         // validate and extract GDR info
         int pos = this.GDROffset + 4;
@@ -67,12 +80,13 @@ final class CDF2Impl extends CDFImpl implements CDF2, java.io.Serializable {
         int x;
 
         if ((x = buf.getInt()) != GDR_RECORD) {
-            throw new Throwable("Bad GDR type " + x);
+            throw new IllegalArgumentException("Bad GDR type " + x);
         }
 
         this.rVDRHead = buf.getInt();
         this.zVDRHead = buf.getInt();
         this.ADRHead = buf.getInt();
+        // eof
         buf.getInt();
         this.numberOfRVariables = buf.getInt();
         this.numberOfAttributes = buf.getInt();
@@ -94,18 +108,34 @@ final class CDF2Impl extends CDFImpl implements CDF2, java.io.Serializable {
         }
 
         buf.position(0);
-        this.variableTable = variables();
-        this.attributeTable = attributes();
+        variables();
+        attributes();
     }
 
-    protected CDF2Impl(ByteBuffer buf, int release) throws Throwable {
-        this(buf, release, null);
+    /**
+     * Instantiates a new CDF 2 impl.
+     *
+     * @param buf     the buf
+     * @param release the release
+     */
+    CDF2Impl(final ByteBuffer buf, final int release) {
+        this(buf, release, (FileChannel) null);
+    }
+
+    CDF2Impl(final ByteBuffer buf, final int release, final CDFSource cdfSource) {
+        this(buf, release);
+        this.source = cdfSource;
+    }
+
+    CDF2Impl(final ByteBuffer buf, final int release, final FileChannel ch, final CDFSource cdfSource) {
+        this(buf, release, ch);
+        this.source = cdfSource;
     }
 
     @Override
-    public String getString(long offset) {
+    public String getString(final long offset) {
 
-        if (this.fc == null) {
+        if (this.fileChannel == null) {
             return getString(offset, MAX_STRING_SIZE);
         }
 
@@ -113,7 +143,7 @@ final class CDF2Impl extends CDFImpl implements CDF2, java.io.Serializable {
 
         try {
             _buf = getRecord(offset, MAX_STRING_SIZE);
-        } catch (Throwable th) {
+        } catch (RuntimeException th) {
             th.printStackTrace();
             return null;
         }
@@ -122,57 +152,18 @@ final class CDF2Impl extends CDFImpl implements CDF2, java.io.Serializable {
     }
 
     @Override
-    public long longInt(ByteBuffer buf) {
-        return buf.getInt();
+    public long longInt(final ByteBuffer byteBuffer) {
+        return byteBuffer.getInt();
     }
 
     @Override
-    public int lowOrderInt(ByteBuffer buf) {
-        return buf.getInt();
+    public int lowOrderInt(final ByteBuffer byteBuffer) {
+        return byteBuffer.getInt();
     }
 
     @Override
-    public int lowOrderInt(ByteBuffer buf, int offset) {
-        return buf.getInt(offset);
-    }
-
-    @Override
-    protected ByteBuffer getRecord(long offset) {
-
-        if (this.fc == null) {
-            return super.getRecord(offset);
-        }
-
-        ByteBuffer lenBuf = ByteBuffer.allocate(4);
-
-        synchronized (this.fc) {
-
-            try {
-                this.fc.position(offset + 4);
-                this.fc.read(lenBuf);
-                int size = lenBuf.getInt(0);
-                return getRecord(offset, size);
-            } catch (Throwable ex) {
-                ex.printStackTrace();
-                return null;
-            }
-
-        }
-
-    }
-
-    protected ByteBuffer getRecord(long offset, int size) throws Throwable {
-        ByteBuffer bb = ByteBuffer.allocate(size);
-        this.fc.position(offset);
-        int got = this.fc.read(bb);
-
-        if (got != size) {
-            System.out.println("Needed " + size + " bytes. Got " + got);
-            return null;
-        }
-
-        bb.position(0);
-        return bb;
+    public int lowOrderInt(final ByteBuffer byteBuffer, final int offset) {
+        return byteBuffer.getInt(offset);
     }
 
     void setOffsets() {

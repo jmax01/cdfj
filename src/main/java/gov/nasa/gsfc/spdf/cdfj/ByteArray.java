@@ -3,91 +3,59 @@ package gov.nasa.gsfc.spdf.cdfj;
 import java.nio.ByteBuffer;
 
 /**
- *
- * @author nand
+ * The Class ByteArray.
  */
 public class ByteArray extends AArray {
 
     /**
+     * Instantiates a new byte array.
      *
-     * @param o
-     *
-     * @throws Throwable
+     * @param o the o
      */
-    public ByteArray(Object o) throws Throwable {
+    public ByteArray(final Object o) {
         super(o);
     }
 
     /**
+     * Instantiates a new byte array.
      *
-     * @param o
-     * @param bln
-     *
-     * @throws Throwable
+     * @param o           the o
+     * @param rowMajority the row majority
      */
-    public ByteArray(Object o, boolean rowMajority) throws Throwable {
+    public ByteArray(final Object o, final boolean rowMajority) {
         super(o, rowMajority);
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
-    public Object array() {
-
-        switch (this.dim) {
-            case 1:
-                return this.o;
-            case 2:
-                return this.o;
-            case 3:
-                return this.o;
-            case 4:
-                return this.o;
-        }
-
-        return null;
-    }
-
-    /**
-     *
-     * @param cl
-     * @param ignore
-     *
-     * @return
-     *
-     * @throws Throwable
-     */
-    @Override
-    public ByteBuffer buffer(Class<?> cl, int ignore) throws Throwable {
+    public ByteBuffer buffer(final Class<?> cl, final int ignore) {
 
         if (cl != Byte.TYPE) {
-            throw new Throwable("Only byte targets supported");
+            throw new IllegalArgumentException("Only byte targets supported");
         }
 
-        if (this.dim > 4) {
-            throw new Throwable("Rank > 4 not supported");
+        if (this.dimensions > 4) {
+            throw new IllegalStateException("Rank > 4 not supported");
         }
 
         ByteBuffer buf = allocate(1);
-        int[] _dim = this.aa.getDimensions();
 
-        switch (this.dim) {
+        int[] _dim = this.attributeArray.getDimensions();
+
+        switch (this.dimensions) {
             case 1:
-                byte[] data = (byte[]) this.o;
-                buf.put(data);
+                byte[] data1 = (byte[]) this.data;
+                buf.put(data1);
                 buf.flip();
                 return buf;
             case 2:
-                byte[][] data2 = (byte[][]) this.o;
+                byte[][] data2 = (byte[][]) this.data;
                 for (int i = 0; i < _dim[0]; i++) {
                     buf.put(data2[i]);
                 }
                 buf.flip();
                 return buf;
             case 3:
-                byte[][][] data3 = (byte[][][]) this.o;
+                byte[][][] data3 = (byte[][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -116,7 +84,7 @@ public class ByteArray extends AArray {
                 buf.flip();
                 return buf;
             case 4:
-                byte[][][][] data4 = (byte[][][][]) this.o;
+                byte[][][][] data4 = (byte[][][][]) this.data;
                 if (this.rowMajority) {
 
                     for (int i = 0; i < _dim[0]; i++) {
@@ -152,8 +120,9 @@ public class ByteArray extends AArray {
                 }
                 buf.flip();
                 return buf;
+            default:
+                throw new IllegalStateException("Rank > 4 not supported");
         }
 
-        return null;
     }
 }

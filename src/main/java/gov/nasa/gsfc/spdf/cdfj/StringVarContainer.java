@@ -1,37 +1,34 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 
 /**
+ * The Class StringVarContainer.
  *
  * @author nand
  */
 public final class StringVarContainer extends ByteVarContainer implements VDataContainer.CString {
 
     /**
+     * Instantiates a new string var container.
      *
-     * @param cdfi
-     * @param vrbl
-     * @param ints
-     *
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     * @throws Throwable
+     * @param thisCDF the this CDF
+     * @param var     the var
+     * @param pt      the pt
      */
-    public StringVarContainer(CDFImpl thisCDF, Variable var, int[] pt)
-            throws IllegalAccessException, InvocationTargetException, Throwable {
+    public StringVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt) {
         super(thisCDF, var, pt);
     }
 
     /**
+     * Checks if is compatible.
      *
-     * @param type
-     * @param preserve
+     * @param type     the type
+     * @param preserve the preserve
      *
-     * @return
+     * @return true, if is compatible
      */
-    public static boolean isCompatible(int type, boolean preserve) {
+    public static boolean isCompatible(final int type, final boolean preserve) {
 
         if (isCompatible(type, preserve, Byte.TYPE)) {
             boolean stringType = DataTypes.isStringType(type);
@@ -41,18 +38,12 @@ public final class StringVarContainer extends ByteVarContainer implements VDataC
         return false;
     }
 
-    /**
-     *
-     * @return
-     *
-     * @throws Throwable
-     */
     @Override
-    public Object _asArray() throws Throwable {
+    public Object _asArray() {
         int rank = this.var.getEffectiveRank();
 
         if (rank > 1) {
-            throw new Throwable("Rank > 1 not supported for strings.");
+            throw new IllegalStateException("Rank > 1 not supported for strings.");
         }
 
         ByteBuffer buf = getBuffer();
@@ -76,7 +67,8 @@ public final class StringVarContainer extends ByteVarContainer implements VDataC
                 }
                 return sa;
             case 1:
-                int n0 = (((Integer) this.var.getElementCount().elementAt(0)));
+                int n0 = this.var.getDimensionElementCounts()
+                        .get(0);
                 records = words / (n0 * len);
                 String[][] sa1 = new String[records][n0];
                 for (int r = 0; r < records; r++) {
@@ -89,7 +81,7 @@ public final class StringVarContainer extends ByteVarContainer implements VDataC
                 }
                 return sa1;
             default:
-                throw new Throwable("Internal error");
+                throw new IllegalStateException("Rank > 1 not supported for strings.");
         }
 
     }
@@ -99,34 +91,18 @@ public final class StringVarContainer extends ByteVarContainer implements VDataC
         return super.as1DArray();
     }
 
-    /**
-     *
-     * @return
-     *
-     * @throws Throwable
-     */
     @Override
-    public AArray asArray() throws Throwable {
+    public AArray asArray() {
         return new StringArray(_asArray());
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public byte[] asOneDArray() {
         return super.asOneDArray();
     }
 
-    /**
-     *
-     * @param cmtarget
-     *
-     * @return
-     */
     @Override
-    public byte[] asOneDArray(boolean cmtarget) {
+    public byte[] asOneDArray(final boolean cmtarget) {
         return super.asOneDArray(cmtarget);
     }
 }
