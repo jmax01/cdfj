@@ -114,6 +114,7 @@ class ReaderFactoryTest {
         Files.list(ReaderFactoryTest.CDFJ_BUILD_PATH)
                 .map(CDFMagicNumbers::from)
                 .peek(mn -> LOGGER.info("{}", mn))
+                .sorted(CDFMagicNumbers.COMP)
                 // .filter(CDFMagicNumbers::isV3)
                 .forEach(cdfmn -> {
                     LOGGER.info("File {}", cdfmn);
