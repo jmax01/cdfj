@@ -116,8 +116,10 @@ class ReaderFactoryTest {
         Files.list(ReaderFactoryTest.CDFJ_BUILD_PATH)
                 .map(CDFMagicNumbers::from)
                 .peek(mn -> LOGGER.info("{}", mn))
-                .filter(CDFMagicNumbers::isV3)
+                .sorted(CDFMagicNumbers.COMP)
+                // .filter(CDFMagicNumbers::isV3)
                 .forEach(fname -> {
+                    LOGGER.info("{}", fname);
 
                     try (CDFReader reader = ReaderFactory.getReader(fname.getFilePath()
                             .toString())) {

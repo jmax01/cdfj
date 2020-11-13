@@ -7,6 +7,34 @@ package gov.nasa.gsfc.spdf.cdfj;
 public interface CDFCore extends CDFMeta {
 
     /**
+     * Record size field java type.
+     *
+     * @return the class<? extends number>
+     */
+    Class<? extends Number> recordSizeFieldJavaType();
+
+    /**
+     * Offset field java type.
+     *
+     * @return the class<? extends number>
+     */
+    Class<? extends Number> offsetFieldJavaType();
+
+    /**
+     * Record size field size.
+     *
+     * @return the int
+     */
+    int recordSizeFieldSize();
+
+    /**
+     * Offset field size.
+     *
+     * @return the int
+     */
+    int offsetFieldSize();
+
+    /**
      * Returns a byte[] containing value of the given variable for the
      * specified range of points.
      * <p>

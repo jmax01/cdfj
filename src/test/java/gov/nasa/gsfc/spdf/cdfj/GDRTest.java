@@ -1,9 +1,5 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import static gov.nasa.gsfc.spdf.cdfj.GDR.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -157,6 +153,5 @@ class GDRTest {
     // final ByteBuffer GDRRecord = GDR.get();
     // assertEquals(expected, GDRRecord.getInt(GDR_NZ_ENTRIES_FIELD_OFFSET));
     // }
-
 
 }

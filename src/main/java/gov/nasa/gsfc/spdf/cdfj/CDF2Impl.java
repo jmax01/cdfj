@@ -49,7 +49,7 @@ final class CDF2Impl extends CDFImpl implements CDF2 {
         setOffsets();
         this.thisCDF = this;
         IntBuffer ibuf = buf.asIntBuffer();
-        getRecord(0);
+        getRecord(8);
         ibuf.position(2);
         ibuf.get();
         ibuf.position(3);
@@ -83,7 +83,11 @@ final class CDF2Impl extends CDFImpl implements CDF2 {
             throw new IllegalArgumentException("Bad GDR type " + x);
         }
 
+        // ByteBuffer globalDescriptorRecord = getRecord(this.GDROffset);
+        // int zv = globalDescriptorRecord.getInt(8);
+
         this.rVDRHead = buf.getInt();
+
         this.zVDRHead = buf.getInt();
         this.ADRHead = buf.getInt();
         // eof

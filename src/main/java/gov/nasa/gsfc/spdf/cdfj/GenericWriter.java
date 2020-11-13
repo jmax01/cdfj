@@ -1208,7 +1208,7 @@ public class GenericWriter {
             // if (adr.scope != 1) continue;
             adr.position = obuf.position();
             obuf.position((int) (adr.position + adr.getSize()));
-            CopyOnWriteArrayList<AEDR> vec = this.attributeEntries.get(name);
+            List<AEDR> vec = this.attributeEntries.get(name);
 
             for (int i = 0; i < vec.size(); i++) {
                 AEDR ae = vec.get(i);
@@ -1253,7 +1253,7 @@ public class GenericWriter {
             String name = adr.name;
             obuf.position((int) adr.position);
             obuf.put(adr.get());
-            Iterable<AEDR> vec = this.attributeEntries.get(name);
+            List<AEDR> vec = this.attributeEntries.get(name);
 
             for (AEDR ae : vec) {
                 obuf.position((int) ae.position);
@@ -1373,15 +1373,17 @@ public class GenericWriter {
      * @param vname name of the variable
      * @param aname name of the attribute
      */
-    CopyOnWriteArrayList<VariableAttributeEntry> findVariableAttributeEntries(final String vname, final String aname)
+    List<VariableAttributeEntry> findVariableAttributeEntries(final String vname, final String aname)
             throws CDFException.WriterError {
+
         VDR vdesc = this.variableDescriptors.get(vname);
 
         if (vdesc == null) {
             throw new CDFException.WriterError("Variable " + vname + " has not been defined.");
         }
 
-        CopyOnWriteArrayList<VariableAttributeEntry> result = new CopyOnWriteArrayList<>();
+        List<VariableAttributeEntry> result = new CopyOnWriteArrayList<>();
+
         Iterable<AEDR> entries = this.attributeEntries.get(aname);
 
         if (entries == null) {
@@ -1389,16 +1391,15 @@ public class GenericWriter {
         }
 
         for (AEDR entry : entries) {
-            VariableAttributeEntry vae;
 
-            try {
-                vae = (VariableAttributeEntry) entry;
-            } catch (Exception ex) {
-                continue;
-            }
+            if (entry instanceof VariableAttributeEntry) {
 
-            if (vae.getNum() == vdesc.getNum()) {
-                result.add(vae);
+                VariableAttributeEntry vae = (VariableAttributeEntry) entry;
+
+                if (vae.getNum() == vdesc.getNum()) {
+                    result.add(vae);
+                }
+
             }
 
         }
@@ -1611,7 +1612,7 @@ public class GenericWriter {
             // if (adr.scope != 1) continue;
             adr.position = channel.position();
             channel.position(adr.position + adr.getSize());
-            CopyOnWriteArrayList<AEDR> vec = this.attributeEntries.get(name);
+            List<AEDR> vec = this.attributeEntries.get(name);
 
             for (int i = 0; i < vec.size(); i++) {
                 AEDR ae = vec.get(i);

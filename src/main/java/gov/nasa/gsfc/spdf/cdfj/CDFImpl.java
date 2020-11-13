@@ -23,6 +23,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
+import lombok.ToString;
+
 abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
     private static final long serialVersionUID = -7106016786475171626L;
@@ -318,7 +320,11 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
         if ((this.fileChannel != null) && this.fileChannel.isOpen()) {
 
             synchronized (this.fileChannel) {
-                this.fileChannel.close();
+
+                if ((this.fileChannel != null) && this.fileChannel.isOpen()) {
+                    this.fileChannel.close();
+                }
+
             }
 
         }
@@ -1457,8 +1463,9 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
         synchronized (this.fileChannel) {
 
             try {
-                this.fileChannel.position(offset + 4);
+                this.fileChannel.position(offset);
                 this.fileChannel.read(lenBuf);
+                lenBuf.position(0);
                 int size = lenBuf.getInt(0);
                 return getRecord(offset, size);
             } catch (IOException e) {
@@ -1835,6 +1842,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
     /**
      * AttributeEntry class.
      */
+    @ToString(exclude = "_buf")
     public class CDFAttributeEntry implements AttributeEntry, Serializable {
 
         private static final long serialVersionUID = 3507692892215505019L;
@@ -1999,6 +2007,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
     /**
      * CDFVariable class.
      */
+    @ToString
     public class CDFVariable implements java.io.Serializable, Variable {
 
         private static final long serialVersionUID = 1512547111444704626L;
@@ -3221,6 +3230,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
     /**
      * CDFAttribute class
      */
+    @ToString
     class CDFAttribute implements java.io.Serializable, Attribute {
 
         private static final long serialVersionUID = -2085580948842565139L;
@@ -3361,11 +3371,10 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
                 if (variable == null) {
 
-                    Object[] params = { attributeEntry.getAttributeName(), type, attributeEntry.getVariableNumber() };
-
                     LOGGER.log(Level.WARNING,
                             "An attribute entry for {0} of type, {1}, links to variable number {2} that was not found",
-                            params);
+                            new Object[] { attributeEntry.getAttributeName(), type,
+                                    attributeEntry.getVariableNumber() });
 
                 } else {
                     variable.attributes.add(attributeEntry);

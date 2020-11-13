@@ -33,7 +33,7 @@ final class CDF3Impl extends CDFImpl implements CDF3 {
         setOffsets();
         this.thisCDF = this;
         IntBuffer ibuf = buf.asIntBuffer();
-        getRecord(0);
+        getRecord(8);
         ibuf.position(2); // skip magic numbers
         ibuf.get(); // Record Size
         ibuf.get(); // Record Size

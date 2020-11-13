@@ -142,7 +142,8 @@ class CDFFactoryTest {
     @Test
     void test2() throws IOException {
         // String fileName = "target/test-classes/tha_l2_scm_20160831_v01.cdf";
-        String fileName = "target/test-classes/mms1_fpi_fast_sitl_20150801132440_v0.0.0.cdf";
+        String fileName = ReaderFactoryTest.CDFJ_BUILD_PATH.resolve("c1_waveform_wbd_200202080940_v01_subset.cdf")
+                .toString();
         Path filePath = Path.of(fileName);
 
         try (FileChannel fc = FileChannel.open(filePath)) {
@@ -157,9 +158,7 @@ class CDFFactoryTest {
             assertEquals(CDF_V3_MAGIC_NUMBER_UNCOMPRESSED, CDFFactory.CDF3_MAGIC);
 
             ByteBuffer cdfrsdrbb = ByteBuffer.allocate(8);
-
             fc.read(cdfrsdrbb);
-            cdfrsdrbb.position(0);
             long cdfrsbb = cdfrsdrbb.getLong(0);
             LOGGER.info("cdfrsbb {}", cdfrsbb);
             CDFDescriptorRecordV3Builder builder = CDFDescriptorRecordV3.builder()
