@@ -150,4 +150,8 @@ final class CDF3Impl extends CDFImpl implements CDF3 {
         this.offset_CDATA = OFFSET_CDATA;
     }
 
+    @Override
+    int readRecordSizeFieldAsInt(ByteBuffer recordSizeFieldByteBuffer) {
+        return (int) recordSizeFieldByteBuffer.getLong(0);
+    }
 }

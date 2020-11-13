@@ -1444,6 +1444,8 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
         return this.buf;
     }
 
+    abstract int readRecordSizeFieldAsInt(ByteBuffer recordSizeFieldByteBuffer);
+
     /**
      * Gets the record.
      *
@@ -1459,15 +1461,15 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
             return _buf.slice();
         }
 
-        ByteBuffer lenBuf = ByteBuffer.allocate(4);
+        ByteBuffer recordSizeFieldByteBuffer = ByteBuffer.allocate(recordSizeFieldSize());
 
         synchronized (this.fileChannel) {
 
             try {
                 this.fileChannel.position(offset);
-                this.fileChannel.read(lenBuf);
-                lenBuf.position(0);
-                int size = lenBuf.getInt(0);
+                this.fileChannel.read(recordSizeFieldByteBuffer);
+                recordSizeFieldByteBuffer.position(0);
+                int size = readRecordSizeFieldAsInt(recordSizeFieldByteBuffer);
                 return getRecord(offset, size);
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "Failed to read from file channel", e);

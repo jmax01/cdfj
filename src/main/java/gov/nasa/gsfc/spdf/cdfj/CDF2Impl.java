@@ -200,4 +200,9 @@ final class CDF2Impl extends CDFImpl implements CDF2 {
         this.offset_CSIZE = OFFSET_CSIZE;
         this.offset_CDATA = OFFSET_CDATA;
     }
+
+    @Override
+    int readRecordSizeFieldAsInt(ByteBuffer recordSizeFieldByteBuffer) {
+        return recordSizeFieldByteBuffer.getInt(0);
+    }
 }

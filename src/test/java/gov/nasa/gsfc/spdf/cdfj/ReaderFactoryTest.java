@@ -117,7 +117,9 @@ class ReaderFactoryTest {
                 .map(CDFMagicNumbers::from)
                 .peek(mn -> LOGGER.info("{}", mn))
                 .sorted(CDFMagicNumbers.COMP)
-                // .filter(CDFMagicNumbers::isV3)
+                // .filter(cm -> cm.getFilePath()
+                // .toString()
+                // .contains("compress"))
                 .forEach(fname -> {
                     LOGGER.info("{}", fname);
 
