@@ -256,6 +256,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
             System.out.println("getNumberAttribute: " + vbuf);
             System.out.println("type: " + type);
             ex.printStackTrace();
+            LOGGER.log(Level.SEVERE, ex, () -> "Failed to get number attributes for type, " + type + " nelement");
             return null;
         }
 
