@@ -157,7 +157,9 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
     /** The variable table. */
     private Map<String, CDFVariable> cdfVariablesByName;
 
-    private Map<Integer, CDFVariable> cdfVariablesByNumber;
+    private Map<Integer, CDFVariable> cdfZVariablesByNumber;
+
+    private Map<Integer, CDFVariable> cdfRVariablesByNumber;
 
     private Map<String, CDFAttribute> cdfAttributesByName;
 
@@ -1653,7 +1655,9 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
         this.cdfVariablesByName = new HashMap<>();
 
-        this.cdfVariablesByNumber = new HashMap<>();
+        this.cdfRVariablesByNumber = new HashMap<>();
+
+        this.cdfZVariablesByNumber = new HashMap<>();
 
         int[] offsets = { (int) this.zVDRHead, (int) this.rVDRHead };
 
@@ -1684,7 +1688,11 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
                 variableNamesAsList.add(variableName);
 
-                this.cdfVariablesByNumber.put(cdfv.getNumber(), cdfv);
+                if ( cdfv.isTypeR() ) {
+                    this.cdfRVariablesByNumber.put( cdfv.number, cdfv );
+                } else {
+                    this.cdfZVariablesByNumber.put( cdfv.number, cdfv );
+                }                
 
                 this.cdfVariablesByName.put(variableName, cdfv);
 
@@ -1756,14 +1764,13 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      */
     Variable getCDFVariable(final String vtype, final int number) {
 
-        CDFVariable variable = this.cdfVariablesByNumber.get(number);
-
-        if (vtype.equals(variable.getVariableType())) {
-            return variable;
+        if ( vtype.charAt(0)=='z' ) {
+            CDFVariable var= this.cdfZVariablesByNumber.get( number );
+            return var;
+        } else {
+            CDFVariable var= this.cdfRVariablesByNumber.get( number );
+            return var;
         }
-
-        throw new IllegalArgumentException(
-                "unsupported variable type, " + vtype + ", file must contain only zvariables or rvariables");
     }
 
     Object getFillValue(final VariableMetaData variableMetaData) {
