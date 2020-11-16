@@ -698,28 +698,24 @@ public abstract class BaseVarContainer implements Runnable {
 
             if (firstBlock) {
 
-                if (this.pt != null) {
+                if (begin > first) {
+                    int pos = bv.position() + ((begin - first) * this.itemSize);
+                    bv.position(pos);
+                }
 
-                    if (begin > first) {
-                        int pos = bv.position() + ((begin - first) * this.itemSize);
-                        bv.position(pos);
+                if (end == begin) { // single point needed
+
+                    try {
+                        doData(bv, this.type, this.elements, 1, _buf, data);
+                    } catch (Throwable ex) {
+                        ex.printStackTrace();
                     }
 
-                    if (end == begin) { // single point needed
-
-                        try {
-                            doData(bv, this.type, this.elements, 1, _buf, data);
-                        } catch (Throwable ex) {
-                            ex.printStackTrace();
-                        }
-
-                        if (this.buffers.isEmpty()) {
-                            this.buffers.add(new ContentDescriptor(_buf, begin, end));
-                        }
-
-                        return;
+                    if (this.buffers.isEmpty()) {
+                        this.buffers.add(new ContentDescriptor(_buf, begin, end));
                     }
 
+                    return;
                 }
 
                 firstBlock = false;
@@ -863,7 +859,7 @@ public abstract class BaseVarContainer implements Runnable {
      * }
      */
 
-    Class<?> componentType(final Object o) {
+    static Class<?> componentType(final Object o) {
 
         if (!o.getClass()
                 .isArray()) {

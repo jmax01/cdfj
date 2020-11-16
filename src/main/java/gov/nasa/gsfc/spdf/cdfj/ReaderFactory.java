@@ -112,7 +112,7 @@ public final class ReaderFactory {
      * Gets the reader.
      *
      * @param fname the fname
-     *
+     * @param map   the map
      *
      * @return the reader
      *

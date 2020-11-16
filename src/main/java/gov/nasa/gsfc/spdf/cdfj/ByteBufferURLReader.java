@@ -286,7 +286,7 @@ public class ByteBufferURLReader {
             // FIXME: Message does not match logic
             if (chunkSize < blockSize) {
                 throw new IllegalArgumentException(
-                        "chunkSize(" + chunkSize + ") must be >= blockSize(" + blockSize + ")");
+                        "chunkSize(" + chunkSize + ") must be >= blockSize(" + blockSize + ')');
             }
 
             this.blockSize = blockSize;

@@ -127,7 +127,6 @@ public final class DataTypes {
             method[32] = meth;
             typeCategory[32] = DOUBLE;
             size[32] = 8;
-            typeCategory[41] = SIGNED_INTEGER;
             typeCategory[51] = STRING;
             typeCategory[52] = STRING;
         } catch (NoSuchMethodException | SecurityException ex) {

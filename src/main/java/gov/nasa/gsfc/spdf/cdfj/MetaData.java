@@ -271,15 +271,13 @@ public abstract class MetaData {
      * @param variableName the var name
      *
      * @return the effective rank
-     *
-     * @throws ReaderError the reader error
      */
     public final OptionalInt getVariableEffectiveRank(final String variableName) {
 
         return this.thisCDF.getVariableByName(variableName)
                 .map(Variable::getEffectiveRank)
                 .map(OptionalInt::of)
-                .orElse(OptionalInt.empty());
+                .orElseGet(OptionalInt::empty);
     }
 
     /**

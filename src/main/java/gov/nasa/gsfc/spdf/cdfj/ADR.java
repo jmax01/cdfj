@@ -209,7 +209,7 @@ public class ADR {
      * @return the name bytes
      *
      */
-    public byte[] getNameBytes(final String s) {
+    public static byte[] getNameBytes(final String s) {
 
         final byte[] padded = new byte[ADR_NAME_FIELD_LENGTH];
 
@@ -369,7 +369,7 @@ public class ADR {
      * @param name the new name, may not be null.
      *
      * @throws IllegalArgumentException if the name is longer than
-     *                                  {@link ADR_NAME_LENGTH}.
+     *                                  {@link #ADR_NAME_FIELD_LENGTH}.
      */
     public void setName(final String name) {
 

@@ -10,7 +10,6 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,6 +56,11 @@ public class CDFReader extends GenericReader implements Closeable {
         this.cdfVec.rdr = this;
     }
 
+    /**
+     * Instantiates a new CDF reader.
+     *
+     * @param cdfImpl the cdf impl
+     */
     public CDFReader(final CDFImpl cdfImpl) {
         super(cdfImpl);
     }
@@ -425,7 +429,7 @@ public class CDFReader extends GenericReader implements Closeable {
                 .map(variableAttributeName -> this.thisCDF.getAttribute(variableName, variableAttributeName))
                 .filter(List.class::isInstance)
                 .map(List.class::cast)
-                .filter(Predicate.not(List::isEmpty))
+                .filter(l -> !l.isEmpty())
                 .map(attributes -> attributes.get(0))
                 .filter(String.class::isInstance)
                 .map(String.class::cast)
@@ -1020,7 +1024,7 @@ public class CDFReader extends GenericReader implements Closeable {
             int dim = var.getEffectiveDimensions()[0];
 
             if ((component < 0) || (component > dim)) {
-                throw new IllegalArgumentException("component exceeds dimension of " + variableName + " (" + dim + ")");
+                throw new IllegalArgumentException("component exceeds dimension of " + variableName + " (" + dim + ')');
             }
 
             return _getTimeSeries(variableName, component, true, null);
@@ -1312,7 +1316,7 @@ public class CDFReader extends GenericReader implements Closeable {
         }
     }
 
-    class TimeSeriesOneDImpl extends TimeSeriesImpl implements TimeSeriesOneD {
+    static class TimeSeriesOneDImpl extends TimeSeriesImpl implements TimeSeriesOneD {
 
         boolean columnMajor;
 

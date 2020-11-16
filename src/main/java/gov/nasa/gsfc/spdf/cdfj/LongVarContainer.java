@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
+import java.util.Arrays;
 
 /**
  * The Class LongVarContainer.
@@ -44,9 +45,7 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
             double[] dpad = (double[]) pad;
             this.lpad = new long[dpad.length];
 
-            for (int i = 0; i < this.lpad.length; i++) {
-                this.lpad[i] = (long) dpad[i];
-            }
+            Arrays.setAll(this.lpad, i -> (long) dpad[i]);
 
         } else {
             this.lpad = (long[]) this.thisCDF.getPadValue(var);
@@ -237,12 +236,6 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
 
     }
 
-    /**
-     *
-     * @param size
-     *
-     * @return
-     */
     @Override
     public Object allocateDataArray(final int size) {
         return new long[size];
@@ -377,7 +370,7 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
 
         } catch (IllegalAccessException | InvocationTargetException e) {
 
-            throw new IllegalStateException("Attempt to execute method, " + method + "failed", e);
+            throw new IllegalStateException("Attempt to execute method, " + method + " failed", e);
         }
 
     }

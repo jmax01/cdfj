@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -1327,7 +1328,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
         }
 
-        return vars.toArray(String[]::new);
+        return vars.toArray(new String[0]);
     }
 
     /**
@@ -1462,19 +1463,19 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
         ByteBuffer recordSizeFieldByteBuffer = ByteBuffer.allocate(recordSizeFieldSize());
 
-        synchronized (this.fileChannel) {
+        try {
 
-            try {
+            synchronized (this.fileChannel) {
                 this.fileChannel.position(offset);
                 this.fileChannel.read(recordSizeFieldByteBuffer);
                 recordSizeFieldByteBuffer.position(0);
                 int size = readRecordSizeFieldAsInt(recordSizeFieldByteBuffer);
                 return getRecord(offset, size);
-            } catch (IOException e) {
-                LOGGER.log(Level.SEVERE, "Failed to read from file channel", e);
-                return null;
             }
 
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Failed to read from file channel", e);
+            return null;
         }
 
     }
@@ -1491,29 +1492,26 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
         ByteBuffer bb = ByteBuffer.allocate(size);
 
-        synchronized (this.fileChannel) {
+        try {
+            int got = 0;
 
-            try {
+            synchronized (this.fileChannel) {
                 this.fileChannel.position(offset);
 
-                int got = this.fileChannel.read(bb);
-
-                if (got != size) {
-
-                    LOGGER.log(Level.SEVERE,
-                            () -> String.format("Failed to get record at offset %s, needed %s bytes, got %s bytes.",
-                                    offset, size, got));
-
-                    return null;
-                }
-
-                bb.position(0);
-                return bb;
-            } catch (IOException e) {
-                LOGGER.log(Level.SEVERE, "Failed to read from file channel", e);
-                return null;
+                got = this.fileChannel.read(bb);
             }
 
+            if (got != size) {
+
+                throw new IllegalArgumentException(String.format(
+                        "Failed to get record at offset %s, needed %s bytes, got %s bytes.", offset, size, got));
+            }
+
+            bb.position(0);
+            return bb;
+        } catch (IOException e) {
+            throw new UncheckedIOException(
+                    String.format("Failed to get record at offset %s, with size %s", offset, size), e);
         }
 
     }
@@ -1568,7 +1566,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
     /**
      * Long int.
      *
-     * @param buf the buf
+     * @param byteBuffer the byte buffer
      *
      * @return the long
      */
@@ -1577,7 +1575,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
     /**
      * Low order int.
      *
-     * @param buf the buf
+     * @param byteBuffer the byte buffer
      *
      * @return the int
      */
@@ -1586,8 +1584,8 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
     /**
      * Low order int.
      *
-     * @param buf    the buf
-     * @param offset the offset
+     * @param byteBuffer the byte buffer
+     * @param offset     the offset
      *
      * @return the int
      */
@@ -1618,7 +1616,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      * @param bo the new byte order
      */
     protected void setByteOrder(final ByteOrder bo) {
-        this.bigEndian = bo.equals(ByteOrder.BIG_ENDIAN);
+        this.bigEndian = bo == ByteOrder.BIG_ENDIAN;
     }
 
     /**
@@ -1703,7 +1701,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
         }
 
-        this.variableNames = variableNamesAsList.toArray(String[]::new);
+        this.variableNames = variableNamesAsList.toArray(new String[0]);
 
         LOGGER.exiting("CDFImpl", "variables");
         return this.cdfVariablesByName;
@@ -1843,7 +1841,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
             bv = getValueBuffer(offset, size, count);
         }
 
-        bv.order(getByteOrder());
+        bv.order(this.byteOrder);
         return bv;
     }
 
@@ -1965,11 +1963,11 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
         @Override
         public boolean isSameAs(final AttributeEntry ae) {
 
-            if (getType() != ae.getType()) {
+            if (this.type != ae.getType()) {
                 return false;
             }
 
-            if (getNumberOfElements() != ae.getNumberOfElements()) {
+            if (this.nelement != ae.getNumberOfElements()) {
                 return false;
             }
 
@@ -2089,9 +2087,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
             if ("z".equals(vtype)) {
                 this.dimensions = new int[this._buf.getInt()];
 
-                for (int i = 0; i < this.dimensions.length; i++) {
-                    this.dimensions[i] = this._buf.getInt();
-                }
+                Arrays.setAll(this.dimensions, i -> this._buf.getInt());
 
             }
 
@@ -2217,7 +2213,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 return container.as1DArray();
             }
 
-            throw new UnsupportedOperationException("Variable " + getName() + " cannot return a byte[].");
+            throw new UnsupportedOperationException("Variable " + this.name + " cannot return a byte[].");
         }
 
         /**
@@ -2236,7 +2232,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 return container.asOneDArray(columnMajor);
             }
 
-            throw new UnsupportedOperationException("Variable " + getName() + " cannot return a byte[].");
+            throw new UnsupportedOperationException("Variable " + this.name + " cannot return a byte[].");
         }
 
         /**
@@ -2287,7 +2283,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 container.run();
                 return container.asOneDArray(targetAttribute.columnMajor);
             } catch (RuntimeException e) {
-                throw new UnsupportedOperationException("Variable " + getName() + " cannot return a double[].", e);
+                throw new UnsupportedOperationException("Variable " + this.name + " cannot return a double[].", e);
             }
 
         }
@@ -2529,7 +2525,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 return new ByteVarContainer(CDFImpl.this, this, pt);
             }
 
-            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.CByte.");
+            throw new UnsupportedOperationException("Variable " + this.name + " cannot return VDataContainer.CByte.");
         }
 
         @Override
@@ -2593,7 +2589,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 variableDataBUffers.add(new VariableDataBuffer(first, last, bbuf, compressed));
             }
 
-            return variableDataBUffers.toArray(VariableDataBuffer[]::new);
+            return variableDataBUffers.toArray(new VariableDataBuffer[0]);
         }
 
         /**
@@ -2633,7 +2629,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 return new DoubleVarContainer(CDFImpl.this, this, pt, preserve, ByteOrder.nativeOrder());
             }
 
-            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.CDouble.");
+            throw new UnsupportedOperationException("Variable " + this.name + " cannot return VDataContainer.CDouble.");
         }
 
         /**
@@ -2711,7 +2707,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 return new FloatVarContainer(CDFImpl.this, this, pt, preserve, ByteOrder.nativeOrder());
             }
 
-            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.Float.");
+            throw new UnsupportedOperationException("Variable " + this.name + " cannot return VDataContainer.Float.");
         }
 
         @Override
@@ -2726,7 +2722,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 return new IntVarContainer(CDFImpl.this, this, pt, preserve, ByteOrder.nativeOrder());
             }
 
-            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.CInt.");
+            throw new UnsupportedOperationException("Variable " + this.name + " cannot return VDataContainer.CInt.");
         }
 
         /**
@@ -2759,7 +2755,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 return new LongVarContainer(CDFImpl.this, this, pt, ByteOrder.nativeOrder());
             }
 
-            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.CLong.");
+            throw new UnsupportedOperationException("Variable " + this.name + " cannot return VDataContainer.CLong.");
         }
 
         /**
@@ -2883,7 +2879,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 return new ShortVarContainer(CDFImpl.this, this, pt, preserve, ByteOrder.nativeOrder());
             }
 
-            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.CShort.");
+            throw new UnsupportedOperationException("Variable " + this.name + " cannot return VDataContainer.CShort.");
         }
 
         @Override
@@ -2893,7 +2889,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 return new StringVarContainer(CDFImpl.this, this, pt);
             }
 
-            throw new UnsupportedOperationException("Variable " + getName() + " cannot return VDataContainer.CString.");
+            throw new UnsupportedOperationException("Variable " + this.name + " cannot return VDataContainer.CString.");
         }
 
         /**
@@ -2934,7 +2930,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
          */
         @Override
         public boolean isCompatible(final Class<?> cl) {
-            return BaseVarContainer.isCompatible(getType(), true, cl);
+            return BaseVarContainer.isCompatible(this.type, true, cl);
         }
 
         /**
@@ -2943,7 +2939,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
          */
         @Override
         public boolean isCompatible(final Class<?> cl, final boolean preserve) {
-            return BaseVarContainer.isCompatible(getType(), preserve, cl);
+            return BaseVarContainer.isCompatible(this.type, preserve, cl);
         }
 
         /**

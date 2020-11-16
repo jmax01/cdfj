@@ -121,7 +121,7 @@ public interface VariableMetaData {
      *
      * @return the element count
      *
-     * @deprecated Use {@link #getElements()}
+     * @deprecated Use {@link #getDimensionElementCounts()}
      */
     @Deprecated
     Vector<Integer> getElementCount();

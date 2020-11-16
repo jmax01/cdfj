@@ -134,14 +134,14 @@ public abstract class AArray {
     }
 
     /**
-     * Buffer.
+     * create a byte buffer of a compatible type.
      *
-     * @param cl   the cl
-     * @param size the size
+     * @param clazz the type
+     * @param size  the size of the buffer
      *
      * @return the byte buffer
      */
-    public abstract ByteBuffer buffer(Class<?> cl, int size);
+    public abstract ByteBuffer buffer(Class<?> clazz, int size);
 
     /**
      * Buffer.
@@ -171,7 +171,7 @@ public abstract class AArray {
     /**
      * Validate dimensions.
      *
-     * @param dimensions the dimensions
+     * @param _dimensions the dimensions
      *
      * @return true, if successful
      */

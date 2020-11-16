@@ -102,26 +102,51 @@ public interface CDF2 extends CDFCore {
     /** The offset csize. */
     int OFFSET_CSIZE = 12;
 
+    /**
+     * Max string size.
+     *
+     * @return the int
+     */
     @Override
     default int maxStringSize() {
         return MAX_STRING_SIZE;
     }
 
+    /**
+     * Record size field java type.
+     *
+     * @return the class
+     */
     @Override
     default Class<Integer> recordSizeFieldJavaType() {
         return Integer.class;
     }
 
+    /**
+     * Offset field java type.
+     *
+     * @return the class
+     */
     @Override
     default Class<Integer> offsetFieldJavaType() {
         return Integer.class;
     }
 
+    /**
+     * Record size field size.
+     *
+     * @return the int
+     */
     @Override
     default int recordSizeFieldSize() {
         return Integer.BYTES;
     }
 
+    /**
+     * Offset field size.
+     *
+     * @return the int
+     */
     @Override
     default int offsetFieldSize() {
         return Integer.BYTES;

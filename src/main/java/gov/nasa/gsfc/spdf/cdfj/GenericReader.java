@@ -85,6 +85,11 @@ public class GenericReader extends MetaData {
 
     }
 
+    /**
+     * Instantiates a new generic reader.
+     *
+     * @param cdfImpl the cdf impl
+     */
     protected GenericReader(final CDFImpl cdfImpl) {
         this.thisCDF = cdfImpl;
     }
@@ -133,7 +138,7 @@ public class GenericReader extends MetaData {
             int ndim = getEffectiveDimensions(variableName).length;
 
             if (ndim != 0) {
-                throw new CDFException.ReaderError("Use asDouble" + ndim + "(" + variableName + ") for " + ndim
+                throw new CDFException.ReaderError("Use asDouble" + ndim + '(' + variableName + ") for " + ndim
                         + "-dimensional variable " + variableName);
             }
 
@@ -176,7 +181,7 @@ public class GenericReader extends MetaData {
             int ndim = getEffectiveDimensions(variableName).length;
 
             if (ndim != 1) {
-                throw new CDFException.ReaderError("Use asDouble" + ndim + "(" + variableName + ") for " + ndim
+                throw new CDFException.ReaderError("Use asDouble" + ndim + '(' + variableName + ") for " + ndim
                         + "-dimensional variable " + variableName);
             }
 
@@ -203,7 +208,7 @@ public class GenericReader extends MetaData {
             int ndim = getEffectiveDimensions(variableName).length;
 
             if (ndim != 2) {
-                throw new CDFException.ReaderError("Use asDouble" + ndim + "(" + variableName + ") for " + ndim
+                throw new CDFException.ReaderError("Use asDouble" + ndim + '(' + variableName + ") for " + ndim
                         + "-dimensional variable " + variableName);
             }
 
@@ -230,7 +235,7 @@ public class GenericReader extends MetaData {
             int ndim = getEffectiveDimensions(variableName).length;
 
             if (ndim != 3) {
-                throw new CDFException.ReaderError("Use asDouble" + ndim + "(" + variableName + ") for " + ndim
+                throw new CDFException.ReaderError("Use asDouble" + ndim + '(' + variableName + ") for " + ndim
                         + "-dimensional variable " + variableName);
             }
 
@@ -931,8 +936,6 @@ public class GenericReader extends MetaData {
      * @param variableName the variable name
      *
      * @return true, if is a list
-     *
-     * @throws ReaderError the reader error
      */
     public final boolean isList(final String variableName) {
         return 1 == getVariableEffectiveRank(variableName).orElse(-1);
@@ -1094,7 +1097,7 @@ public class GenericReader extends MetaData {
             return variable.getStringContainer(recordRange);
         }
 
-        throw new IllegalArgumentException("Variable, " + variableName + ", has an unsupported type: " + type + ".");
+        throw new IllegalArgumentException("Variable, " + variableName + ", has an unsupported type: " + type + '.');
     }
 
     Class<?> getContainerClass(final String supportedClassTypeName) {
@@ -1196,7 +1199,7 @@ public class GenericReader extends MetaData {
      *
      * @param variableName variable name
      * @param targetType   desired type of extracted data
-     * @param recordRange
+     * @param recordRange  the record range
      * @param preserve     specifies whether the target must preserve
      *                     precision. if false, possible loss of precision
      *                     is deemed acceptable.
@@ -1207,9 +1210,7 @@ public class GenericReader extends MetaData {
      * @return Name of the container's thread. Methods to ascertain the
      *         availability and to retrieve require this name.
      *
-     *
      * @see #threadFinished(String threadName)
-     *
      * @see #getOneDArray(String threadName, boolean columnMajor)
      * @see #getBuffer(String threadName)
      */
@@ -1237,21 +1238,21 @@ public class GenericReader extends MetaData {
 
     String threadName(final String variableName, final String type, final int[] recordRange, final boolean preserve,
             final java.nio.ByteOrder bo) {
-        StringBuilder sb = new StringBuilder(variableName + "_" + type + "_");
+        StringBuilder sb = new StringBuilder(variableName + '_' + type + '_');
 
         if (recordRange == null) {
             sb.append("null_");
         } else {
             sb.append(recordRange[0])
-                    .append("_")
+                    .append('_')
                     .append(recordRange[1]);
-            sb.append("_");
+            sb.append('_');
         }
 
         sb.append(preserve)
-                .append("_")
+                .append('_')
                 .append(Math.random())
-                .append("_")
+                .append('_')
                 .append(bo);
         return sb.toString();
     }

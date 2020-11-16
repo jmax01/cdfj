@@ -1,5 +1,6 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
+import java.util.Arrays;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -36,32 +37,32 @@ public class ArrayAttribute {
 
             if (clazz.isPrimitive()) {
 
-                if (Double.TYPE.equals(clazz)) {
+                if (Double.TYPE == clazz) {
                     this.dim.add(((double[]) this.data).length);
                     break;
                 }
 
-                if (Float.TYPE.equals(clazz)) {
+                if (Float.TYPE == clazz) {
                     this.dim.add(((float[]) this.data).length);
                     break;
                 }
 
-                if (Integer.TYPE.equals(clazz)) {
+                if (Integer.TYPE == clazz) {
                     this.dim.add(((int[]) this.data).length);
                     break;
                 }
 
-                if (Byte.TYPE.equals(clazz)) {
+                if (Byte.TYPE == clazz) {
                     this.dim.add(((byte[]) this.data).length);
                     break;
                 }
 
-                if (Short.TYPE.equals(clazz)) {
+                if (Short.TYPE == clazz) {
                     this.dim.add(((short[]) this.data).length);
                     break;
                 }
 
-                if (Long.TYPE.equals(clazz)) {
+                if (Long.TYPE == clazz) {
                     this.dim.add(((long[]) this.data).length);
                     break;
                 }
@@ -84,9 +85,7 @@ public class ArrayAttribute {
     public int[] getDimensions() {
         int[] ia = new int[this.dim.size()];
 
-        for (int i = 0; i < ia.length; i++) {
-            ia[i] = (this.dim.get(i));
-        }
+        Arrays.setAll(ia, this.dim::get);
 
         return ia;
     }

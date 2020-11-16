@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
@@ -467,7 +468,7 @@ public class CDFWriter extends GenericWriter {
      */
     public static void setLoggerLevel(final Level newLevel) {
 
-        if (LOGGER == anonymousLogger) {
+        if (Objects.equals(LOGGER, anonymousLogger)) {
             LOGGER.setLevel(newLevel);
         }
 
@@ -590,9 +591,9 @@ public class CDFWriter extends GenericWriter {
      * @return the string[]
      */
     public String[] attributesInDoNotCheckList() {
-        String[] sa = new String[doNotCheckListGlobal.size()];
-        doNotCheckListGlobal.toArray(sa);
-        return sa;
+
+        return doNotCheckListGlobal.toArray(new String[0]);
+
     }
 
     /**
@@ -765,7 +766,6 @@ public class CDFWriter extends GenericWriter {
             }
 
             for (VariableDataBuffer dbuf : dbufs) {
-                dbuf.getBuffer();
                 addBuffer(vn, dbuf);
             }
 
@@ -794,7 +794,7 @@ public class CDFWriter extends GenericWriter {
 
             }
 
-            System.out.println("rr: " + rr[0] + "," + rr[1]);
+            System.out.println("rr: " + rr[0] + ',' + rr[1]);
 
             if (cdf.rowMajority() == this.rowMajority) {
                 addData(vn, _container.getBuffer(), rr);
@@ -928,10 +928,11 @@ public class CDFWriter extends GenericWriter {
             return new String[0];
         }
 
-        return selected.toArray(String[]::new);
+        return selected.toArray(new String[0]);
     }
 
     List<String> getTimeVariableList(final GenericReader cdf) {
+
         List<String> list = new ArrayList<>();
         String[] vnames = this.vcol.getNames();
 
@@ -1135,7 +1136,7 @@ public class CDFWriter extends GenericWriter {
         public String[] getNames() {
 
             return this.map.keySet()
-                    .toArray(String[]::new);
+                    .toArray(new String[0]);
 
         }
 

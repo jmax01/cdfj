@@ -126,9 +126,11 @@ public final class TimeUtil {
         LAST_LEAP_SECOND_ID = leapSecondIds[leapSecondIds.length - 1];
     }
 
-    static Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-
     private TimeUtil() {}
+
+    static Calendar newGMTCalendarInstance() {
+        return Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+    }
 
     /**
      * Gets the offset.
@@ -347,7 +349,7 @@ public final class TimeUtil {
             t[5] = 59;
         }
 
-        cal.clear();
+        Calendar cal = newGMTCalendarInstance();
         cal.set(t[0], t[1], t[2], t[3], t[4], t[5]);
         cal.set(Calendar.MILLISECOND, (n > 6) ? time[6] : 0);
         return cal.getTimeInMillis();

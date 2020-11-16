@@ -31,17 +31,20 @@ public final class CDFFactory {
     /** The Constant CDF_V3_MAGIC_NUMBER_1. */
     public static final int CDF_V3_MAGIC_NUMBER_1 = 0xCDF3_0001;
 
+    /** The Constant CDF_V3_MAGIC_NUMBER_1_AS_STRING. */
     public static final String CDF_V3_MAGIC_NUMBER_1_AS_STRING = Integer.toHexString(CDF_V3_MAGIC_NUMBER_1);
 
     /** The Constant CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2. */
     public static final int CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2 = 0x0000_ffff;
 
+    /** The Constant CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2_AS_STRING. */
     public static final String CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2_AS_STRING = Integer
             .toHexString(CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2);
 
     /** The Constant CDF_V3_COMPRESSED_MAGIC_NUMBER_2. */
     public static final int CDF_V3_COMPRESSED_MAGIC_NUMBER_2 = 0xCCCC_0001;
 
+    /** The Constant CDF_V3_COMPRESSED_MAGIC_NUMBER_2_AS_STRING. */
     public static final String CDF_V3_COMPRESSED_MAGIC_NUMBER_2_AS_STRING = Integer
             .toHexString(CDF_V3_COMPRESSED_MAGIC_NUMBER_2);
 
@@ -49,6 +52,7 @@ public final class CDFFactory {
     public static final long CDF_V3_MAGIC_NUMBER_UNCOMPRESSED = (((long) CDF_V3_MAGIC_NUMBER_1) << 32)
             + CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2;
 
+    /** The Constant CDF_V3_MAGIC_NUMBER_UNCOMPRESSED_AS_STRING. */
     public static final String CDF_V3_MAGIC_NUMBER_UNCOMPRESSED_AS_STRING = Long
             .toHexString(CDF_V3_MAGIC_NUMBER_UNCOMPRESSED);
 
@@ -56,6 +60,7 @@ public final class CDFFactory {
     public static final long CDF_V3_MAGIC_NUMBER_COMPRESSED = (((long) CDF_V3_MAGIC_NUMBER_1) << 32)
             + CDF_V3_COMPRESSED_MAGIC_NUMBER_2;
 
+    /** The Constant CDF_V3_MAGIC_NUMBER_COMPRESSED_AS_STRING. */
     public static final String CDF_V3_MAGIC_NUMBER_COMPRESSED_AS_STRING = Long
             .toHexString(CDF_V3_MAGIC_NUMBER_COMPRESSED);
 
@@ -147,11 +152,6 @@ public final class CDFFactory {
         maxMappedMemory = value;
     }
 
-    /**
-     * creates CDFImpl object from a byte array.
-     *
-     * @param fileCDFSource
-     */
     static CDFImpl getCDF(final byte[] ba, final CDFSource cdfSource) {
         ByteBuffer buf;
 
@@ -201,11 +201,6 @@ public final class CDFFactory {
         return cdf;
     }
 
-    /**
-     * creates CDFImpl object from a URL.
-     *
-     * @throws IOException
-     */
     static CDFImpl getCDF(final URL url) {
 
         URLConnection con;
@@ -283,7 +278,7 @@ public final class CDFFactory {
 
         }
 
-        return null;
+        throw new IllegalArgumentException("CDF version not supported, magic numbers are " + Long.toHexString(magic));
     }
 
     static ByteBuffer uncompressed(final ByteBuffer buf, final int version) {
@@ -471,6 +466,9 @@ public final class CDFFactory {
         }
     }
 
+    /**
+     * The Class RejectMissingRecords.
+     */
     public static class RejectMissingRecords extends ProcessingOption {
 
         @Override
@@ -479,6 +477,9 @@ public final class CDFFactory {
         }
     }
 
+    /**
+     * The Class AccceptMissingRecords.
+     */
     public static class AccceptMissingRecords extends ProcessingOption {
 
         @Override
@@ -515,8 +516,6 @@ public final class CDFFactory {
 
         /**
          * Instantiates a new url CDF source.
-         *
-         * @param name the name
          */
         public ByteArrayCDFSource() {
             super("byte[]");
@@ -542,8 +541,6 @@ public final class CDFFactory {
 
         /**
          * Instantiates a new url CDF source.
-         *
-         * @param name the name
          */
         public ByteBufferCDFSource() {
             super("ByteBuffer");

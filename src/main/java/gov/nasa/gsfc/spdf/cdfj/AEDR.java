@@ -135,7 +135,7 @@ public class AEDR {
      */
     public AEDR(final ADR adr, final int type, final Object value) {
 
-        setAttrNum(adr.num);
+        this.attrNum = adr.num;
         setDataType(type);
         Class<?> clazz = value.getClass();
 
@@ -409,7 +409,7 @@ public class AEDR {
 
         this.values = new byte[ba.length];
         System.arraycopy(ba, 0, this.values, 0, ba.length);
-        setNumElems(ba.length);
+        this.numElems = ba.length;
     }
 
     /**
@@ -418,7 +418,7 @@ public class AEDR {
      * @param da the new values
      */
     public void setValues(final double[] da) {
-        setNumElems(da.length);
+        this.numElems = da.length;
 
         if (this.dataType == -1) {
             setDataType(DEFAULT_AEDR_DOUBLE_TYPE);
@@ -436,7 +436,7 @@ public class AEDR {
             || (this.dataType == 32)) {
 
             if (this.dataType == 32) {
-                setNumElems(da.length / 2);
+                this.numElems = da.length / 2;
             }
 
             ByteBuffer buf = ByteBuffer.allocate(8 * da.length);
@@ -524,7 +524,7 @@ public class AEDR {
      * @param fa the new values
      */
     public void setValues(final float[] fa) {
-        setNumElems(fa.length);
+        this.numElems = fa.length;
 
         if (this.dataType == -1) {
             setDataType(DEFAULT_AEDR_FLOAT_TYPE);
@@ -550,7 +550,7 @@ public class AEDR {
      * @param ia the new values
      */
     public void setValues(final int[] ia) {
-        setNumElems(ia.length);
+        this.numElems = ia.length;
 
         if (this.dataType == -1) {
             setDataType(DEFAULT_AEDR_INT_TYPE);
@@ -587,7 +587,7 @@ public class AEDR {
 
         }
 
-        setNumElems(la.length);
+        this.numElems = la.length;
         ByteBuffer buf = ByteBuffer.allocate(8 * la.length);
         buf.order(ByteOrder.LITTLE_ENDIAN);
         buf.asLongBuffer()
@@ -602,7 +602,7 @@ public class AEDR {
      * @param sa the new values
      */
     public void setValues(final short[] sa) {
-        setNumElems(sa.length);
+        this.numElems = sa.length;
 
         if (this.dataType == -1) {
             setDataType(DEFAULT_AEDR_SHORT_TYPE);
@@ -628,7 +628,7 @@ public class AEDR {
      * @param s the new values
      */
     public void setValues(final String s) {
-        setNumElems(s.length());
+        this.numElems = s.length();
 
         if (this.dataType == -1) {
             setDataType(DEFAULT_AEDR_STRING_TYPE);

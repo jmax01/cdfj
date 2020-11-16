@@ -113,21 +113,41 @@ public interface CDF3 extends CDFCore {
         return MAX_STRING_SIZE;
     }
 
+    /**
+     * Record size field java type.
+     *
+     * @return the class
+     */
     @Override
     default Class<Long> recordSizeFieldJavaType() {
         return Long.class;
     }
 
+    /**
+     * Offset field java type.
+     *
+     * @return the class
+     */
     @Override
     default Class<Long> offsetFieldJavaType() {
         return Long.class;
     }
 
+    /**
+     * Record size field size.
+     *
+     * @return the int
+     */
     @Override
     default int recordSizeFieldSize() {
         return Long.BYTES;
     }
 
+    /**
+     * Offset field size.
+     *
+     * @return the int
+     */
     @Override
     default int offsetFieldSize() {
         return Long.BYTES;

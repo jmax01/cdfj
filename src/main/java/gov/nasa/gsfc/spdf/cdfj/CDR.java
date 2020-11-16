@@ -48,7 +48,7 @@ public class CDR {
         this.record.putInt(0);
         this.record.put(copyRight.getBytes());
         int len = 256 - copyRight.length();
-        this.record.put(String.format("%-" + len + "." + len + "s", " ")
+        this.record.put(String.format("%-" + len + '.' + len + 's', " ")
                 .getBytes());
         // for (int i = copyRight.length(); i < 256; i++) {
         // record.put((byte)0x20);

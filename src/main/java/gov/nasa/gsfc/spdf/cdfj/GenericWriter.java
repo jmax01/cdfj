@@ -1,6 +1,7 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -645,8 +646,6 @@ public class GenericWriter {
      */
     public void defineCompressedVariable(final String name, final CDFDataType dataType, final int[] dim)
             throws CDFException.WriterError {
-        boolean[] varys = new boolean[dim.length];
-        Arrays.fill(varys, true);
         defineCompressedVariable(name, dataType, dim, 1);
     }
 
@@ -850,8 +849,6 @@ public class GenericWriter {
      */
     public void defineVariable(final String name, final CDFDataType dataType, final int[] dim)
             throws CDFException.WriterError {
-        boolean[] varys = new boolean[dim.length];
-        Arrays.fill(varys, true);
         defineVariable(name, dataType, dim, 1);
     }
 
@@ -1117,7 +1114,8 @@ public class GenericWriter {
      *
      * @param fname the fname
      *
-     * @throws IOException Signals that an I/O exception has occurred.
+     * @throws IOException           Signals that an I/O exception has occurred.
+     * @throws FileNotFoundException the file not found exception
      */
     public void write(final String fname) throws IOException, java.io.FileNotFoundException {
         List<AEDR> vec = this.attributeEntries.get("cdfj_source");
@@ -1143,7 +1141,8 @@ public class GenericWriter {
      *
      * @return true, if successful
      *
-     * @throws IOException Signals that an I/O exception has occurred.
+     * @throws IOException           Signals that an I/O exception has occurred.
+     * @throws FileNotFoundException the file not found exception
      */
     public boolean write(final String fname, final boolean overwrite)
             throws IOException, java.io.FileNotFoundException {

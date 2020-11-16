@@ -468,7 +468,7 @@ public class GDR {
      */
     @Deprecated
     public void setLastLeapSecondId(final int leapSecondLastUpdated) {
-        setLeapSecondLastUpdated(leapSecondLastUpdated);
+        this.leapSecondLastUpdated = leapSecondLastUpdated;
     }
 
     /**

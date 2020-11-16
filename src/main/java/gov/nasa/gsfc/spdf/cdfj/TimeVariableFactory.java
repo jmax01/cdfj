@@ -6,6 +6,7 @@ import java.nio.LongBuffer;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -324,16 +325,6 @@ public final class TimeVariableFactory {
             return tp == TimePrecision.MILLISECOND;
         }
 
-        /**
-         *
-         * @param first
-         * @param last
-         * @param ts
-         *
-         * @return
-         *
-         * @
-         */
         @Override
         public double[] getTimes(final int first, final int last, final TimeInstantModel ts) {
             double base = JANUARY_1_1970_LONG;
@@ -468,7 +459,7 @@ public final class TimeVariableFactory {
             double start = timeRange[0]; // offset in millis since 1970
             double stop = timeRange[1];
 
-            if (((ts != null) && (ts != defaultTimeInstantModel))) {
+            if (((ts != null) && (!Objects.equals(ts, defaultTimeInstantModel)))) {
                 start = (start - ts.getBaseTime()) + JANUARY_1_1970_LONG;
                 stop = (stop - ts.getBaseTime()) + JANUARY_1_1970_LONG;
 
@@ -709,16 +700,6 @@ public final class TimeVariableFactory {
             return tp != TimePrecision.PICOSECOND;
         }
 
-        /**
-         *
-         * @param first
-         * @param last
-         * @param ts
-         *
-         * @return
-         *
-         * @
-         */
         @Override
         public double[] getTimes(final int first, final int last, final TimeInstantModel ts) {
             TimePrecision offsetUnits = TimePrecision.MILLISECOND;
@@ -826,16 +807,6 @@ public final class TimeVariableFactory {
             return (tp == TimePrecision.MICROSECOND) || (tp == TimePrecision.MILLISECOND);
         }
 
-        /**
-         *
-         * @param first
-         * @param last
-         * @param ts
-         *
-         * @return
-         *
-         * @
-         */
         @Override
         public double[] getTimes(final int first, final int last, final TimeInstantModel ts) {
             TimePrecision offsetUnits = TimePrecision.MILLISECOND;
@@ -957,7 +928,7 @@ public final class TimeVariableFactory {
         @Override
         public DefaultTimeInstantModelImpl clone() {
 
-            return new DefaultTimeInstantModelImpl(this.baseTime, getBaseTimeUnits(), getOffsetUnits());
+            return new DefaultTimeInstantModelImpl(this.baseTime, this.baseTimeUnits, this.offsetUnits);
         }
 
         @Override

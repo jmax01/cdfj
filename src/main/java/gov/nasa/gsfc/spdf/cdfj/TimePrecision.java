@@ -12,10 +12,13 @@ public final class TimePrecision {
     /** The Constant MILLISECOND. */
     public static final TimePrecision MILLISECOND = new TimePrecision(0);
 
+    /** The Constant MICROSECOND. */
     public static final TimePrecision MICROSECOND = new TimePrecision(1);
 
+    /** The Constant NANOSECOND. */
     public static final TimePrecision NANOSECOND = new TimePrecision(2);
 
+    /** The Constant PICOSECOND. */
     public static final TimePrecision PICOSECOND = new TimePrecision(3);
 
     static final Map<String, TimePrecision> TIME_PRECISIONS_BY_NAME = timePrecisionsByName();
@@ -38,7 +41,7 @@ public final class TimePrecision {
     }
 
     /**
-     * Gets the precision by logn or short name
+     * Gets the precision by logn or short name.
      *
      * @param timePrecisionName the time precision name
      *

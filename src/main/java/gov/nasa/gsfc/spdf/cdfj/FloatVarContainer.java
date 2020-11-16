@@ -432,7 +432,7 @@ public final class FloatVarContainer extends BaseVarContainer implements VDataCo
 
         } catch (IllegalAccessException | InvocationTargetException e) {
 
-            throw new IllegalStateException("Attempt to execute method, " + method + "failed", e);
+            throw new IllegalStateException("Attempt to execute method, " + method + " failed", e);
         }
 
     }

@@ -9,6 +9,7 @@ import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.GZIPOutputStream;
 
@@ -586,7 +587,7 @@ public class DataContainer {
                             t = "uncompressed";
                         }
 
-                        throw new IllegalArgumentException("Changing compression mode of input. Previous = " + t + ".");
+                        throw new IllegalArgumentException("Changing compression mode of input. Previous = " + t + '.');
                     }
 
                 }
@@ -720,7 +721,7 @@ public class DataContainer {
                     StringBuilder sbe = new StringBuilder();
 
                     for (int k : dcheck) {
-                        sbe.append(",")
+                        sbe.append(',')
                                 .append(k);
                     }
 
@@ -728,11 +729,11 @@ public class DataContainer {
                     int[] fdim = aa.getDimensions();
 
                     for (int j : fdim) {
-                        sbf.append(",")
+                        sbf.append(',')
                                 .append(j);
                     }
 
-                    throw new IllegalStateException("Dimension mismatch, expected: " + sbe + " found " + sbf + ".");
+                    throw new IllegalStateException("Dimension mismatch, expected: " + sbe + " found " + sbf + '.');
                 }
 
             }
@@ -972,7 +973,7 @@ public class DataContainer {
 
         }
 
-        if (this.phantom == Boolean.TRUE) {
+        if (Objects.equals(this.phantom, Boolean.TRUE)) {
             this.firstRecords.clear();
             this.lastRecords.clear();
             this.bufs.clear();

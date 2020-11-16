@@ -3,7 +3,6 @@ package gov.nasa.gsfc.spdf.cdfj;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.Calendar;
-import java.util.TimeZone;
 
 import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
 
@@ -44,8 +43,6 @@ public class TSExtractor extends Extractor {
         }
 
     }
-
-    static Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
     /**
      * Filter fill.
@@ -423,6 +420,7 @@ public class TSExtractor extends Extractor {
 
         }
 
+        Calendar cal = TimeUtil.newGMTCalendarInstance();
         cal.clear();
         cal.set(t[0], t[1], t[2], t[3], t[4], t[5]);
         cal.set(Calendar.MILLISECOND, (n > 6) ? time[6] : 0);

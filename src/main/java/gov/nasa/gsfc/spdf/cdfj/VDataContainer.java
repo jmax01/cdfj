@@ -105,11 +105,6 @@ public interface VDataContainer extends Runnable {
          */
         @Override
         byte[] asOneDArray(boolean cmtarget);
-
-        /**
-         * Returns the multi dimensional array representation.
-         */
-        // public ByteArray asArray() ;
     }
 
     /**
@@ -336,10 +331,5 @@ public interface VDataContainer extends Runnable {
          */
         @Override
         byte[] asOneDArray(boolean cmtarget);
-
-        /**
-         * Returns the multi dimensional array representation.
-         */
-        // public StringArray asArray() ;
     }
 }

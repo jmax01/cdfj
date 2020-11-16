@@ -103,7 +103,7 @@ public class VDR {
             final SparseRecordOption option) {
         this.sname = name;
         setName(name);
-        setDataType(dataType);
+        this.dataType = dataType;
 
         if (dim.length != varys.length) {
             throw new IllegalArgumentException(

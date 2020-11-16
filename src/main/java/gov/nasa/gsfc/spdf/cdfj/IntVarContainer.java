@@ -235,12 +235,6 @@ public final class IntVarContainer extends BaseVarContainer implements VDataCont
 
     }
 
-    /**
-     *
-     * @param size
-     *
-     * @return
-     */
     @Override
     public Object allocateDataArray(final int size) {
         return new int[size];
@@ -256,21 +250,11 @@ public final class IntVarContainer extends BaseVarContainer implements VDataCont
         return new IntArray(_asArray());
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public int[] asOneDArray() {
         return (int[]) super.asOneDArray(true);
     }
 
-    /**
-     *
-     * @param cmtarget
-     *
-     * @return
-     */
     @Override
     public int[] asOneDArray(final boolean cmtarget) {
         return (int[]) super.asOneDArray(cmtarget);

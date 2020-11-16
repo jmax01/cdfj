@@ -3,6 +3,7 @@ package gov.nasa.gsfc.spdf.cdfj;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Arrays;
 
 import gov.nasa.gsfc.spdf.cdfj.CDFFactory.CDFSource;
 
@@ -43,7 +44,7 @@ final class CDF3Impl extends CDFImpl implements CDF3 {
         this.version = ibuf.get();
 
         if (this.version != CDF_VERSION) {
-            throw new IllegalArgumentException("Version " + this.version + "is not accepted by this reader.");
+            throw new IllegalArgumentException("Version " + this.version + " is not accepted by this reader.");
         }
 
         this.release = ibuf.get();
@@ -81,9 +82,7 @@ final class CDF3Impl extends CDFImpl implements CDF3 {
         if (numberOfRDims > 0) { // skip next integer field
             buf.getInt();
 
-            for (int i = 0; i < this.rDimSizes.length; i++) {
-                this.rDimSizes[i] = buf.getInt();
-            }
+            Arrays.setAll(this.rDimSizes, i -> buf.getInt());
 
         }
 

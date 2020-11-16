@@ -30,11 +30,6 @@ public class IntArray extends AArray {
         super(o, majority);
     }
 
-    /**
-     * create a byte buffer of a compatible type.
-     *
-     * @param ignore
-     */
     @Override
     public ByteBuffer buffer(final Class<?> cl, final int ignore) {
 
