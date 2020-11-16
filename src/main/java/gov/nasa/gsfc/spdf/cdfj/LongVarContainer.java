@@ -304,10 +304,10 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
         int position = _buf.position();
         LongBuffer lbuf = _buf.asLongBuffer();
         Method method = null;
-        int processed = 0;
 
         try {
 
+            int processed = 0;
             switch (DataTypes.typeCategory[type]) {
                 case 2:
                     method = DataTypes.method[type];

@@ -309,10 +309,10 @@ public final class FloatVarContainer extends BaseVarContainer implements VDataCo
         int position = _buf.position();
         FloatBuffer fbuf = _buf.asFloatBuffer();
         Method method = null;
-        int processed = 0;
 
         try {
 
+            int processed = 0;
             switch (DataTypes.typeCategory[type]) {
                 case 0:
                     int ipos = bv.position();

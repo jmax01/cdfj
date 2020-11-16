@@ -34,11 +34,10 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
             }
 
             this.bpad = new byte[count];
-            byte[] ba;
             count = 0;
 
             for (String sa1 : sa) {
-                ba = sa1.getBytes();
+                byte[] ba = sa1.getBytes();
 
                 for (byte value : ba) {
                     this.bpad[count++] = value;
@@ -247,13 +246,11 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
 
         byte[] repl = (rec < 0) ? this.bpad : this.var.asByteArray(new int[] { rec });
 
-        int rem = records;
-
-        byte[] ba = new byte[rem * this.elements];
+        byte[] ba = new byte[records * this.elements];
 
         int n = 0;
 
-        for (int i = 0; i < rem; i++) {
+        for (int i = 0; i < records; i++) {
 
             ba[n++] = repl[0];
 
@@ -263,7 +260,7 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
 
         }
 
-        buf.put(ba, 0, rem * this.elements);
+        buf.put(ba, 0, records * this.elements);
 
     }
 }

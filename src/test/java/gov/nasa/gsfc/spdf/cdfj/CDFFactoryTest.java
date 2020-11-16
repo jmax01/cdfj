@@ -31,6 +31,12 @@ class CDFFactoryTest {
     static final Logger LOGGER = LogManager.getLogger();
 
     @Test
+    void vfgdgd() {
+        LOGGER.info(Integer.toBinaryString(Integer.MAX_VALUE));
+        LOGGER.info(Integer.toBinaryString((Integer.MAX_VALUE & (1 << 0))));
+    }
+
+    @Test
     void testCompressed() throws IOException {
 
         String fileName = "target/test-classes/bigcdf_compressed.cdf";

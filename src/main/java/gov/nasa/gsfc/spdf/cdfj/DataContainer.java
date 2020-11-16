@@ -428,10 +428,9 @@ public class DataContainer {
             return buf;
         }
 
-        int nbuf = 0;
-
         if (!this._bufs.isEmpty()) {
 
+            int nbuf = 0;
             for (VXR vxr1 : this.vxrs) {
                 buf.put(vxr1.get());
 
@@ -498,12 +497,12 @@ public class DataContainer {
             return;
         }
 
-        int nbuf = 0;
         ByteBuffer longbuf = ByteBuffer.allocate(8);
         ByteBuffer intbuf = ByteBuffer.allocate(4);
 
         if (!this._bufs.isEmpty()) {
 
+            int nbuf = 0;
             for (VXR vxr1 : this.vxrs) {
                 channel.write(vxr1.get());
 

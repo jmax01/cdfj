@@ -55,13 +55,12 @@ public final class ReaderFactory {
     @SuppressWarnings("resource")
     private static CDFImpl toCDF(final String fname) throws ReaderError {
 
-        File file = new File(fname);
-
         RandomAccessFile raf = null;
 
         FileChannel fileChannel = null;
 
         try {
+            File file = new File(fname);
             raf = new RandomAccessFile(file, "r");
         } catch (FileNotFoundException e) {
 

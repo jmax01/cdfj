@@ -78,11 +78,10 @@ public class Extractor {
                 new Class<?>[] { cdfClass, variableClass, Integer.class, Integer.class, Integer.class }, null, null };
         addFunction("RangeForElement", cl, arglist);
         // String rank 0 and 1 only
-        Method[] ma;
 
         try {
-            ma = new Method[] { cl.getMethod("getStringSeries0", cdfClass, variableClass),
-                    cl.getMethod("getStringSeries1", cdfClass, variableClass) };
+            Method[] ma = new Method[]{cl.getMethod("getStringSeries0", cdfClass, variableClass),
+                    cl.getMethod("getStringSeries1", cdfClass, variableClass)};
             stringMethodMap.put("Series", ma);
         } catch (NoSuchMethodException ex) {
             ex.printStackTrace();
@@ -332,10 +331,7 @@ public class Extractor {
             data = new double[numberOfValues * elements];
         }
 
-        Object temp = null;
-
         List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
-        ByteBuffer bv;
         int blk = 0;
 
         if (begin > 0) {// position to first needed block
@@ -371,7 +367,6 @@ public class Extractor {
 
         // there is valid data to send back
         // begin may lie before blk. This is handled later
-        boolean firstBlock = true;
         int next = begin;
         int offset = 0;
         int[] _edim = Arrays.copyOf(edim, edim.length);
@@ -389,13 +384,14 @@ public class Extractor {
 
         }
 
-        for (; blk < locations.size(); blk++) {
+        Object temp = null;
+        for (boolean firstBlock = true; blk < locations.size(); blk++) {
             long[] loc = locations.get(blk);
             int first = (int) loc[0];
             int last = (int) loc[1];
 
             int count = ((last - first) + 1);
-            bv = positionBuffer(thisCDF, var, loc[2], count);
+            ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], count);
 
             if (firstBlock) {
 
@@ -603,8 +599,6 @@ public class Extractor {
 
         int[] edim = var.getEffectiveDimensions();
         List<long[]> locations = ((CDFImpl.DataLocator) var.getLocator()).getLocationsAsList();
-        ByteBuffer bv;
-        int blk = 0;
         int offset = 0;
 
         if (pt == null) {
@@ -612,7 +606,7 @@ public class Extractor {
             end = (int) (locations.get(locations.size() - 1)[1]);
         }
 
-        for (; blk < locations.size(); blk++) {
+        for (int blk = 0; blk < locations.size(); blk++) {
             long[] loc = locations.get(blk);
             int first = (int) loc[0];
             int last = (int) loc[1];
@@ -622,7 +616,7 @@ public class Extractor {
             }
 
             int count = ((last - first) + 1);
-            bv = positionBuffer(thisCDF, var, loc[2], count);
+            ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], count);
             // position buffer at the first point desired
             // init is the index of the first point desired
             int init;
@@ -1368,11 +1362,11 @@ public class Extractor {
 
             ByteBuffer bv = positionBuffer(thisCDF, var, loc[2], (int) ((loc[1] - loc[0]) + 1));
             int pos = bv.position() + ((point - (int) loc[0]) * itemSize);
-            Method method;
-            Number num;
 
             try {
 
+                Number num;
+                Method method;
                 switch (DataTypes.typeCategory[type]) {
                     case 0:
                         return (double) bv.getFloat(pos);
@@ -1387,8 +1381,7 @@ public class Extractor {
                         long longInt = DataTypes.longInt[type];
                         num = (Number) method.invoke(bv);
                         int x = num.intValue();
-                        double d = (x >= 0) ? x : (longInt + x);
-                        return d;
+                        return (double) ((x >= 0) ? x : (longInt + x));
                     case 5:
                         return bv.getLong(pos);
                 }
@@ -2402,13 +2395,13 @@ public class Extractor {
 
             if (locations != null) { // there is some data
                 int _last = var.getRecordRange()[1];
-                int n = 0;
 
                 if (substitute) {
 
                     if (start > _last) { // after the last record
                         double[] lastValue = var.asDoubleArray(new int[] { _last });
 
+                        int n = 0;
                         for (int i = start; i <= end; i++) {
                             data[n++] = lastValue;
                         }
@@ -4374,7 +4367,6 @@ public class Extractor {
 
         }
 
-        Method method;
         double[] data = null;
 
         if (DataTypes.typeCategory[type] != DataTypes.LONG) {
@@ -4383,6 +4375,7 @@ public class Extractor {
 
         try {
 
+            Method method;
             switch (DataTypes.typeCategory[type]) {
                 case 0:
                     float[] tf = new float[number];
@@ -4448,12 +4441,11 @@ public class Extractor {
             data = (double[]) result;
         }
 
-        double[] td = null;
-        int n = 0;
-        Method method;
-
         try {
 
+            Method method;
+            int n = 0;
+            double[] td = null;
             switch (DataTypes.typeCategory[type]) {
                 case 0:
                     float[] tf = new float[number];
@@ -4685,8 +4677,7 @@ public class Extractor {
     // on return, buffer position is advanced by the data read
     static void doSignedInteger(final ByteBuffer bv, final int pos, final int type, final int size, final int first,
             final int last, final double[] data) {
-        int index = first;
-        doSignedInteger(bv, pos, type, size, first, last, data, index);
+        doSignedInteger(bv, pos, type, size, first, last, data, first);
         /*
          * Method method = DataTypes.method[type];
          * bv.position(pos);
@@ -5057,10 +5048,10 @@ public class Extractor {
     static void fillWithPrevious(final Variable var, final boolean longType, final Object _data, final int start,
             final int end, final Object _pad) {
         int _last = var.getRecordRange()[1];
-        int n = 0;
 
         if (start > _last) { // after the last record
 
+            int n = 0;
             if (!longType) {
                 double lastValue = var.asDoubleArray(new int[] { _last })[0];
                 double[] data = (double[]) _data;

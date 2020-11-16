@@ -861,8 +861,8 @@ public class GenericReader extends MetaData {
             BaseVarContainer container = getRangeContainer(variableName, new int[] { first, last }, type, preserve);
             int[] _stride = (stride > 0) ? new int[] { stride } : new int[] { -1, -stride };
             return container.asSampledArray(new Stride(_stride));
-        } catch (Throwable t) {
-            throw new CDFException.ReaderError(t.getMessage());
+        } catch (ReaderError e) {
+            throw new CDFException.ReaderError("getSampled failed", e);
         }
 
     }
@@ -896,8 +896,8 @@ public class GenericReader extends MetaData {
             BaseVarContainer container = getRangeContainer(variableName, range, type, preserve);
             int[] _stride = (stride > 0) ? new int[] { stride } : new int[] { -1, -stride };
             return container.asOneDArray(columnMajor, new Stride(_stride));
-        } catch (Throwable t) {
-            throw new CDFException.ReaderError(t.getMessage());
+        } catch (ReaderError e) {
+            throw new CDFException.ReaderError(e);
         }
 
     }

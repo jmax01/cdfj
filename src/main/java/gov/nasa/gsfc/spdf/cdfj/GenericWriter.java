@@ -919,17 +919,13 @@ public class GenericWriter {
             final boolean recordVariance, final boolean compressed, final Object pad, final int size,
             final SparseRecordOption option) throws CDFException.WriterError {
 
-        int[] _dim;
-
-        boolean[] _varys;
-
         synchronized (dim) {
-            _dim = new int[dim.length];
+            int[] _dim = new int[dim.length];
             System.arraycopy(dim, 0, _dim, 0, dim.length);
         }
 
         synchronized (varys) {
-            _varys = new boolean[varys.length];
+            boolean[] _varys = new boolean[varys.length];
             System.arraycopy(varys, 0, _varys, 0, varys.length);
         }
 
@@ -1123,7 +1119,7 @@ public class GenericWriter {
      *
      * @throws IOException Signals that an I/O exception has occurred.
      */
-    public void write(final String fname) throws IOException {
+    public void write(final String fname) throws IOException, java.io.FileNotFoundException {
         List<AEDR> vec = this.attributeEntries.get("cdfj_source");
 
         if (vec != null) {
@@ -1149,7 +1145,7 @@ public class GenericWriter {
      *
      * @throws IOException Signals that an I/O exception has occurred.
      */
-    public boolean write(final String fname, final boolean overwrite) throws IOException {
+    public boolean write(final String fname, final boolean overwrite) throws IOException, java.io.FileNotFoundException {
 
         if (this.leapSecondLastUpdated != -1) {
             this.gdr.setLeapSecondLastUpdated(this.leapSecondLastUpdated);
@@ -1687,7 +1683,7 @@ public class GenericWriter {
 
     }
 
-    void writeWin(final String fname, final ByteBuffer buf) throws IOException {
+    void writeWin(final String fname, final ByteBuffer buf) throws IOException, java.io.FileNotFoundException {
 
         try (FileOutputStream fos = new FileOutputStream(fname)) {
             byte[] ba = buf.array();

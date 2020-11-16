@@ -145,14 +145,13 @@ public final class TimeUtil {
             throw new IllegalArgumentException("Times before January 1, 1972 are not supported at present");
         }
 
-        int i;
         double start;
 
         if (l < jtimes[0]) {
             start = l;
         } else {
             start = -1;
-            i = 0;
+            int i = 0;
 
             while (i < (jtimes.length - 1)) {
 
@@ -206,9 +205,8 @@ public final class TimeUtil {
      * @return the double
      */
     public static double milliSecondSince1970(final long javaMilliSecond) {
-        long l = javaMilliSecond;
 
-        if (l < JANUARY_1_1972) {
+        if (javaMilliSecond < JANUARY_1_1972) {
             throw new IllegalArgumentException("Times before January 1, 1972 are not supported at present");
         }
 
@@ -216,14 +214,14 @@ public final class TimeUtil {
 
         while (i >= 0) {
 
-            if (l > jtimes[i]) {
-                return l + ((i + 1) * 1_000);
+            if (javaMilliSecond > jtimes[i]) {
+                return javaMilliSecond + ((i + 1) * 1_000);
             }
 
             i--;
         }
 
-        return l;
+        return javaMilliSecond;
     }
 
     /**
@@ -305,8 +303,6 @@ public final class TimeUtil {
 
         }
 
-        int adjust = 0;
-
         if (t[5] == 60) {
 
             if (!tt) {
@@ -333,6 +329,7 @@ public final class TimeUtil {
                 throw new IllegalArgumentException("Invalid leap second time");
             }
 
+            int adjust = 0;
             for (int i = (leapSecondIds.length - 1); i >= 0; i--) {
 
                 if (id != leapSecondIds[i]) {

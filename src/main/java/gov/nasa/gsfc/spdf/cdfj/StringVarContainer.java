@@ -31,8 +31,7 @@ public final class StringVarContainer extends ByteVarContainer implements VDataC
     public static boolean isCompatible(final int type, final boolean preserve) {
 
         if (isCompatible(type, preserve, Byte.TYPE)) {
-            boolean stringType = DataTypes.isStringType(type);
-            return stringType;
+            return DataTypes.isStringType(type);
         }
 
         return false;

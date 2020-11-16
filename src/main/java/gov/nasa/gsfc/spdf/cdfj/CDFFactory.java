@@ -207,7 +207,6 @@ public final class CDFFactory {
      * @throws IOException
      */
     static CDFImpl getCDF(final URL url) {
-        final String _url = url.toString();
 
         URLConnection con;
 
@@ -230,6 +229,7 @@ public final class CDFFactory {
                 remaining -= got;
             }
 
+            final String _url = url.toString();
             return getCDF(ba, new UrlCDFSource(_url));
 
         } catch (IOException e) {

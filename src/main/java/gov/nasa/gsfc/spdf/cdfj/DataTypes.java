@@ -76,9 +76,9 @@ public final class DataTypes {
         }
 
         // byte
-        Class<ByteBuffer> bb = ByteBuffer.class;
 
         try {
+            Class<ByteBuffer> bb = ByteBuffer.class;
             Method meth = bb.getMethod("get");
             method[1] = meth;
             typeCategory[1] = SIGNED_INTEGER;
@@ -130,7 +130,9 @@ public final class DataTypes {
             typeCategory[41] = SIGNED_INTEGER;
             typeCategory[51] = STRING;
             typeCategory[52] = STRING;
-        } catch (NoSuchMethodException | SecurityException ex) {}
+        } catch (NoSuchMethodException | SecurityException ex) {
+
+        }
 
         for (int i = 0; i < LAST_TYPE; i++) {
 

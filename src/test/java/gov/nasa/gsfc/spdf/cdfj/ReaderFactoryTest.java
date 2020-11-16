@@ -7,8 +7,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -17,7 +19,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -60,25 +65,9 @@ class ReaderFactoryTest {
     @BeforeAll
     static void downloadSamples() throws IOException {
 
-        String cdfTestFilesUrlAsString = "https://cdaweb.gsfc.nasa.gov/pub/software/cdf/cdf_test_files/";
-        Document doc = Jsoup.connect(cdfTestFilesUrlAsString)
-                .get();
-        LOGGER.info("doc {}", doc);
+        List<URL> urls = retreiveUrlsFromSite();
 
-        doc.select("a[href]")
-                .parallelStream()
-                .map(anchor -> anchor.attr("href"))
-                .filter(href -> href.endsWith(".cdf"))
-                .map(cdfHref -> cdfTestFilesUrlAsString + cdfHref)
-                .map(cdfFileUrlAsString -> {
-
-                    try {
-                        return new URL(cdfFileUrlAsString);
-                    } catch (MalformedURLException e) {
-                        throw new UncheckedIOException(e);
-                    }
-
-                })
+        urls.stream()
                 .forEach(cdfFileUrl -> {
 
                     String filename = Paths.get(cdfFileUrl.getPath())
@@ -109,6 +98,56 @@ class ReaderFactoryTest {
 
                 });
 
+    }
+
+    private static List<URL> retreiveUrlsFromSite() throws IOException {
+
+        String cdfTestFilesUrlAsString = "https://cdaweb.gsfc.nasa.gov/pub/software/cdf/cdf_test_files/";
+
+        Document doc = Jsoup.connect(cdfTestFilesUrlAsString)
+                .get();
+
+        List<URL> urls = doc.select("a[href]")
+                .parallelStream()
+                .map(anchor -> anchor.attr("href"))
+                .filter(href -> href.endsWith(".cdf"))
+                .map(cdfHref -> cdfTestFilesUrlAsString + cdfHref)
+                .map(cdfFileUrlAsString -> {
+
+                    try {
+                        return new URL(cdfFileUrlAsString);
+                    } catch (MalformedURLException e) {
+                        throw new UncheckedIOException(e);
+                    }
+
+                })
+                .collect(Collectors.toList());
+        return Collections.unmodifiableList(urls);
+    }
+
+    @Test
+    void readUrls() throws IOException {
+        retreiveUrlsFromSite().stream()
+                .forEach(url -> {
+
+                    try {
+                        URLConnection urlConnection = url.openConnection();
+
+                        if (urlConnection instanceof HttpURLConnection) {
+                            HttpURLConnection httpURLConnection = (HttpURLConnection) urlConnection;
+                            httpURLConnection.setRequestMethod("HEAD");
+
+                        }
+
+                        try (InputStream is = urlConnection.getInputStream()) {
+                            LOGGER.info("url: {} size: {}", url, urlConnection.getContentLength());
+                        }
+
+                    } catch (IOException e) {
+                        throw new RuntimeException(" failed", e);
+                    }
+
+                });
     }
 
     @Test
@@ -186,4 +225,35 @@ class ReaderFactoryTest {
             return CDFFactory.CDF_V3_MAGIC_NUMBER_1_AS_STRING.equals(magicNumber1AsHex);
         }
     }
+
+    static class RecordReader {
+
+        static ByteBuffer read(final FileChannel fileChannel, final long offset, int recordSizeFieldSizeInBytes) {
+
+            ByteBuffer recordSizeFieldByteBuffer = ByteBuffer.allocate(recordSizeFieldSizeInBytes);
+
+            try {
+                fileChannel.read(recordSizeFieldByteBuffer, offset);
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to read recordSize field at offset, " + offset + ".", e);
+            }
+
+            int size = Long.BYTES == recordSizeFieldSizeInBytes ? (int) recordSizeFieldByteBuffer.getLong(0)
+                    : recordSizeFieldByteBuffer.getInt(0);
+
+            ByteBuffer recordByteBuffer = ByteBuffer.allocate(size);
+
+            try {
+                fileChannel.read(recordByteBuffer, offset);
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to read " + size + " byte record at, offset, " + offset + ".",
+                        e);
+            }
+
+            return recordByteBuffer;
+
+        }
+
+    }
+
 }

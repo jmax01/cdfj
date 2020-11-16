@@ -467,7 +467,6 @@ public class TSExtractor extends Extractor {
 
         boolean ignore = ignoreFill;
         double[] vdata;
-        int[] recordRange = null;
         TimeVariable tv = TimeVariableFactory.getTimeVariable(rdr, var.getName());
         double[] times = tv.getTimes();
 
@@ -504,7 +503,7 @@ public class TSExtractor extends Extractor {
             }
 
         } else {
-            recordRange = getRecordRange(rdr, var, timeRange);
+            int[] recordRange = getRecordRange(rdr, var, timeRange);
 
             if (recordRange == null) {
                 return null;

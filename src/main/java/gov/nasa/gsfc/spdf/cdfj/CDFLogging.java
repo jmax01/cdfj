@@ -21,12 +21,10 @@ public final class CDFLogging {
      */
     public static Logger newLogger(final Class<?> clazz) {
 
-        Logger logger = Logger.getLogger(Objects.requireNonNull(clazz, "clazz must not be null")
-                .getCanonicalName());
-
         // logger.addHandler(H);
 
-        return logger;
+        return Logger.getLogger(Objects.requireNonNull(clazz, "clazz must not be null")
+                .getCanonicalName());
     }
 
 }

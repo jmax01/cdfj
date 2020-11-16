@@ -154,10 +154,9 @@ public class AEDR {
 
         if (componentType.getComponentType() == String.class) {
             String[] strings = (String[]) value;
-            int x;
             StringBuilder str = new StringBuilder();
 
-            for (x = 0; x < strings.length; ++x) {
+            for (int x = 0; x < strings.length; ++x) {
                 str.append(strings[x]);
 
                 if (x != (strings.length - 1)) {
@@ -651,10 +650,9 @@ public class AEDR {
      */
     public void setValues(final String[] s) {
         int x = s.length;
-        int i;
         StringBuilder str = new StringBuilder();
 
-        for (i = 0; i < x; ++i) {
+        for (int i = 0; i < x; ++i) {
             str.append(s[i]);
 
             if (i != (x - 1)) {

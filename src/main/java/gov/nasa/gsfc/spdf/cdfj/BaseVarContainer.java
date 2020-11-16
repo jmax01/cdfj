@@ -622,7 +622,6 @@ public abstract class BaseVarContainer implements Runnable {
         }
 
         CopyOnWriteArrayList<long[]> locations = ((CDFImpl.DataLocator) this.var.getLocator()).locations;
-        ByteBuffer bv;
         int blk = 0;
         int next = begin;
 
@@ -688,15 +687,14 @@ public abstract class BaseVarContainer implements Runnable {
 
         // there is valid data to send back
         // begin may lie before blk. This is handled later
-        boolean firstBlock = true;
 
-        for (; blk < locations.size(); blk++) {
+        for (boolean firstBlock = true; blk < locations.size(); blk++) {
             long[] loc = locations.get(blk);
             int first = (int) loc[0];
             int last = (int) loc[1];
 
             int count = ((last - first) + 1);
-            bv = this.thisCDF.positionBuffer(this.var, loc[2], count);
+            ByteBuffer bv = this.thisCDF.positionBuffer(this.var, loc[2], count);
 
             if (firstBlock) {
 

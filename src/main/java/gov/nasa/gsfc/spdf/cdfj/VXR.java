@@ -57,8 +57,7 @@ public class VXR {
      * @return the size
      */
     public int getSize() {
-        int size = this.record.capacity() + (16 * this.numEntries);
-        return size;
+        return this.record.capacity() + (16 * this.numEntries);
     }
 
     /**

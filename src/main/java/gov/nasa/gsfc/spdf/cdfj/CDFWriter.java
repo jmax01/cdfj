@@ -482,10 +482,10 @@ public class CDFWriter extends GenericWriter {
             return Collections.emptyList();
         }
 
-        return Arrays.stream(variableAttributeNames)
+        return Collections.unmodifiableList(Arrays.stream(variableAttributeNames)
                 .filter(attributeName -> attributeName.startsWith("DEPEND_"))
                 .map(attributeName -> ((List<String>) cdf.getAttribute(vname, attributeName)).get(0))
-                .collect(Collectors.toUnmodifiableList());
+                .collect(Collectors.toList()));
 
     }
 

@@ -308,11 +308,11 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
             return null;
         }
 
-        return cdfVariable.getAttributes()
+        return Collections.unmodifiableList(cdfVariable.getAttributes()
                 .stream()
                 .filter(ae -> ae.getAttributeName()
                         .equals(attributeName))
-                .collect(Collectors.toUnmodifiableList());
+                .collect(Collectors.toList()));
     }
 
     @Override
@@ -677,8 +677,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
     @Deprecated
     @Override
     public Vector getAttributeEntries(final String attributeName) {
-        return attributeEntries(attributeName).stream()
-                .collect(Collectors.toCollection(Vector::new));
+        return new Vector<>(attributeEntries(attributeName));
     }
 
     /**
@@ -696,9 +695,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
     public Vector<AttributeEntry> getAttributeEntries(final String variableName, final String attributeName) {
         List<AttributeEntry> attributeEntries = attributeEntries(variableName, attributeName);
 
-        return (attributeEntries == null) ? null
-                : attributeEntries.stream()
-                        .collect(Collectors.toCollection(Vector::new));
+        return (attributeEntries == null) ? null : new Vector<>(attributeEntries);
 
     }
 
@@ -1982,9 +1979,8 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                         return false;
                     }
 
-                    String[] oldStrings = this.stringValues;
                     String[] newStrings = (String[]) newValue;
-                    return Arrays.equals(oldStrings, newStrings);
+                    return Arrays.equals(this.stringValues, newStrings);
                 }
 
                 return (this.stringValue.equals(ae.getValue()));
@@ -2225,10 +2221,9 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
          * @return the byte[]
          */
         public byte[] asByteArray(final int[] pt, final boolean columnMajor) {
-            VDataContainer.CByte container;
 
             if (ByteVarContainer.isCompatible(this.type, true)) {
-                container = new ByteVarContainer(CDFImpl.this, this, pt);
+                VDataContainer.CByte container = new ByteVarContainer(CDFImpl.this, this, pt);
                 container.run();
                 return container.asOneDArray(columnMajor);
             }
@@ -3136,8 +3131,8 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
          */
         public List<long[]> getLocationsAsList() {
 
-            return Arrays.stream(getLocations())
-                    .collect(Collectors.toUnmodifiableList());
+            return Collections.unmodifiableList(Arrays.stream(getLocations())
+                    .collect(Collectors.toList()));
 
         }
 
@@ -3342,9 +3337,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
         public Vector getAttributeEntries(final long offset) {
             List<AttributeEntry> attributeEntries = attributeEntries(offset);
 
-            return (attributeEntries == null) ? null
-                    : attributeEntries.stream()
-                            .collect(Collectors.toCollection(Vector::new));
+            return (attributeEntries == null) ? null : new Vector<>(attributeEntries);
         }
 
         /**

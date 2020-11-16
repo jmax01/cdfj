@@ -117,7 +117,7 @@ public abstract class MetaData {
             return this.attributeEntries(attributeName)
                     .stream()
                     .collect(Collectors.toCollection(Vector::new));
-        } catch (Exception ex) {
+        } catch (RuntimeException ex) {
             throw new CDFException.ReaderError("Failed to retrieve attribute entries for " + attributeName, ex);
         }
 

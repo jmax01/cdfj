@@ -65,8 +65,6 @@ public class ShortArray extends AArray {
 
         byte[] temp = null;
 
-        ByteBuffer _buf = buf;
-
         switch (this.dimensions) {
             case 1:
                 short[] data = (short[]) this.data;
@@ -74,7 +72,7 @@ public class ShortArray extends AArray {
                 for (int i = 0; i < data.length; i++) {
                     temp[i] = (byte) data[i];
                 }
-                _buf.put(temp);
+                buf.put(temp);
                 buf.flip();
                 return buf;
             case 2:
@@ -87,7 +85,7 @@ public class ShortArray extends AArray {
                         temp[j] = (byte) di[j];
                     }
 
-                    _buf.put(temp);
+                    buf.put(temp);
                 }
                 buf.flip();
                 return buf;
@@ -105,7 +103,7 @@ public class ShortArray extends AArray {
                                 temp[k] = (byte) di[k];
                             }
 
-                            _buf.put(temp);
+                            buf.put(temp);
                         }
 
                     }
@@ -117,7 +115,7 @@ public class ShortArray extends AArray {
                         for (int k = 0; k < _dim[2]; k++) {
 
                             for (int j = 0; j < _dim[1]; j++) {
-                                _buf.put((byte) data3[i][j][k]);
+                                buf.put((byte) data3[i][j][k]);
                             }
 
                         }
@@ -144,7 +142,7 @@ public class ShortArray extends AArray {
                                     temp[l] = (byte) di[l];
                                 }
 
-                                _buf.put(temp);
+                                buf.put(temp);
                             }
 
                         }
@@ -160,7 +158,7 @@ public class ShortArray extends AArray {
                             for (int k = 0; k < _dim[2]; k++) {
 
                                 for (int j = 0; j < _dim[1]; j++) {
-                                    _buf.put((byte) data4[i][j][k][l]);
+                                    buf.put((byte) data4[i][j][k][l]);
                                 }
 
                             }

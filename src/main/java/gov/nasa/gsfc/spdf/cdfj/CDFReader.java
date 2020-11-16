@@ -127,7 +127,7 @@ public class CDFReader extends GenericReader implements Closeable {
 
             try {
                 tr = TSExtractor.getOverlap(this, trange, variableName, start, null);
-            } catch (Exception ex) {
+            } catch (RuntimeException ex) {
                 LOGGER.log(Level.SEVERE, ex,
                         () -> String.format("firstAvailableTime failed for variableName: %s start[]: %s", variableName,
                                 Arrays.toString(start)));
@@ -759,10 +759,9 @@ public class CDFReader extends GenericReader implements Closeable {
      */
     public TimeSeries getTimeSeries(final String variableName, final int[] startTime, final int[] stopTime,
             final TimeInstantModel tspec) throws CDFException.ReaderError {
-        TimeVariable tv = null;
 
         try {
-            tv = TimeVariableFactory.getTimeVariable(this, variableName);
+            TimeVariable tv = TimeVariableFactory.getTimeVariable(this, variableName);
             TimeInstantModel _tspec = tspec;
 
             if (_tspec == null) {
@@ -848,9 +847,9 @@ public class CDFReader extends GenericReader implements Closeable {
 
             return getTimeSeries(variableName, tr, _tspec, columnMajor);
 
-        } catch (RuntimeException th) {
+        } catch (IllegalArgumentException e) {
 
-            throw new CDFException.ReaderError("getTimeSeriesOneD failed", th);
+            throw new CDFException.ReaderError("getTimeSeriesOneD failed", e);
         }
 
     }
@@ -978,17 +977,15 @@ public class CDFReader extends GenericReader implements Closeable {
     }
 
     private TimeInstantModel getTimeInstantModel(final double msec) {
-        TimeInstantModel tspec = TimeVariableFactory.getDefaultTimeInstantModel(msec);
-        return tspec;
+        return TimeVariableFactory.getDefaultTimeInstantModel(msec);
     }
 
     private TimeSeries getTimeSeries(final String variableName, final double[] timeRange, final TimeInstantModel tspec)
             throws CDFException.ReaderError {
         Variable var = this.thisCDF.getVariable(variableName);
-        TimeSeriesX ts = null;
 
         try {
-            ts = new TSExtractor.GeneralTimeSeriesX(this, var, false, timeRange, tspec, false, true);
+            TimeSeriesX ts = new TSExtractor.GeneralTimeSeriesX(this, var, false, timeRange, tspec, false, true);
             return new TimeSeriesImpl(ts);
         } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
@@ -999,10 +996,9 @@ public class CDFReader extends GenericReader implements Closeable {
     private TimeSeriesOneD getTimeSeries(final String variableName, final double[] timeRange,
             final TimeInstantModel tspec, final boolean columnMajor) throws CDFException.ReaderError {
         Variable var = this.thisCDF.getVariable(variableName);
-        TimeSeriesX ts = null;
 
         try {
-            ts = new TSExtractor.GeneralTimeSeriesX(this, var, false, timeRange, tspec, true, columnMajor);
+            TimeSeriesX ts = new TSExtractor.GeneralTimeSeriesX(this, var, false, timeRange, tspec, true, columnMajor);
             return new TimeSeriesOneDImpl(ts);
         } catch (RuntimeException th) {
             throw new CDFException.ReaderError(th.getMessage());
