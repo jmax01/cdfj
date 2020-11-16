@@ -1,6 +1,7 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * The Class CDR.
@@ -46,10 +47,10 @@ public class CDR {
         this.record.putInt(libraryIncrement);
         this.record.putInt(libraryIdentifier);
         this.record.putInt(0);
-        this.record.put(copyRight.getBytes());
+        this.record.put(copyRight.getBytes(StandardCharsets.US_ASCII));
         int len = 256 - copyRight.length();
         this.record.put(String.format("%-" + len + '.' + len + 's', " ")
-                .getBytes());
+                .getBytes(StandardCharsets.US_ASCII));
         // for (int i = copyRight.length(); i < 256; i++) {
         // record.put((byte)0x20);
         // }

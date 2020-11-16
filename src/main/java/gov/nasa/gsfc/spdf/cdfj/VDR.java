@@ -2,6 +2,7 @@ package gov.nasa.gsfc.spdf.cdfj;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -274,7 +275,7 @@ public class VDR {
 
                             for (String value : values) {
 
-                                buf.put(value.getBytes());
+                                buf.put(value.getBytes(StandardCharsets.US_ASCII));
 
                                 buf.position(0);
                             }
@@ -491,7 +492,7 @@ public class VDR {
      * @param s the new name
      */
     public void setName(final String s) {
-        byte[] bs = s.getBytes();
+        byte[] bs = s.getBytes(StandardCharsets.US_ASCII);
         int i = 0;
 
         for (; i < bs.length; i++) {

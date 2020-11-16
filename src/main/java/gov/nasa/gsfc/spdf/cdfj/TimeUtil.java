@@ -59,36 +59,7 @@ public final class TimeUtil {
         transition[42][0] = true;
         transition[45][0] = true;
         transition[46][1] = true;
-        /*
-         * try {
-         * URL url = new URL(
-         * "https://hpiers.obspm.fr/eoppc/bul/bulc/UTC-TAI.history");
-         * URLConnection con = url.openConnection();
-         * InputStream is = con.getInputStream();
-         * byte[] ba = new byte[con.getContentLength()];
-         * int index = 0;
-         * int c;
-         * while ((c = is.read()) != -1) ba[index++] = (byte)c;
-         * String s = new String(ba);
-         * Scanner sc = new Scanner(s);
-         * CopyOnWriteArrayList lines = new CopyOnWriteArrayList();
-         * while (sc.hasNextLine()) lines.add(sc.nextLine());
-         * int n = lines.size() -2;
-         * while (n > 0) {
-         * Scanner scl = new Scanner((String)lines.get(n));
-         * int year = scl.nextInt();
-         * String mon = scl.next();
-         * if (mon.startsWith("Jul")) transition[year-1970][0]=true;
-         * if (mon.startsWith("Jan")) transition[year-1970-1][1]=true;
-         * if (year == 1973) break;
-         * n--;
-         * }
-         * System.out.println("Leap second table updated");
-         * } catch (Exception ex) {
-         * System.out.println("Unable to retrieve leap second table. " +
-         * "Using existing table for version 3.6");
-         * }
-         */
+
         CopyOnWriteArrayList<Long> times = new CopyOnWriteArrayList<>();
         CopyOnWriteArrayList<Integer> ids = new CopyOnWriteArrayList<>();
 
@@ -114,11 +85,7 @@ public final class TimeUtil {
             jtimes[i] = times.get(i);
             leapSecondIds[i] = ids.get(i);
 
-            try {
-                tt_times[i] = tt2000(jtimes[i]);
-            } catch (Throwable t) {
-                System.out.println("Internal error.");
-            }
+            tt_times[i] = tt2000(jtimes[i]);
 
         }
 

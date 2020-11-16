@@ -3,6 +3,7 @@ package gov.nasa.gsfc.spdf.cdfj;
 // import gov.nasa.gsfc.spdf.common.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * The Class ByteVarContainer.
@@ -16,14 +17,14 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
     /**
      * Instantiates a new byte var container.
      *
-     * @param thisCDF the this CDF
-     * @param var     the var
-     * @param pt      the pt
+     * @param thisCDF  the this CDF
+     * @param variable the var
+     * @param pt       the pt
      */
-    public ByteVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt) {
-        super(thisCDF, var, pt, true, ByteOrder.BIG_ENDIAN, Byte.TYPE);
+    public ByteVarContainer(final CDFImpl thisCDF, final Variable variable, final int[] pt) {
+        super(thisCDF, variable, pt, true, ByteOrder.BIG_ENDIAN, Byte.TYPE);
 
-        Object pad = this.thisCDF.getPadValue(var);
+        Object pad = this.thisCDF.getPadValue(variable);
 
         if (DataTypes.isStringType(this.type)) {
             String[] sa = (String[]) pad;
@@ -37,7 +38,7 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
             count = 0;
 
             for (String sa1 : sa) {
-                byte[] ba = sa1.getBytes();
+                byte[] ba = sa1.getBytes(StandardCharsets.US_ASCII);
 
                 for (byte value : ba) {
                     this.bpad[count++] = value;
@@ -79,7 +80,7 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
      * @return the object
      */
     public Object _asArray() {
-        int rank = this.var.getEffectiveRank();
+        int rank = this.variable.getEffectiveRank();
 
         if (rank > 4) {
             throw new IllegalStateException("Ranks > 4 are not supported at this time.");
@@ -103,7 +104,7 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
                 buf.get(ba);
                 return ba;
             case 1:
-                int n = this.var.getDimensionElementCounts()
+                int n = this.variable.getDimensionElementCounts()
                         .get(0);
                 records = words / n;
                 byte[][] ba1 = new byte[records][n];
@@ -112,9 +113,9 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
                 }
                 return (this.singlePoint) ? ba1[0] : ba1;
             case 2:
-                int n0 = this.var.getDimensionElementCounts()
+                int n0 = this.variable.getDimensionElementCounts()
                         .get(0);
-                int n1 = this.var.getDimensionElementCounts()
+                int n1 = this.variable.getDimensionElementCounts()
                         .get(1);
                 records = words / (n0 * n1);
                 byte[][][] ba2 = new byte[records][n0][n1];
@@ -127,11 +128,11 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
                 }
                 return (this.singlePoint) ? ba2[0] : ba2;
             case 3:
-                n0 = this.var.getDimensionElementCounts()
+                n0 = this.variable.getDimensionElementCounts()
                         .get(0);
-                n1 = this.var.getDimensionElementCounts()
+                n1 = this.variable.getDimensionElementCounts()
                         .get(1);
-                int n2 = ((this.var.getDimensionElementCounts()
+                int n2 = ((this.variable.getDimensionElementCounts()
                         .get(2)));
                 records = words / (n0 * n1 * n2);
                 byte[][][][] ba3 = new byte[records][n0][n1][n2];
@@ -148,13 +149,13 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
                 }
                 return (this.singlePoint) ? ba3[0] : ba3;
             case 4:
-                n0 = this.var.getDimensionElementCounts()
+                n0 = this.variable.getDimensionElementCounts()
                         .get(0);
-                n1 = this.var.getDimensionElementCounts()
+                n1 = this.variable.getDimensionElementCounts()
                         .get(1);
-                n2 = ((this.var.getDimensionElementCounts()
+                n2 = ((this.variable.getDimensionElementCounts()
                         .get(2)));
-                int n3 = ((this.var.getDimensionElementCounts()
+                int n3 = ((this.variable.getDimensionElementCounts()
                         .get(3)));
                 records = words / (n0 * n1 * n2 * n3);
                 byte[][][][][] ba4 = new byte[records][n0][n1][n2][n3];
@@ -244,7 +245,7 @@ public class ByteVarContainer extends BaseVarContainer implements VDataContainer
     @Override
     void doMissing(final int records, final ByteBuffer buf, final Object _data, final int rec) {
 
-        byte[] repl = (rec < 0) ? this.bpad : this.var.asByteArray(new int[] { rec });
+        byte[] repl = (rec < 0) ? this.bpad : this.variable.asByteArray(new int[] { rec });
 
         byte[] ba = new byte[records * this.elements];
 

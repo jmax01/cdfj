@@ -142,14 +142,7 @@ final class CDF2Impl extends CDFImpl implements CDF2 {
             return getString(offset, MAX_STRING_SIZE);
         }
 
-        ByteBuffer _buf;
-
-        try {
-            _buf = getRecord(offset, MAX_STRING_SIZE);
-        } catch (RuntimeException th) {
-            th.printStackTrace();
-            return null;
-        }
+        ByteBuffer _buf = getRecord(offset, MAX_STRING_SIZE);
 
         return getString(_buf, MAX_STRING_SIZE);
     }

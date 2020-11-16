@@ -61,7 +61,7 @@ public class GenericReader extends MetaData {
         try {
             this.thisCDF = CDFFactory.getCDF(cdfFile);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("init GenericReader failed for " + cdfFile, th);
         }
 
         LOGGER.exiting("GenericReader", "constructor");
@@ -80,7 +80,7 @@ public class GenericReader extends MetaData {
         try {
             this.thisCDF = CDFFactory.getCDF(url);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("init GenericReader failed for " + url, th);
         }
 
     }
@@ -94,19 +94,19 @@ public class GenericReader extends MetaData {
         this.thisCDF = cdfImpl;
     }
 
-    private static boolean coreNeeded(final VariableMetaData var) {
-        return var.isMissingRecords();
+    private static boolean coreNeeded(final VariableMetaData variable) {
+        return variable.isMissingRecords();
     }
 
-    private static boolean coreNeeded(final VariableMetaData var, final int[] range) {
-        int[] available = var.getRecordRange();
+    private static boolean coreNeeded(final VariableMetaData variable, final int[] range) {
+        int[] available = variable.getRecordRange();
 
         if (range.length == 1) {
-            return (range[0] < available[0]) || var.isMissingRecords();
+            return (range[0] < available[0]) || variable.isMissingRecords();
         }
 
         return (range[0] < available[0]) || (range[1] > available[1])
-            || var.isMissingRecords();
+            || variable.isMissingRecords();
     }
 
     private static Map<String, Class<?>> initSupportedClassesByName() {
@@ -160,7 +160,7 @@ public class GenericReader extends MetaData {
 
             return da;
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("asDouble0 failed for " + variableName, th);
         }
 
     }
@@ -177,18 +177,14 @@ public class GenericReader extends MetaData {
      */
     public final double[][] asDouble1(final String variableName) throws CDFException.ReaderError {
 
-        try {
-            int ndim = getEffectiveDimensions(variableName).length;
+        int ndim = getEffectiveDimensions(variableName).length;
 
-            if (ndim != 1) {
-                throw new CDFException.ReaderError("Use asDouble" + ndim + '(' + variableName + ") for " + ndim
-                        + "-dimensional variable " + variableName);
-            }
-
-            return (double[][]) get(variableName);
-        } catch (CDFException.ReaderError th) {
-            throw new CDFException.ReaderError(th.getMessage());
+        if (ndim != 1) {
+            throw new CDFException.ReaderError("Use asDouble" + ndim + '(' + variableName + ") for " + ndim
+                    + "-dimensional variable " + variableName);
         }
+
+        return (double[][]) get(variableName);
 
     }
 
@@ -204,18 +200,14 @@ public class GenericReader extends MetaData {
      */
     public final double[][][] asDouble2(final String variableName) throws CDFException.ReaderError {
 
-        try {
-            int ndim = getEffectiveDimensions(variableName).length;
+        int ndim = getEffectiveDimensions(variableName).length;
 
-            if (ndim != 2) {
-                throw new CDFException.ReaderError("Use asDouble" + ndim + '(' + variableName + ") for " + ndim
-                        + "-dimensional variable " + variableName);
-            }
-
-            return (double[][][]) get(variableName);
-        } catch (CDFException.ReaderError th) {
-            throw new CDFException.ReaderError(th.getMessage());
+        if (ndim != 2) {
+            throw new CDFException.ReaderError("Use asDouble" + ndim + '(' + variableName + ") for " + ndim
+                    + "-dimensional variable " + variableName);
         }
+
+        return (double[][][]) get(variableName);
 
     }
 
@@ -231,18 +223,14 @@ public class GenericReader extends MetaData {
      */
     public final double[][][][] asDouble3(final String variableName) throws CDFException.ReaderError {
 
-        try {
-            int ndim = getEffectiveDimensions(variableName).length;
+        int ndim = getEffectiveDimensions(variableName).length;
 
-            if (ndim != 3) {
-                throw new CDFException.ReaderError("Use asDouble" + ndim + '(' + variableName + ") for " + ndim
-                        + "-dimensional variable " + variableName);
-            }
-
-            return (double[][][][]) get(variableName);
-        } catch (CDFException.ReaderError th) {
-            throw new CDFException.ReaderError(th.getMessage());
+        if (ndim != 3) {
+            throw new CDFException.ReaderError("Use asDouble" + ndim + '(' + variableName + ") for " + ndim
+                    + "-dimensional variable " + variableName);
         }
+
+        return (double[][][][]) get(variableName);
 
     }
 
@@ -270,20 +258,20 @@ public class GenericReader extends MetaData {
      * @see #getOneD(String variableName, boolean columnMajor)
      */
     public final Object get(final String variableName) throws CDFException.ReaderError {
-        Variable var = this.thisCDF.getVariable(variableName);
+        Variable variable = this.thisCDF.getVariable(variableName);
 
-        if (var == null) {
+        if (variable == null) {
             throw new CDFException.ReaderError("No such variable " + variableName);
         }
 
         try {
-            Method method = Extractor.getMethod(var, "Series");
+            Method method = Extractor.getMethod(variable, "Series");
 
-            if ((method == null) || coreNeeded(var)) {
+            if ((method == null) || coreNeeded(variable)) {
                 return this.thisCDF.get(variableName);
             }
 
-            return method.invoke(null, this.thisCDF, var);
+            return method.invoke(null, this.thisCDF, variable);
         } catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
             throw new CDFException.ReaderError("Failed to get variable " + variableName, e);
         }
@@ -305,21 +293,14 @@ public class GenericReader extends MetaData {
 
         if (threadFinished(threadName)) {
 
-            synchronized (this.threadNameEntriesByThreadName) {
+            try {
 
-                VDataContainer container = this.threadNameEntriesByThreadName.get(threadName)
-                        .getContainer();
+                return this.threadNameEntriesByThreadName.remove(threadName)
+                        .getContainer()
+                        .getBuffer();
 
-                try {
-                    return container.getBuffer();
-
-                } catch (RuntimeException e) {
-                    throw new CDFException.ReaderError("Failed to get buffer for threadname " + threadName, e);
-                } finally {
-                    this.threadNameEntriesByThreadName.remove(threadName);
-
-                }
-
+            } catch (RuntimeException e) {
+                throw new CDFException.ReaderError("Failed to get buffer for threadname " + threadName, e);
             }
 
         }
@@ -376,7 +357,7 @@ public class GenericReader extends MetaData {
         try {
             type = getContainerClass(targetType);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getBuffer failed for " + variableName, th);
         }
 
         if (!isCompatible(variableName, type, preserve)) {
@@ -389,7 +370,7 @@ public class GenericReader extends MetaData {
         try {
             container = getContainer(variableName, type, recordRange, preserve, ByteOrder.nativeOrder());
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getBuffer failed for " + variableName, th);
         }
 
         container.setDirect(useDirect);
@@ -418,7 +399,7 @@ public class GenericReader extends MetaData {
             Class<?> type = getContainerClass(targetType);
             container = getContainer(variableName, type, recordRange, preserve, ByteOrder.nativeOrder());
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getBuffer failed for " + variableName, th);
         }
 
         container.setUserBuffer(buffer);
@@ -445,7 +426,7 @@ public class GenericReader extends MetaData {
             Class<?> type = getContainerClass(targetType);
             container = getContainer(variableName, type, recordRange, false, ByteOrder.nativeOrder());
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getBufferCapacity failed for " + variableName, th);
         }
 
         return container.getCapacity();
@@ -454,8 +435,8 @@ public class GenericReader extends MetaData {
     /*
      * public final double[] getOneD(String variableName, int first, int last,
      * int[] stride) throws CDFException.ReaderError {
-     * Variable var = thisCDF.getVariable(variableName);
-     * if (var == null) throw new CDFException.ReaderError(
+     * Variable variable = thisCDF.getVariable(variableName);
+     * if (variable == null) throw new CDFException.ReaderError(
      * "No such variable " + variableName);
      * try {
      * return thisCDF.get1D(variableName, first, last, stride);
@@ -486,14 +467,14 @@ public class GenericReader extends MetaData {
         }
 
         try {
-            Variable var = this.thisCDF.getVariable(variableName);
-            Method method = Extractor.getMethod(var, "Element");
+            Variable variable = this.thisCDF.getVariable(variableName);
+            Method method = Extractor.getMethod(variable, "Element");
 
-            if ((method == null) || coreNeeded(var)) {
+            if ((method == null) || coreNeeded(variable)) {
                 return (double[]) this.thisCDF.get(variableName, component);
             }
 
-            return (double[]) method.invoke(null, this.thisCDF, var, component);
+            return (double[]) method.invoke(null, this.thisCDF, variable, component);
         } catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
             throw new CDFException.ReaderError("Failed to get variable " + variableName, e);
         }
@@ -521,14 +502,14 @@ public class GenericReader extends MetaData {
         }
 
         try {
-            Variable var = this.thisCDF.getVariable(variableName);
-            Method method = Extractor.getMethod(var, "Elements");
+            Variable variable = this.thisCDF.getVariable(variableName);
+            Method method = Extractor.getMethod(variable, "Elements");
 
-            if ((method == null) || coreNeeded(var)) {
+            if ((method == null) || coreNeeded(variable)) {
                 return (double[][]) this.thisCDF.get(variableName, components);
             }
 
-            return (double[][]) method.invoke(null, this.thisCDF, var, components);
+            return (double[][]) method.invoke(null, this.thisCDF, variable, components);
         } catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
             throw new CDFException.ReaderError("Failed to get variable " + variableName, e);
         }
@@ -555,16 +536,16 @@ public class GenericReader extends MetaData {
      * @see #getOneD(String variableName, boolean columnMajor)
      */
     public final Object getLong(final String variableName) throws CDFException.ReaderError {
-        Variable var = this.thisCDF.getVariable(variableName);
+        Variable variable = this.thisCDF.getVariable(variableName);
 
-        if (var == null) {
+        if (variable == null) {
             throw new CDFException.ReaderError("No such variable " + variableName);
         }
 
         try {
             return this.thisCDF.getLong(variableName);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getLong failed for " + variableName, th);
         }
 
     }
@@ -589,9 +570,9 @@ public class GenericReader extends MetaData {
      */
     public final double[] getOneD(final String variableName, final boolean columnMajor)
             throws CDFException.ReaderError {
-        Variable var = this.thisCDF.getVariable(variableName);
+        Variable variable = this.thisCDF.getVariable(variableName);
 
-        if (var == null) {
+        if (variable == null) {
             throw new CDFException.ReaderError("No such variable " + variableName);
         }
 
@@ -602,7 +583,7 @@ public class GenericReader extends MetaData {
         try {
             return this.thisCDF.getOneD(variableName, columnMajor);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getOneD failed for " + variableName, th);
         }
 
     }
@@ -623,20 +604,14 @@ public class GenericReader extends MetaData {
 
         if (threadFinished(threadName)) {
 
-            synchronized (this.threadNameEntriesByThreadName) {
-                VDataContainer container = this.threadNameEntriesByThreadName.get(threadName)
-                        .getContainer();
-                // System.out.println("getOneDArray: " + container);
-                Object array = null;
+            try {
 
-                try {
-                    array = container.asOneDArray(columnMajor);
-                } catch (RuntimeException th) {
-                    throw new CDFException.ReaderError(th.getMessage());
-                }
+                return this.threadNameEntriesByThreadName.get(threadName)
+                        .getContainer()
+                        .asOneDArray(columnMajor);
 
-                this.threadNameEntriesByThreadName.remove(threadName);
-                return array;
+            } catch (RuntimeException th) {
+                throw new CDFException.ReaderError("getOneDArray failed for " + threadName, th);
             }
 
         }
@@ -671,7 +646,7 @@ public class GenericReader extends MetaData {
             Class<?> type = getContainerClass(targetType);
             container = getContainer(variableName, type, recordRange, preserve, ByteOrder.nativeOrder());
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getOneDArray failed for " + variableName, th);
         }
 
         container.run();
@@ -703,20 +678,20 @@ public class GenericReader extends MetaData {
      */
     public final Object getRange(final String variableName, final int first, final int last)
             throws CDFException.ReaderError {
-        Variable var = this.thisCDF.getVariable(variableName);
+        Variable variable = this.thisCDF.getVariable(variableName);
 
-        if (var == null) {
+        if (variable == null) {
             throw new CDFException.ReaderError("No such variable " + variableName);
         }
 
         try {
-            Method method = Extractor.getMethod(var, "Range");
+            Method method = Extractor.getMethod(variable, "Range");
 
-            if ((method == null) || coreNeeded(var)) {
+            if ((method == null) || coreNeeded(variable)) {
                 return this.thisCDF.getRange(variableName, first, last);
             }
 
-            return method.invoke(null, this.thisCDF, var, first, last);
+            return method.invoke(null, this.thisCDF, variable, first, last);
         } catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
             throw new CDFException.ReaderError("Failed to get variable " + variableName, e);
         }
@@ -748,14 +723,14 @@ public class GenericReader extends MetaData {
         }
 
         try {
-            Variable var = this.thisCDF.getVariable(variableName);
-            Method method = Extractor.getMethod(var, "RangeForElement");
+            Variable variable = this.thisCDF.getVariable(variableName);
+            Method method = Extractor.getMethod(variable, "RangeForElement");
 
-            if ((method == null) || coreNeeded(var, new int[] { first, last })) {
+            if ((method == null) || coreNeeded(variable, new int[] { first, last })) {
                 return (double[]) this.thisCDF.getRange(variableName, first, last, component);
             }
 
-            return (double[]) method.invoke(null, this.thisCDF, var, first, last, component);
+            return (double[]) method.invoke(null, this.thisCDF, variable, first, last, component);
         } catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
             throw new CDFException.ReaderError("Failed to get variable " + variableName, e);
         }
@@ -787,14 +762,14 @@ public class GenericReader extends MetaData {
         }
 
         try {
-            Variable var = this.thisCDF.getVariable(variableName);
-            Method method = Extractor.getMethod(var, "RangeForElements");
+            Variable variable = this.thisCDF.getVariable(variableName);
+            Method method = Extractor.getMethod(variable, "RangeForElements");
 
-            if ((method == null) || coreNeeded(var)) {
+            if ((method == null) || coreNeeded(variable)) {
                 return (double[][]) this.thisCDF.get(variableName, first, last, components);
             }
 
-            return (double[][]) method.invoke(null, this.thisCDF, var, first, last, components);
+            return (double[][]) method.invoke(null, this.thisCDF, variable, first, last, components);
         } catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
             throw new CDFException.ReaderError("Failed to get variable " + variableName, e);
         }
@@ -824,16 +799,16 @@ public class GenericReader extends MetaData {
      */
     public final double[] getRangeOneD(final String variableName, final int first, final int last,
             final boolean columnMajor) throws CDFException.ReaderError {
-        Variable var = this.thisCDF.getVariable(variableName);
+        Variable variable = this.thisCDF.getVariable(variableName);
 
-        if (var == null) {
+        if (variable == null) {
             throw new CDFException.ReaderError("No such variable " + variableName);
         }
 
         try {
             return (double[]) this.thisCDF.getRangeOneD(variableName, first, last, columnMajor);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getRangeOneD failed for " + variableName, th);
         }
 
     }
@@ -991,7 +966,7 @@ public class GenericReader extends MetaData {
         try {
             return startContainerThread(variableName, targetType, recordRange, preserve, ByteOrder.nativeOrder());
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("startContainerThread failed for " + variableName, th);
         }
 
     }
@@ -1129,40 +1104,40 @@ public class GenericReader extends MetaData {
             throw new IllegalArgumentException("Invalid type " + type);
         }
 
-        Variable var = this.thisCDF.getVariable(variableName);
+        Variable variable = this.thisCDF.getVariable(variableName);
 
         if ("float".equals(type)) {
-            FloatVarContainer container = new FloatVarContainer(this.thisCDF, var, range, preserve);
+            FloatVarContainer container = new FloatVarContainer(this.thisCDF, variable, range, preserve);
             container.run();
             return container;
         }
 
         if ("double".equals(type)) {
-            DoubleVarContainer container = new DoubleVarContainer(this.thisCDF, var, range, preserve);
+            DoubleVarContainer container = new DoubleVarContainer(this.thisCDF, variable, range, preserve);
             container.run();
             return container;
         }
 
         if ("int".equals(type)) {
-            IntVarContainer container = new IntVarContainer(this.thisCDF, var, range, preserve);
+            IntVarContainer container = new IntVarContainer(this.thisCDF, variable, range, preserve);
             container.run();
             return container;
         }
 
         if ("short".equals(type)) {
-            ShortVarContainer container = new ShortVarContainer(this.thisCDF, var, range, preserve);
+            ShortVarContainer container = new ShortVarContainer(this.thisCDF, variable, range, preserve);
             container.run();
             return container;
         }
 
         if ("byte".equals(type)) {
-            ByteVarContainer container = new ByteVarContainer(this.thisCDF, var, range);
+            ByteVarContainer container = new ByteVarContainer(this.thisCDF, variable, range);
             container.run();
             return container;
         }
 
         if ("long".equals(type)) {
-            LongVarContainer container = new LongVarContainer(this.thisCDF, var, range);
+            LongVarContainer container = new LongVarContainer(this.thisCDF, variable, range);
             container.run();
             return container;
         }

@@ -36,7 +36,7 @@ class ADRTest {
     void testGetNameBytes() {
 
         System.out.println(System.getProperty("java.io.tmpdir"));
-        final ADR adr = newDefaultAdrInstance();
+        newDefaultAdrInstance();
         final String name = "A";
         final byte[] expected = new byte[ADR_NAME_FIELD_LENGTH];
         expected[0] = name.getBytes()[0];

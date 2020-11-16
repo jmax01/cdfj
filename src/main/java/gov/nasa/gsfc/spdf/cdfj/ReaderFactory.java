@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -196,7 +197,7 @@ public final class ReaderFactory {
         } catch (RuntimeException e) {
             throw new CDFException.ReaderError("I/O Error reading " + url, e);
         } catch (IOException e) {
-            throw new RuntimeException("getReader failed", e);
+            throw new UncheckedIOException("getReader failed", e);
         }
 
     }

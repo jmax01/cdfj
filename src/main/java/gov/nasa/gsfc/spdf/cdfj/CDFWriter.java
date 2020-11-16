@@ -27,6 +27,7 @@ public class CDFWriter extends GenericWriter {
 
     static final Logger anonymousLogger = Logger.getAnonymousLogger();
 
+    @SuppressWarnings("hiding")
     static final Logger LOGGER = CDFLogging.newLogger(CDFWriter.class);
 
     static final String[] DO_NOT_CHECK_LIST_GLOBAL_AS_ARRAY = { "Logical_file_id", "Generation_date",
@@ -42,7 +43,7 @@ public class CDFWriter extends GenericWriter {
     SelectedVariableCollection vcol = new Selector();
 
     /**
-     * Constructs a {@link CDFWriter CDFWriter} of given row majority.
+     * Constructs a of given row majority.
      *
      * @param targetMajority the target majority
      */
@@ -51,7 +52,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a {@link CDFWriter CDFWriter} populated
+     * Constructs a populated
      * with data from the given {@link GenericReader GenericReader}.
      *
      * @param cdf the cdf
@@ -72,7 +73,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a column major {@link CDFWriter CDFWriter} populated
+     * Constructs a column major populated
      * with data from the given CDF file.
      *
      * @param fname the fname
@@ -93,7 +94,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a {@link CDFWriter CDFWriter} of specified row majority,
+     * Constructs a of specified row majority,
      * populated with data from the given file.
      *
      * @param fname          the fname
@@ -116,7 +117,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a {@link CDFWriter CDFWriter} of specified row majority,
+     * Constructs a of specified row majority,
      * populated with selected variables, and variables they depend on, from
      * the given file.
      *
@@ -137,7 +138,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a column major {@link CDFWriter CDFWriter} populated with
+     * Constructs a column major populated with
      * selected variables, and variables they depend on, from the given file.
      *
      * @param fname the fname
@@ -156,7 +157,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a column major {@link CDFWriter CDFWriter} populated
+     * Constructs a column major populated
      * with data from the given files.
      *
      * @param files the files
@@ -174,7 +175,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a {@link CDFWriter CDFWriter} of specified row majority,
+     * Constructs a of specified row majority,
      * populated with data from the given files.
      *
      * @param files          the files
@@ -194,7 +195,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a {@link CDFWriter CDFWriter} of specified row majority,
+     * Constructs a of specified row majority,
      * populated with selected variables, and variables they depend on, from
      * the given files.
      *
@@ -216,7 +217,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a column major {@link CDFWriter CDFWriter} populated with
+     * Constructs a column major populated with
      * selected variables, and variables they depend on, from the given files.
      *
      * @param files the files
@@ -236,7 +237,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a column major {@link CDFWriter CDFWriter} populated
+     * Constructs a column major populated
      * with data from the given URL.
      *
      * @param url the url
@@ -257,7 +258,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a {@link CDFWriter CDFWriter} of specified row majority,
+     * Constructs a of specified row majority,
      * populated with data from the given URL.
      *
      * @param url            the url
@@ -280,7 +281,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a {@link CDFWriter CDFWriter} of specified row majority,
+     * Constructs a of specified row majority,
      * populated with selected variables, and variables they depend on, from
      * the given URL.
      *
@@ -299,19 +300,19 @@ public class CDFWriter extends GenericWriter {
         try {
             cdf = new GenericReader(url);
         } catch (CDFException.ReaderError th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.WriterError("init CDFWriter failed for " + url, th);
         }
 
         try {
             _addCDF(cdf, variableNames(cdf, col));
         } catch (CDFException.ReaderError | CDFException.WriterError th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("init CDFWriter failed for " + url, th);
         }
 
     }
 
     /**
-     * Constructs a column major {@link CDFWriter CDFWriter} populated with
+     * Constructs a column major populated with
      * selected variables, and variables they depend on, from the given URL.
      *
      * @param url the url
@@ -328,19 +329,19 @@ public class CDFWriter extends GenericWriter {
         try {
             cdf = new GenericReader(url);
         } catch (CDFException.ReaderError th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.WriterError("init CDFWriter failed for " + url, th);
         }
 
         try {
             _addCDF(cdf, variableNames(cdf, col));
         } catch (CDFException.ReaderError | CDFException.WriterError th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("init CDFWriter failed for " + url, th);
         }
 
     }
 
     /**
-     * Constructs a column major {@link CDFWriter CDFWriter} populated
+     * Constructs a column major populated
      * with data from the given array of URLs.
      *
      * @param urls the urls
@@ -358,7 +359,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a {@link CDFWriter CDFWriter} of specified row majority,
+     * Constructs a of specified row majority,
      * populated with data from the given array of URLs.
      *
      * @param urls           the urls
@@ -378,7 +379,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a {@link CDFWriter CDFWriter} of specified row majority,
+     * Constructs a of specified row majority,
      * populated with selected variables, and variables they depend on, from
      * the given array of URLs.
      *
@@ -400,7 +401,7 @@ public class CDFWriter extends GenericWriter {
     }
 
     /**
-     * Constructs a column major {@link CDFWriter CDFWriter} populated with
+     * Constructs a column major populated with
      * selected variables, and variables they depend on, from the given
      * array of URLs.
      *
@@ -526,7 +527,7 @@ public class CDFWriter extends GenericWriter {
                             }
 
                         } catch (CDFException.ReaderError th) {
-                            throw new CDFException.WriterError(th.getMessage());
+                            throw new CDFException.WriterError("addCDF failed", th);
                         }
 
                         if (!dc.timeOrderOK(firstTime)) {
@@ -579,7 +580,7 @@ public class CDFWriter extends GenericWriter {
         try {
             cdf = new GenericReader(url);
         } catch (CDFException.ReaderError th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.WriterError("addCDF failed for " + url, th);
         }
 
         addCDF(cdf);
@@ -759,10 +760,10 @@ public class CDFWriter extends GenericWriter {
             VariableDataBuffer[] dbufs = null;
 
             try {
-                Variable var = cdf.thisCDF.getVariable(vn);
-                dbufs = var.getDataBuffers(true);
+                Variable variable = cdf.thisCDF.getVariable(vn);
+                dbufs = variable.getDataBuffers(true);
             } catch (RuntimeException th) {
-                throw new CDFException.ReaderError(th.getMessage(), th);
+                throw new CDFException.ReaderError("copyVariableData failed for " + vn, th);
             }
 
             for (VariableDataBuffer dbuf : dbufs) {
@@ -775,7 +776,7 @@ public class CDFWriter extends GenericWriter {
             try {
                 _container = getContainer(cdf, vn);
             } catch (RuntimeException th) {
-                throw new CDFException.ReaderError(th.getMessage(), th);
+                throw new CDFException.ReaderError("copyVariableData for " + vn, th);
             }
 
             _container.run();
@@ -784,7 +785,6 @@ public class CDFWriter extends GenericWriter {
 
             if (container != null) {
                 int _last = container.getLastRecord();
-                System.out.println("last: " + _last);
 
                 if (_last >= 0) {
                     _last++;
@@ -793,8 +793,6 @@ public class CDFWriter extends GenericWriter {
                 }
 
             }
-
-            System.out.println("rr: " + rr[0] + ',' + rr[1]);
 
             if (cdf.rowMajority() == this.rowMajority) {
                 addData(vn, _container.getBuffer(), rr);
@@ -809,50 +807,50 @@ public class CDFWriter extends GenericWriter {
     VDataContainer getContainer(final GenericReader rdr, final String variableName) throws ReaderError {
         VDataContainer container = null;
         CDFDataType ctype = SupportedTypes.cdfType(rdr.getType(variableName));
-        Variable var = rdr.thisCDF.getVariable(variableName);
+        Variable variable = rdr.thisCDF.getVariable(variableName);
         ByteOrder order = ByteOrder.LITTLE_ENDIAN;
 
         if ((ctype == CDFDataType.INT1) || (ctype == CDFDataType.UINT1)) {
-            container = var.getByteContainer(null);
+            container = variable.getByteContainer(null);
         }
 
         if (ctype == CDFDataType.INT2) {
-            container = var.getShortContainer(null, true, order);
+            container = variable.getShortContainer(null, true, order);
         }
 
         if (ctype == CDFDataType.INT4) {
-            container = var.getIntContainer(null, true, order);
+            container = variable.getIntContainer(null, true, order);
         }
 
         if (ctype == CDFDataType.UINT2) {
-            container = var.getShortContainer(null, false, order);
+            container = variable.getShortContainer(null, false, order);
         }
 
         if (ctype == CDFDataType.UINT4) {
-            container = var.getIntContainer(null, false, order);
+            container = variable.getIntContainer(null, false, order);
         }
 
         if (ctype == CDFDataType.FLOAT) {
-            container = var.getFloatContainer(null, true, order);
+            container = variable.getFloatContainer(null, true, order);
         }
 
         if ((ctype == CDFDataType.DOUBLE) || (ctype == CDFDataType.EPOCH)
             || (ctype == CDFDataType.EPOCH16)) {
-            container = var.getDoubleContainer(null, true, order);
+            container = variable.getDoubleContainer(null, true, order);
         }
 
         if ((ctype == CDFDataType.TT2000) || (ctype == CDFDataType.INT8)) {
-            container = var.getLongContainer(null, order);
+            container = variable.getLongContainer(null, order);
         }
 
         if (ctype == CDFDataType.CHAR) {
-            container = var.getStringContainer(null);
+            container = variable.getStringContainer(null);
         }
 
         return container;
     }
 
-    GenericReader getFileReader(final String fname) throws CDFException.ReaderError {
+    GenericReader getFileReader(final String fname) throws CDFException.ReaderError, WriterError {
         GenericReader cdf = null;
         File file = new File(fname);
 
@@ -875,7 +873,7 @@ public class CDFWriter extends GenericWriter {
             }
 
         } catch (CDFException.ReaderError th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.WriterError("addCDF for filename " + fname, th);
         }
 
         return cdf;

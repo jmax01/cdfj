@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -78,7 +79,8 @@ public class CDFUrl {
 
             CertificateFactory certificateFactory = CertificateFactory.getInstance(X_509_CERTIFICATE_TYPE);
 
-            ByteArrayInputStream certificateBais = new ByteArrayInputStream(certificateAsString.getBytes());
+            ByteArrayInputStream certificateBais = new ByteArrayInputStream(
+                    certificateAsString.getBytes(StandardCharsets.US_ASCII));
 
             Certificate certificate = certificateFactory.generateCertificate(certificateBais);
 

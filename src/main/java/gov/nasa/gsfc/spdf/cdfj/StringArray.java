@@ -1,6 +1,7 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * The Class StringArray.
@@ -150,7 +151,7 @@ public class StringArray extends AArray {
             throw new IllegalArgumentException("String " + s + " is longer than the specified max " + max);
         }
 
-        byte[] _bar = s.getBytes();
+        byte[] _bar = s.getBytes(StandardCharsets.US_ASCII);
         buf.put(_bar);
 
         for (int f = 0; f < (max - _bar.length); f++) {

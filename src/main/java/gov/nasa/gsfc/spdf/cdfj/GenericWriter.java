@@ -1,13 +1,13 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Logger;
 
 import gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError;
 
@@ -26,6 +27,8 @@ import gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError;
  * which includes user selected data from existing CDFs.
  */
 public class GenericWriter {
+
+    static final Logger LOGGER = CDFLogging.newLogger(GenericWriter.class);
 
     LinkedHashMap<String, ADR> attributes = new LinkedHashMap<>();
 
@@ -82,7 +85,7 @@ public class GenericWriter {
         try {
             container.addData(data, null, false, false);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("addData failed for " + name, th);
         }
 
     }
@@ -111,7 +114,7 @@ public class GenericWriter {
         try {
             container.addData(data, null, false, relax);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("addData failed for " + name, th);
         }
 
     }
@@ -143,7 +146,7 @@ public class GenericWriter {
         try {
             container.addData(data, recordRange, false, false);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("addData failed for " + name, th);
         }
 
     }
@@ -237,7 +240,7 @@ public class GenericWriter {
         try {
             container.addData(data, recordRange, false, relax);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("addData failed for " + name, th);
         }
 
     }
@@ -267,7 +270,7 @@ public class GenericWriter {
         try {
             gae = new GlobalAttributeEntry(adr, type, value);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("addData failed for " + name, th);
         }
 
         gae.setNum(adr.ngrEntries);
@@ -329,7 +332,7 @@ public class GenericWriter {
             try {
                 addData(name, AArray.getPoint(value));
             } catch (RuntimeException th) {
-                throw new CDFException.WriterError(th.getMessage());
+                throw new CDFException.WriterError("addNRVVariable failed for " + name, th);
             }
 
         } else {
@@ -390,7 +393,7 @@ public class GenericWriter {
         try {
             container.addData(data, null, true, false);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("addOneD failed for " + name, th);
         }
 
     }
@@ -413,7 +416,7 @@ public class GenericWriter {
         try {
             container.addData(data, null, true, relax);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("addOneD failed for " + name, th);
         }
 
     }
@@ -437,7 +440,7 @@ public class GenericWriter {
         try {
             container.addData(data, recordRange, true, false);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("addOneD failed for " + name, th);
         }
 
     }
@@ -514,7 +517,7 @@ public class GenericWriter {
         try {
             container.addData(data, recordRange, true, relax);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("addOneD failed for " + name, th);
         }
 
     }
@@ -525,29 +528,29 @@ public class GenericWriter {
      * If an entry exists, new value is added to the existing entry
      * if both are of String type.
      *
-     * @param vname    name of the variable
-     * @param aname    name of the attribute
-     * @param dataType {@link CDFDataType CDFDataType} desired
-     * @param value    array of primitives, or String value to assign to
-     *                 attribute
+     * @param variableName  name of the variable
+     * @param attributeName name of the attribute
+     * @param dataType      {@link CDFDataType CDFDataType} desired
+     * @param value         array of primitives, or String value to assign to
+     *                      attribute
      *
      * @throws WriterError the writer error
      */
-    public void addVariableAttributeEntry(final String vname, final String aname, final CDFDataType dataType,
-            final Object value) throws CDFException.WriterError {
+    public void addVariableAttributeEntry(final String variableName, final String attributeName,
+            final CDFDataType dataType, final Object value) throws CDFException.WriterError {
 
-        VDR vdesc = this.variableDescriptors.get(vname);
+        VDR vdesc = this.variableDescriptors.get(variableName);
 
         if (vdesc == null) {
-            throw new CDFException.WriterError("Variable " + vname + " has not been defined.");
+            throw new CDFException.WriterError("Variable " + variableName + " has not been defined.");
         }
 
-        List<VariableAttributeEntry> currentEntries = findVariableAttributeEntries(vname, aname);
+        List<VariableAttributeEntry> currentEntries = findVariableAttributeEntries(variableName, attributeName);
 
         if (currentEntries.isEmpty()) {
 
-            if (!this.attributeEntries.containsKey(aname)) {
-                this.attributeEntries.put(aname, new CopyOnWriteArrayList<>());
+            if (!this.attributeEntries.containsKey(attributeName)) {
+                this.attributeEntries.put(attributeName, new CopyOnWriteArrayList<>());
             }
 
         } else {
@@ -563,18 +566,18 @@ public class GenericWriter {
 
         }
 
-        ADR adr = getAttribute(aname, false);
+        ADR adr = getAttribute(attributeName, false);
         VariableAttributeEntry vae;
         int type = (dataType == null) ? -1 : dataType.getValue();
 
         try {
             vae = new VariableAttributeEntry(adr, type, value);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("addVariableAttributeEntry failed for " + variableName, th);
         }
 
         vae.setNum(vdesc.getNum());
-        this.attributeEntries.get(aname)
+        this.attributeEntries.get(attributeName)
                 .add(vae);
 
         if (vdesc.getNum() > adr.mAXzEntry) {
@@ -957,7 +960,7 @@ public class GenericWriter {
         try {
             vdr = new VDR(name, dataType.getValue(), dim, varys, recordVariance, compressed, _pad, size, option);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("addVariableAttributeEntry failed for " + name, th);
         }
 
         vdr.setNum(this.variableDescriptors.size());
@@ -1114,16 +1117,15 @@ public class GenericWriter {
      *
      * @param fname the fname
      *
-     * @throws IOException           Signals that an I/O exception has occurred.
-     * @throws FileNotFoundException the file not found exception
+     * @throws IOException Signals that an I/O exception has occurred.
      */
-    public void write(final String fname) throws IOException, java.io.FileNotFoundException {
+    public void write(final String fname) throws IOException {
         List<AEDR> vec = this.attributeEntries.get("cdfj_source");
 
         if (vec != null) {
 
-            if (new String(vec.get(0).values).equals(fname)) {
-                System.out.println("overwriting " + fname);
+            if (new String(vec.get(0).values, StandardCharsets.UTF_8).equals(fname)) {
+                LOGGER.warning("overwriting " + fname);
                 write(fname, true);
                 return;
             }
@@ -1141,11 +1143,9 @@ public class GenericWriter {
      *
      * @return true, if successful
      *
-     * @throws IOException           Signals that an I/O exception has occurred.
-     * @throws FileNotFoundException the file not found exception
+     * @throws IOException Signals that an I/O exception has occurred.
      */
-    public boolean write(final String fname, final boolean overwrite)
-            throws IOException, java.io.FileNotFoundException {
+    public boolean write(final String fname, final boolean overwrite) throws IOException {
 
         if (this.leapSecondLastUpdated != -1) {
             this.gdr.setLeapSecondLastUpdated(this.leapSecondLastUpdated);
@@ -1314,7 +1314,7 @@ public class GenericWriter {
             container.addData(data.getBuffer(), new int[] { data.getFirstRecord(), data.getLastRecord() }, false,
                     false);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("addBuffer failed for " + name, th);
         }
 
     }
@@ -1433,7 +1433,7 @@ public class GenericWriter {
         try {
             aa = new ArrayAttribute(data);
         } catch (RuntimeException th) {
-            throw new CDFException.WriterError(th.getMessage());
+            throw new CDFException.WriterError("getContainer failed for " + name, th);
         }
 
         if (aa.getDimensions().length != 1) {
@@ -1455,8 +1455,7 @@ public class GenericWriter {
         try {
             md = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException nsa) {
-            nsa.printStackTrace();
-            return null;
+            throw new IllegalStateException("MD5 messageDigest is missing", nsa);
         }
 
         int pos = obuf.position();
@@ -1483,11 +1482,9 @@ public class GenericWriter {
         try {
             md = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException nsa) {
-            nsa.printStackTrace();
-            return;
+            throw new IllegalStateException("MD5 messageDigest is missing", nsa);
         }
 
-        // System.out.println(channel.position());
         byte[] ba = new byte[1_024 * 1_024];
         ByteBuffer buf = ByteBuffer.wrap(ba);
         long remaining = channel.size();
@@ -1512,10 +1509,8 @@ public class GenericWriter {
             remaining -= trans;
         }
 
-        // System.out.println(channel.position());
-        // channel.position(channel.size());
         channel.write(ByteBuffer.wrap(md.digest()));
-        // System.out.println(channel.size());
+
     }
 
     long getSize() {
@@ -1683,12 +1678,11 @@ public class GenericWriter {
 
     }
 
-    void writeWin(final String fname, final ByteBuffer buf) throws IOException, java.io.FileNotFoundException {
+    void writeWin(final String fname, final ByteBuffer buf) throws IOException {
 
         try (FileOutputStream fos = new FileOutputStream(fname)) {
             byte[] ba = buf.array();
             fos.write(ba);
-            // System.out.println("finished writing to " + fname);
         }
 
     }

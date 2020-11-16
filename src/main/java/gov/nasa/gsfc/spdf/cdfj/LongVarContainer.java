@@ -20,25 +20,25 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
     /**
      * Instantiates a new long var container.
      *
-     * @param thisCDF the this CDF
-     * @param var     the var
-     * @param pt      the pt
+     * @param thisCDF  the this CDF
+     * @param variable the var
+     * @param pt       the pt
      */
-    public LongVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt) {
-        this(thisCDF, var, pt, ByteOrder.nativeOrder());
+    public LongVarContainer(final CDFImpl thisCDF, final Variable variable, final int[] pt) {
+        this(thisCDF, variable, pt, ByteOrder.nativeOrder());
     }
 
     /**
      * Instantiates a new long var container.
      *
-     * @param thisCDF the this CDF
-     * @param var     the var
-     * @param pt      the pt
-     * @param bo      the bo
+     * @param thisCDF  the this CDF
+     * @param variable the var
+     * @param pt       the pt
+     * @param bo       the bo
      */
-    public LongVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt, final ByteOrder bo) {
-        super(thisCDF, var, pt, true, bo, Long.TYPE);
-        Object pad = this.thisCDF.getPadValue(var);
+    public LongVarContainer(final CDFImpl thisCDF, final Variable variable, final int[] pt, final ByteOrder bo) {
+        super(thisCDF, variable, pt, true, bo, Long.TYPE);
+        Object pad = this.thisCDF.getPadValue(variable);
 
         if (pad.getClass()
                 .getComponentType() == Double.TYPE) {
@@ -48,7 +48,7 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
             Arrays.setAll(this.lpad, i -> (long) dpad[i]);
 
         } else {
-            this.lpad = (long[]) this.thisCDF.getPadValue(var);
+            this.lpad = (long[]) this.thisCDF.getPadValue(variable);
         }
 
     }
@@ -71,7 +71,7 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
      * @return the object
      */
     public Object _asArray() {
-        int rank = this.var.getEffectiveRank();
+        int rank = this.variable.getEffectiveRank();
 
         if (rank > 4) {
             throw new IllegalStateException("Ranks > 4 are not supported at this time.");
@@ -93,7 +93,7 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
                 _buf.get(_a0);
                 return (this.singlePoint) ? Long.valueOf(_a0[0]) : _a0;
             case 1:
-                int n = ((this.var.getDimensionElementCounts()
+                int n = ((this.variable.getDimensionElementCounts()
                         .get(0)));
                 records = words / n;
                 long[][] _a1 = new long[records][n];
@@ -102,13 +102,13 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
                 }
                 return (this.singlePoint) ? _a1[0] : _a1;
             case 2:
-                int n0 = ((this.var.getDimensionElementCounts()
+                int n0 = ((this.variable.getDimensionElementCounts()
                         .get(0)));
-                int n1 = ((this.var.getDimensionElementCounts()
+                int n1 = ((this.variable.getDimensionElementCounts()
                         .get(1)));
                 records = words / (n0 * n1);
                 long[][][] _a2 = new long[records][n0][n1];
-                if (this.var.rowMajority()) {
+                if (this.variable.rowMajority()) {
 
                     for (int r = 0; r < records; r++) {
 
@@ -135,15 +135,15 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
                 }
                 return (this.singlePoint) ? _a2[0] : _a2;
             case 3:
-                n0 = ((this.var.getDimensionElementCounts()
+                n0 = ((this.variable.getDimensionElementCounts()
                         .get(0)));
-                n1 = ((this.var.getDimensionElementCounts()
+                n1 = ((this.variable.getDimensionElementCounts()
                         .get(1)));
-                int n2 = ((this.var.getDimensionElementCounts()
+                int n2 = ((this.variable.getDimensionElementCounts()
                         .get(2)));
                 records = words / (n0 * n1 * n2);
                 long[][][][] _a3 = new long[records][n0][n1][n2];
-                if (this.var.rowMajority()) {
+                if (this.variable.rowMajority()) {
 
                     for (int r = 0; r < records; r++) {
 
@@ -178,17 +178,17 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
                 }
                 return (this.singlePoint) ? _a3[0] : _a3;
             case 4:
-                n0 = ((this.var.getDimensionElementCounts()
+                n0 = ((this.variable.getDimensionElementCounts()
                         .get(0)));
-                n1 = ((this.var.getDimensionElementCounts()
+                n1 = ((this.variable.getDimensionElementCounts()
                         .get(1)));
-                n2 = ((this.var.getDimensionElementCounts()
+                n2 = ((this.variable.getDimensionElementCounts()
                         .get(2)));
-                int n3 = ((this.var.getDimensionElementCounts()
+                int n3 = ((this.variable.getDimensionElementCounts()
                         .get(3)));
                 records = words / (n0 * n1 * n2 * n3);
                 long[][][][][] _a4 = new long[records][n0][n1][n2][n3];
-                if (this.var.rowMajority()) {
+                if (this.variable.rowMajority()) {
 
                     for (int r = 0; r < records; r++) {
 
@@ -378,7 +378,7 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
     @Override
     void doMissing(final int records, final ByteBuffer _buf, final Object _data, final int rec) {
         long[] data = (long[]) _data;
-        long[] repl = (rec < 0) ? this.lpad : this.var.asLongArray(new int[] { rec });
+        long[] repl = (rec < 0) ? this.lpad : this.variable.asLongArray(new int[] { rec });
 
         int position = _buf.position();
         LongBuffer lbuf = _buf.asLongBuffer();

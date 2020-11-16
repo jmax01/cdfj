@@ -19,29 +19,29 @@ public final class IntVarContainer extends BaseVarContainer implements VDataCont
      * Instantiates a new int var container.
      *
      * @param thisCDF  the this CDF
-     * @param var      the var
+     * @param variable the var
      * @param pt       the pt
      * @param preserve the preserve
      * @
      */
-    public IntVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt, final boolean preserve) {
-        this(thisCDF, var, pt, preserve, ByteOrder.nativeOrder());
+    public IntVarContainer(final CDFImpl thisCDF, final Variable variable, final int[] pt, final boolean preserve) {
+        this(thisCDF, variable, pt, preserve, ByteOrder.nativeOrder());
     }
 
     /**
      * Instantiates a new int var container.
      *
      * @param thisCDF  the this CDF
-     * @param var      the var
+     * @param variable the var
      * @param pt       the pt
      * @param preserve the preserve
      * @param bo       the bo
      * @
      */
-    public IntVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt, final boolean preserve,
+    public IntVarContainer(final CDFImpl thisCDF, final Variable variable, final int[] pt, final boolean preserve,
             final ByteOrder bo) {
-        super(thisCDF, var, pt, preserve, bo, Integer.TYPE);
-        Object pad = this.thisCDF.getPadValue(var);
+        super(thisCDF, variable, pt, preserve, bo, Integer.TYPE);
+        Object pad = this.thisCDF.getPadValue(variable);
         double[] dpad = (double[]) pad;
         this.ipad = new int[dpad.length];
 
@@ -70,7 +70,7 @@ public final class IntVarContainer extends BaseVarContainer implements VDataCont
      * @
      */
     public Object _asArray() {
-        int rank = this.var.getEffectiveRank();
+        int rank = this.variable.getEffectiveRank();
 
         if (rank > 4) {
             throw new IllegalStateException("Ranks > 4 are not supported at this time.");
@@ -92,7 +92,7 @@ public final class IntVarContainer extends BaseVarContainer implements VDataCont
                 _buf.get(_a0);
                 return (this.singlePoint) ? Integer.valueOf(_a0[0]) : _a0;
             case 1:
-                int n = this.var.getDimensionElementCounts()
+                int n = this.variable.getDimensionElementCounts()
                         .get(0);
                 records = words / n;
                 int[][] _a1 = new int[records][n];
@@ -101,13 +101,13 @@ public final class IntVarContainer extends BaseVarContainer implements VDataCont
                 }
                 return (this.singlePoint) ? _a1[0] : _a1;
             case 2:
-                int n0 = this.var.getDimensionElementCounts()
+                int n0 = this.variable.getDimensionElementCounts()
                         .get(0);
-                int n1 = this.var.getDimensionElementCounts()
+                int n1 = this.variable.getDimensionElementCounts()
                         .get(1);
                 records = words / (n0 * n1);
                 int[][][] _a2 = new int[records][n0][n1];
-                if (this.var.rowMajority()) {
+                if (this.variable.rowMajority()) {
 
                     for (int r = 0; r < records; r++) {
 
@@ -134,15 +134,15 @@ public final class IntVarContainer extends BaseVarContainer implements VDataCont
                 }
                 return (this.singlePoint) ? _a2[0] : _a2;
             case 3:
-                n0 = this.var.getDimensionElementCounts()
+                n0 = this.variable.getDimensionElementCounts()
                         .get(0);
-                n1 = this.var.getDimensionElementCounts()
+                n1 = this.variable.getDimensionElementCounts()
                         .get(1);
-                int n2 = this.var.getDimensionElementCounts()
+                int n2 = this.variable.getDimensionElementCounts()
                         .get(2);
                 records = words / (n0 * n1 * n2);
                 int[][][][] _a3 = new int[records][n0][n1][n2];
-                if (this.var.rowMajority()) {
+                if (this.variable.rowMajority()) {
 
                     for (int r = 0; r < records; r++) {
 
@@ -177,17 +177,17 @@ public final class IntVarContainer extends BaseVarContainer implements VDataCont
                 }
                 return (this.singlePoint) ? _a3[0] : _a3;
             case 4:
-                n0 = this.var.getDimensionElementCounts()
+                n0 = this.variable.getDimensionElementCounts()
                         .get(0);
-                n1 = this.var.getDimensionElementCounts()
+                n1 = this.variable.getDimensionElementCounts()
                         .get(1);
-                n2 = this.var.getDimensionElementCounts()
+                n2 = this.variable.getDimensionElementCounts()
                         .get(2);
-                int n3 = this.var.getDimensionElementCounts()
+                int n3 = this.variable.getDimensionElementCounts()
                         .get(3);
                 records = words / (n0 * n1 * n2 * n3);
                 int[][][][][] _a4 = new int[records][n0][n1][n2][n3];
-                if (this.var.rowMajority()) {
+                if (this.variable.rowMajority()) {
 
                     for (int r = 0; r < records; r++) {
 
@@ -301,6 +301,7 @@ public final class IntVarContainer extends BaseVarContainer implements VDataCont
 
         switch (DataTypes.typeCategory[type]) {
             case 2:
+
                 if ((type == 1) || (type == 41)) {
 
                     while (processed < toprocess) {
@@ -451,7 +452,7 @@ public final class IntVarContainer extends BaseVarContainer implements VDataCont
 
         int[] data = (int[]) _data;
 
-        int[] repl = (rec < 0) ? this.ipad : this.var.asIntArray(new int[] { rec });
+        int[] repl = (rec < 0) ? this.ipad : this.variable.asIntArray(new int[] { rec });
 
         int position = _buf.position();
         IntBuffer ibuf = _buf.asIntBuffer();

@@ -22,12 +22,12 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
      * Instantiates a new double var container.
      *
      * @param thisCDF  the this CDF
-     * @param var      the var
+     * @param variable the variable
      * @param pt       the pt
      * @param preserve the preserve
      */
-    public DoubleVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt, final boolean preserve) {
-        this(thisCDF, var, pt, preserve, ByteOrder.nativeOrder());
+    public DoubleVarContainer(final CDFImpl thisCDF, final Variable variable, final int[] pt, final boolean preserve) {
+        this(thisCDF, variable, pt, preserve, ByteOrder.nativeOrder());
     }
 
     /**
@@ -78,7 +78,7 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
      * @return the object
      */
     public Object _asArray() {
-        int rank = this.var.getEffectiveRank();
+        int rank = this.variable.getEffectiveRank();
 
         if (rank > 4) {
             throw new IllegalStateException("Ranks > 4 are not supported at this time.");
@@ -100,7 +100,7 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
                 _buf.get(_a0);
                 return (this.singlePoint) ? Double.valueOf(_a0[0]) : _a0;
             case 1:
-                int n = this.var.getDimensionElementCounts()
+                int n = this.variable.getDimensionElementCounts()
                         .get(0);
                 records = words / n;
                 double[][] _a1 = new double[records][n];
@@ -109,13 +109,13 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
                 }
                 return (this.singlePoint) ? _a1[0] : _a1;
             case 2:
-                int n0 = this.var.getDimensionElementCounts()
+                int n0 = this.variable.getDimensionElementCounts()
                         .get(0);
-                int n1 = this.var.getDimensionElementCounts()
+                int n1 = this.variable.getDimensionElementCounts()
                         .get(1);
                 records = words / (n0 * n1);
                 double[][][] _a2 = new double[records][n0][n1];
-                if (this.var.rowMajority()) {
+                if (this.variable.rowMajority()) {
 
                     for (int r = 0; r < records; r++) {
 
@@ -142,15 +142,15 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
                 }
                 return (this.singlePoint) ? _a2[0] : _a2;
             case 3:
-                n0 = this.var.getDimensionElementCounts()
+                n0 = this.variable.getDimensionElementCounts()
                         .get(0);
-                n1 = this.var.getDimensionElementCounts()
+                n1 = this.variable.getDimensionElementCounts()
                         .get(1);
-                int n2 = ((this.var.getDimensionElementCounts()
+                int n2 = ((this.variable.getDimensionElementCounts()
                         .get(2)));
                 records = words / (n0 * n1 * n2);
                 double[][][][] _a3 = new double[records][n0][n1][n2];
-                if (this.var.rowMajority()) {
+                if (this.variable.rowMajority()) {
 
                     for (int r = 0; r < records; r++) {
 
@@ -185,17 +185,17 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
                 }
                 return (this.singlePoint) ? _a3[0] : _a3;
             case 4:
-                n0 = this.var.getDimensionElementCounts()
+                n0 = this.variable.getDimensionElementCounts()
                         .get(0);
-                n1 = this.var.getDimensionElementCounts()
+                n1 = this.variable.getDimensionElementCounts()
                         .get(1);
-                n2 = ((this.var.getDimensionElementCounts()
+                n2 = ((this.variable.getDimensionElementCounts()
                         .get(2)));
-                int n3 = ((this.var.getDimensionElementCounts()
+                int n3 = ((this.variable.getDimensionElementCounts()
                         .get(3)));
                 records = words / (n0 * n1 * n2 * n3);
                 double[][][][][] _a4 = new double[records][n0][n1][n2][n3];
-                if (this.var.rowMajority()) {
+                if (this.variable.rowMajority()) {
 
                     for (int r = 0; r < records; r++) {
 
@@ -263,20 +263,20 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
      * @return the double[]
      */
     public double[] asArrayElement(final int index0, final int index1) {
-        int rank = this.var.getEffectiveRank();
+        int rank = this.variable.getEffectiveRank();
 
         if (rank != 2) {
             throw new IllegalStateException("Rank other than 2 not supported, was " + rank);
         }
 
-        int n0 = this.var.getDimensionElementCounts()
+        int n0 = this.variable.getDimensionElementCounts()
                 .get(0);
 
         if ((index0 < 0) || (index0 >= n0)) {
             throw new IllegalArgumentException("Invalid first index " + index0);
         }
 
-        int n1 = this.var.getDimensionElementCounts()
+        int n1 = this.variable.getDimensionElementCounts()
                 .get(1);
 
         if ((index1 < 0) || (index1 >= n1)) {
@@ -294,7 +294,7 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
         DoubleBuffer _buf = buf.asDoubleBuffer();
         int records = words / pointSize;
         double[] _a1 = new double[records];
-        int loc = (this.var.rowMajority()) ? ((n1 * index0) + index1) : ((n0 * index1) + index0);
+        int loc = (this.variable.rowMajority()) ? ((n1 * index0) + index1) : ((n0 * index1) + index0);
         int pos = 0;
 
         for (int r = 0; r < records; r++) {
@@ -342,13 +342,13 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
      */
     public Object asArrayElement(final int[] elements) {
 
-        int rank = this.var.getEffectiveRank();
+        int rank = this.variable.getEffectiveRank();
 
         if (rank != 1) {
             throw new IllegalStateException("Rank > 1 not supported.");
         }
 
-        if (!validElement(this.var, elements)) {
+        if (!validElement(this.variable, elements)) {
             return null;
         }
 
@@ -360,7 +360,7 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
 
         int words = (buf.remaining()) / 8;
         DoubleBuffer _buf = buf.asDoubleBuffer();
-        int n = this.var.getDimensionElementCounts()
+        int n = this.variable.getDimensionElementCounts()
                 .get(0);
         int records = words / n;
 
@@ -570,7 +570,7 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
 
         } catch (IllegalAccessException | InvocationTargetException e) {
 
-            throw new IllegalStateException("Failed to invoke method" + method.getName(), e);
+            throw new IllegalStateException("Failed to invoke method" + method, e);
         }
 
     }
@@ -580,7 +580,7 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
 
         double[] data = (double[]) _data;
 
-        double[] repl = (rec < 0) ? this.dpad : this.var.asDoubleArray(new int[] { rec });
+        double[] repl = (rec < 0) ? this.dpad : this.variable.asDoubleArray(new int[] { rec });
 
         int position = _buf.position();
         DoubleBuffer dbuf = _buf.asDoubleBuffer();

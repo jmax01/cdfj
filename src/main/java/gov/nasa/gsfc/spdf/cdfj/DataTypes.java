@@ -3,6 +3,7 @@ package gov.nasa.gsfc.spdf.cdfj;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * The Class DataTypes.
@@ -131,6 +132,7 @@ public final class DataTypes {
             typeCategory[52] = STRING;
         } catch (NoSuchMethodException | SecurityException ex) {
 
+            throw new IllegalStateException("Failed to populate arrays", ex);
         }
 
         for (int i = 0; i < LAST_TYPE; i++) {
@@ -153,7 +155,9 @@ public final class DataTypes {
             Method meth = tc.getMethod("getString", ByteBuffer.class, Integer.class);
             method[51] = meth;
             method[52] = meth;
-        } catch (NoSuchMethodException | SecurityException ex) {}
+        } catch (NoSuchMethodException | SecurityException ex) {
+            throw new IllegalStateException("Failed to obtain getString methods", ex);
+        }
 
     }
 
@@ -171,7 +175,7 @@ public final class DataTypes {
         }
 
         if (isStringType(type)) {
-            return " ".getBytes()[0];
+            return " ".getBytes(StandardCharsets.US_ASCII)[0];
         }
 
         return Double.valueOf(0);

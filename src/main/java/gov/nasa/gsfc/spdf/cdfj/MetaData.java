@@ -240,8 +240,8 @@ public abstract class MetaData {
             throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        Variable var = this.thisCDF.getVariable(variableName);
-        return var.getEffectiveDimensions();
+        Variable variable = this.thisCDF.getVariable(variableName);
+        return variable.getEffectiveDimensions();
     }
 
     /**
@@ -317,7 +317,7 @@ public abstract class MetaData {
         try {
             return this.thisCDF.getGlobalAttribute(atr);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getGlobalAttribute failed for " + atr, th);
         }
 
     }
@@ -430,8 +430,8 @@ public abstract class MetaData {
             throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        Variable var = this.thisCDF.getVariable(variableName);
-        return var.getPadValue(preservePrecision);
+        Variable variable = this.thisCDF.getVariable(variableName);
+        return variable.getPadValue(preservePrecision);
     }
 
     /**
@@ -479,8 +479,8 @@ public abstract class MetaData {
         }
 
         // assume istp convention
-        Variable var = this.thisCDF.getVariable(variableName);
-        String vname = var.getName();
+        Variable variable = this.thisCDF.getVariable(variableName);
+        String vname = variable.getName();
 
         List<String> v = (List<String>) this.thisCDF.getAttribute(vname, "DEPEND_0");
 
@@ -621,7 +621,7 @@ public abstract class MetaData {
             return this.thisCDF.getVariable(variableName)
                     .isCompatible(cl);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("isCompatible failed for " + variableName + " class " + cl, th);
         }
 
     }
@@ -645,8 +645,8 @@ public abstract class MetaData {
             throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        Variable var = this.thisCDF.getVariable(variableName);
-        return var.isCompatible(cl, preserve);
+        Variable variable = this.thisCDF.getVariable(variableName);
+        return variable.isCompatible(cl, preserve);
     }
 
     /**
@@ -751,8 +751,8 @@ public abstract class MetaData {
             throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        Variable var = this.thisCDF.getVariable(variableName);
-        return var.missingRecordValueIsPad();
+        Variable variable = this.thisCDF.getVariable(variableName);
+        return variable.missingRecordValueIsPad();
     }
 
     /**
@@ -771,8 +771,8 @@ public abstract class MetaData {
             throw new CDFException.ReaderError("CDF does not hava a variable named " + variableName);
         }
 
-        Variable var = this.thisCDF.getVariable(variableName);
-        return var.missingRecordValueIsPrevious();
+        Variable variable = this.thisCDF.getVariable(variableName);
+        return variable.missingRecordValueIsPrevious();
     }
 
     /**

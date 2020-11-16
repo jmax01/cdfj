@@ -1,6 +1,7 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * The Class StringVarContainer.
@@ -12,12 +13,12 @@ public final class StringVarContainer extends ByteVarContainer implements VDataC
     /**
      * Instantiates a new string var container.
      *
-     * @param thisCDF the this CDF
-     * @param var     the var
-     * @param pt      the pt
+     * @param thisCDF  the this CDF
+     * @param variable the var
+     * @param pt       the pt
      */
-    public StringVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt) {
-        super(thisCDF, var, pt);
+    public StringVarContainer(final CDFImpl thisCDF, final Variable variable, final int[] pt) {
+        super(thisCDF, variable, pt);
     }
 
     /**
@@ -39,7 +40,7 @@ public final class StringVarContainer extends ByteVarContainer implements VDataC
 
     @Override
     public Object _asArray() {
-        int rank = this.var.getEffectiveRank();
+        int rank = this.variable.getEffectiveRank();
 
         if (rank > 1) {
             throw new IllegalStateException("Rank > 1 not supported for strings.");
@@ -53,7 +54,7 @@ public final class StringVarContainer extends ByteVarContainer implements VDataC
 
         int words = buf.remaining();
         int records = -1;
-        int len = this.var.getNumberOfElements();
+        int len = this.variable.getNumberOfElements();
         byte[] ba = new byte[len];
 
         switch (rank) {
@@ -62,11 +63,11 @@ public final class StringVarContainer extends ByteVarContainer implements VDataC
                 String[] sa = new String[records];
                 for (int r = 0; r < records; r++) {
                     buf.get(ba);
-                    sa[r] = new String(ba);
+                    sa[r] = new String(ba, StandardCharsets.US_ASCII);
                 }
                 return sa;
             case 1:
-                int n0 = this.var.getDimensionElementCounts()
+                int n0 = this.variable.getDimensionElementCounts()
                         .get(0);
                 records = words / (n0 * len);
                 String[][] sa1 = new String[records][n0];
@@ -74,7 +75,7 @@ public final class StringVarContainer extends ByteVarContainer implements VDataC
 
                     for (int e = 0; e < n0; e++) {
                         buf.get(ba);
-                        sa1[r][e] = new String(ba);
+                        sa1[r][e] = new String(ba, StandardCharsets.US_ASCII);
                     }
 
                 }

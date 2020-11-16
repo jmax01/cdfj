@@ -227,13 +227,7 @@ public class CDFReader extends GenericReader implements Closeable {
      */
     public double[][] getVectorTimeSeries(final String variableName, final int component, final boolean ignoreFill)
             throws CDFException.ReaderError {
-
-        try {
-            return this.cdfVec.getTimeSeries(variableName, component, ignoreFill);
-        } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
-        }
-
+        return this.cdfVec.getTimeSeries(variableName, component, ignoreFill);
     }
 
     /**
@@ -270,8 +264,8 @@ public class CDFReader extends GenericReader implements Closeable {
 
         try {
             return this.cdfVec.getTimeSeries(variableName, component, ignoreFill, startTime, stopTime);
-        } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+        } catch (RuntimeException e) {
+            throw new CDFException.ReaderError("getVectorTimeSeries failed for " + variableName, e);
         }
 
     }
@@ -316,7 +310,7 @@ public class CDFReader extends GenericReader implements Closeable {
         try {
             return this.cdfVec.getTimeSeries(variableName, component, ignoreFill, startTime, stopTime, tspec);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getVectorTimeSeries failed for " + variableName, th);
         }
 
     }
@@ -358,7 +352,7 @@ public class CDFReader extends GenericReader implements Closeable {
         try {
             return this.cdfVec.getTimeSeries(variableName, component, startTime, stopTime);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getVectorTimeSeries failed for " + variableName, th);
         }
 
     }
@@ -404,7 +398,7 @@ public class CDFReader extends GenericReader implements Closeable {
         try {
             return this.cdfVec.getTimeSeries(variableName, component, startTime, stopTime, tspec);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getVectorTimeSeries failed for " + variableName, th);
         }
 
     }
@@ -518,7 +512,7 @@ public class CDFReader extends GenericReader implements Closeable {
         try {
             return this.scalar.getTimeSeries(variableName, ignoreFill);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getScalarTimeSeries failed for " + variableName, th);
         }
 
     }
@@ -560,7 +554,7 @@ public class CDFReader extends GenericReader implements Closeable {
         try {
             return this.scalar.getTimeSeries(variableName, ignoreFill, startTime, stopTime);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getScalarTimeSeries failed for " + variableName, th);
         }
 
     }
@@ -647,7 +641,7 @@ public class CDFReader extends GenericReader implements Closeable {
         try {
             return this.scalar.getTimeSeries(variableName, startTime, stopTime);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getScalarTimeSeries failed for " + variableName, th);
         }
 
     }
@@ -689,7 +683,7 @@ public class CDFReader extends GenericReader implements Closeable {
         try {
             return this.scalar.getTimeSeries(variableName, startTime, stopTime, tspec);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getScalarTimeSeries failed for " + variableName, th);
         }
 
     }
@@ -780,7 +774,7 @@ public class CDFReader extends GenericReader implements Closeable {
             double[] tr = TSExtractor.getOverlap(this, trange, variableName, startTime, stopTime);
             return getTimeSeries(variableName, tr, tspec);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getTimeSeries failed for " + variableName, th);
         }
 
     }
@@ -841,8 +835,8 @@ public class CDFReader extends GenericReader implements Closeable {
             }
 
             if (!tv.canSupportPrecision(_tspec.getOffsetUnits())) {
-                // System.out.println("cannot support");
-                throw new IllegalArgumentException(variableName + " has lower time precision than requested.");
+
+                throw new CDFException.ReaderError(variableName + " has lower time precision than requested.");
             }
 
             double[] trange = getAvailableTimeRange(variableName);
@@ -911,7 +905,7 @@ public class CDFReader extends GenericReader implements Closeable {
 
             return null;
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage(), th);
+            throw new CDFException.ReaderError("lastAvailableTime failed for " + variableName, th);
         }
 
     }
@@ -944,7 +938,7 @@ public class CDFReader extends GenericReader implements Closeable {
             msec += TimeVariableFactory.JANUARY_1_1970_LONG;
             return getTimeInstantModel(msec);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("timeModelInstance failed for " + variableName, th);
         }
 
     }
@@ -986,26 +980,27 @@ public class CDFReader extends GenericReader implements Closeable {
 
     private TimeSeries getTimeSeries(final String variableName, final double[] timeRange, final TimeInstantModel tspec)
             throws CDFException.ReaderError {
-        Variable var = this.thisCDF.getVariable(variableName);
+        Variable variable = this.thisCDF.getVariable(variableName);
 
         try {
-            TimeSeriesX ts = new TSExtractor.GeneralTimeSeriesX(this, var, false, timeRange, tspec, false, true);
+            TimeSeriesX ts = new TSExtractor.GeneralTimeSeriesX(this, variable, false, timeRange, tspec, false, true);
             return new TimeSeriesImpl(ts);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getTimeSeries failed for " + variableName, th);
         }
 
     }
 
     private TimeSeriesOneD getTimeSeries(final String variableName, final double[] timeRange,
             final TimeInstantModel tspec, final boolean columnMajor) throws CDFException.ReaderError {
-        Variable var = this.thisCDF.getVariable(variableName);
+        Variable variable = this.thisCDF.getVariable(variableName);
 
         try {
-            TimeSeriesX ts = new TSExtractor.GeneralTimeSeriesX(this, var, false, timeRange, tspec, true, columnMajor);
+            TimeSeriesX ts = new TSExtractor.GeneralTimeSeriesX(this, variable, false, timeRange, tspec, true,
+                    columnMajor);
             return new TimeSeriesOneDImpl(ts);
         } catch (RuntimeException th) {
-            throw new CDFException.ReaderError(th.getMessage());
+            throw new CDFException.ReaderError("getTimeSeries failed for " + variableName, th);
         }
 
     }
@@ -1015,13 +1010,13 @@ public class CDFReader extends GenericReader implements Closeable {
         MetaData rdr;
 
         public double[][] getTimeSeries(final String variableName, final int component) throws ReaderError {
-            Variable var = CDFReader.this.thisCDF.getVariable(variableName);
+            Variable variable = CDFReader.this.thisCDF.getVariable(variableName);
 
-            if (var.getEffectiveRank() != 1) {
+            if (variable.getEffectiveRank() != 1) {
                 throw new IllegalArgumentException(variableName + " is not a CopyOnWriteArrayList.");
             }
 
-            int dim = var.getEffectiveDimensions()[0];
+            int dim = variable.getEffectiveDimensions()[0];
 
             if ((component < 0) || (component > dim)) {
                 throw new IllegalArgumentException("component exceeds dimension of " + variableName + " (" + dim + ')');
@@ -1138,12 +1133,12 @@ public class CDFReader extends GenericReader implements Closeable {
 
             checkType(variableName);
 
-            Variable var = CDFReader.this.thisCDF.getVariable(variableName);
+            Variable variable = CDFReader.this.thisCDF.getVariable(variableName);
 
-            Method method = TSExtractor.getMethod(var, "TimeSeries", 1);
+            Method method = TSExtractor.getMethod(variable, "TimeSeries", 1);
 
             try {
-                return (double[][]) method.invoke(null, this.rdr, var, component, ignoreFill, timeRange);
+                return (double[][]) method.invoke(null, this.rdr, variable, component, ignoreFill, timeRange);
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new ReaderError("getTimeSeries failed", e);
             }
@@ -1155,13 +1150,13 @@ public class CDFReader extends GenericReader implements Closeable {
 
             checkType(variableName);
 
-            Variable var = CDFReader.this.thisCDF.getVariable(variableName);
+            Variable variable = CDFReader.this.thisCDF.getVariable(variableName);
 
-            Method method = TSExtractor.getMethod(var, "TimeSeriesObject", 1);
+            Method method = TSExtractor.getMethod(variable, "TimeSeriesObject", 1);
 
             try {
                 return new TimeSeriesImpl(
-                        (TimeSeries) method.invoke(null, this.rdr, var, component, ignoreFill, timeRange, tspec));
+                        (TimeSeries) method.invoke(null, this.rdr, variable, component, ignoreFill, timeRange, tspec));
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new ReaderError("getTimeSeries failed", e);
             }
@@ -1185,9 +1180,9 @@ public class CDFReader extends GenericReader implements Closeable {
         MetaData rdr;
 
         public double[][] getTimeSeries(final String variableName) throws ReaderError {
-            Variable var = CDFReader.this.thisCDF.getVariable(variableName);
+            Variable variable = CDFReader.this.thisCDF.getVariable(variableName);
 
-            if (var.getEffectiveRank() != 0) {
+            if (variable.getEffectiveRank() != 0) {
                 throw new IllegalArgumentException(variableName + " is not a scalar.");
             }
 
@@ -1259,11 +1254,11 @@ public class CDFReader extends GenericReader implements Closeable {
         double[][] _getTimeSeries(final String variableName, final boolean ignoreFill, final double[] timeRange)
                 throws ReaderError {
             checkType(variableName);
-            Variable var = CDFReader.this.thisCDF.getVariable(variableName);
-            Method method = TSExtractor.getMethod(var, "TimeSeries", 0);
+            Variable variable = CDFReader.this.thisCDF.getVariable(variableName);
+            Method method = TSExtractor.getMethod(variable, "TimeSeries", 0);
 
             try {
-                return (double[][]) method.invoke(null, this.rdr, var, ignoreFill, timeRange);
+                return (double[][]) method.invoke(null, this.rdr, variable, ignoreFill, timeRange);
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new ReaderError("getTimeSeries failed", e);
             }
@@ -1273,12 +1268,12 @@ public class CDFReader extends GenericReader implements Closeable {
         TimeSeries _getTimeSeries(final String variableName, final boolean ignoreFill, final double[] timeRange,
                 final TimeInstantModel tspec) throws ReaderError {
             checkType(variableName);
-            Variable var = CDFReader.this.thisCDF.getVariable(variableName);
-            Method method = TSExtractor.getMethod(var, "TimeSeriesObject", 0);
+            Variable variable = CDFReader.this.thisCDF.getVariable(variableName);
+            Method method = TSExtractor.getMethod(variable, "TimeSeriesObject", 0);
 
             try {
                 return new TimeSeriesImpl(
-                        (TimeSeries) method.invoke(null, this.rdr, var, ignoreFill, timeRange, tspec));
+                        (TimeSeries) method.invoke(null, this.rdr, variable, ignoreFill, timeRange, tspec));
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new ReaderError("getTimeSeries failed", e);
             }

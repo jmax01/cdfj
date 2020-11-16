@@ -2,10 +2,12 @@ package gov.nasa.gsfc.spdf.cdfj;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -359,10 +361,8 @@ public class DataContainer {
                         this._bufs.set(nbuf, null);
                     }
 
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream(uncompressed.length);
-
-                    try {
-                        GZIPOutputStream gzos = new GZIPOutputStream(baos);
+                    try (ByteArrayOutputStream baos = new ByteArrayOutputStream(uncompressed.length);
+                            GZIPOutputStream gzos = new GZIPOutputStream(baos)) {
                         gzos.write(uncompressed, 0, uncompressed.length);
                         gzos.finish();
                         baos.flush();
@@ -371,7 +371,7 @@ public class DataContainer {
                         int len = CVVR_PREAMBLE + b.limit();
                         size += len;
                     } catch (IOException ex) {
-                        ex.printStackTrace();
+                        throw new UncheckedIOException(ex);
                     }
 
                     nbuf++;
@@ -621,9 +621,10 @@ public class DataContainer {
                 if ((first - expected) > 0) {
 
                     if (this.vdr.sRecords == 0) {
-                        System.out.println("Gap: " + expected + " - " + first + " for " + this.vdr.getName());
+
                         throw new IllegalArgumentException(" SparseRecordOption must be set. There are "
-                                + " missing records between files for " + this.vdr.getName());
+                                + " missing records between files for " + this.vdr.getName() + ". Gap: " + expected
+                                + " - " + first + " for " + this.vdr.getName());
                     }
 
                 }
@@ -925,9 +926,6 @@ public class DataContainer {
         if (!done && (this.vdr.dataType > 50)) { // data is String[]
             String[] values = (String[]) data;
             npt = ((values.length * this.vdr.numElems) / this.vdr.itemsPerPoint);
-            // System.out.println(values.length);
-            // System.out.println(vdr.itemsPerPoint);
-            // System.out.println(npt);
 
             if (recordRange != null) {
 
@@ -947,7 +945,7 @@ public class DataContainer {
                     throw new IllegalStateException("String " + value + " is longer than the length of variable.");
                 }
 
-                byte[] _bar = value.getBytes();
+                byte[] _bar = value.getBytes(StandardCharsets.US_ASCII);
                 buf.put(_bar);
 
                 for (int f = 0; f < (this.vdr.numElems - _bar.length); f++) {

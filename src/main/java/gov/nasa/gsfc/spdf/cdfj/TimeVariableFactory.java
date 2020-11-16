@@ -20,6 +20,8 @@ public final class TimeVariableFactory {
     /** The Constant JANUARY_1_1970. */
     public static final double JANUARY_1_1970;
 
+    static final Logger LOGGER = CDFLogging.newLogger(TimeVariableFactory.class);
+
     static final long LONG_FILL = -9_223_372_036_854_775_807L;
 
     static final double DOUBLE_FILL = -1.0e31;
@@ -93,13 +95,13 @@ public final class TimeVariableFactory {
      */
     public static CDFTimeVariable getTimeVariable(final MetaData rdr, final String vname) {
         CDFImpl cdf = rdr.thisCDF;
-        Variable var = cdf.getVariable(vname);
-        int recordCount = var.getNumberOfValues();
+        Variable variable = cdf.getVariable(vname);
+        int recordCount = variable.getNumberOfValues();
         CDFTimeVariable tv;
 
         String tname = rdr.getTimeVariableName(vname);
 
-        List<String> depend0VariableNames = (List<String>) cdf.getAttribute(var.getName(), "DEPEND_0");
+        List<String> depend0VariableNames = (List<String>) cdf.getAttribute(variable.getName(), "DEPEND_0");
 
         if (!depend0VariableNames.isEmpty()) {
             tname = depend0VariableNames.get(0);
@@ -111,7 +113,7 @@ public final class TimeVariableFactory {
 
                 if (cdf.getVariable("Epoch") != null) {
                     tname = "Epoch";
-                    System.out.println("Variable " + vname + " has no DEPEND_0 attribute. Variable named Epoch "
+                    LOGGER.fine("Variable " + vname + " has no DEPEND_0 attribute. Variable named Epoch "
                             + "assumed to be the right time variable");
                 } else {
                     throw new IllegalArgumentException("Time variable not found for " + vname);
@@ -133,20 +135,20 @@ public final class TimeVariableFactory {
 
         if (tvar.getNumberOfValues() == 0) { // themis like
 
-            List<String> dependTimeVariableNames = (List<String>) cdf.getAttribute(var.getName(), "DEPEND_TIME");
+            List<String> dependTimeVariableNames = (List<String>) cdf.getAttribute(variable.getName(), "DEPEND_TIME");
 
             if (!dependTimeVariableNames.isEmpty()) {
                 tname = dependTimeVariableNames.get(0);
                 tvar = cdf.getVariable(tname);
                 themisLike = true;
             } else {
-                throw new IllegalArgumentException("Expected unix time variable not found for " + var.getName());
+                throw new IllegalArgumentException("Expected unix time variable not found for " + variable.getName());
             }
 
         }
 
         if (tvar.getNumberOfValues() == 0) {
-            throw new IllegalArgumentException("Empty time variable for " + var.getName());
+            throw new IllegalArgumentException("Empty time variable for " + variable.getName());
         }
 
         ByteBuffer buf = null;
@@ -350,7 +352,6 @@ public final class TimeVariableFactory {
             for (int i = 0; i < count; i++) {
 
                 if (da[i] == DOUBLE_FILL) {
-                    System.out.println("at " + i + " fill found");
                     da[i] = Double.NaN;
                     continue;
                 }
@@ -377,6 +378,7 @@ public final class TimeVariableFactory {
      */
     public abstract static class CDFTimeVariable implements TimeVariableX {
 
+        @SuppressWarnings("hiding")
         static final Logger LOGGER = CDFLogging.newLogger(CDFTimeVariable.class);
 
         CDFImpl cdf;
@@ -418,8 +420,8 @@ public final class TimeVariableFactory {
                 }
 
                 return d;
-            } catch (Throwable t) {
-                t.printStackTrace();
+            } catch (RuntimeException e) {
+                LOGGER.log(Level.WARNING, e, () -> "getFirstMilliSecond");
                 return Double.NaN;
             }
 

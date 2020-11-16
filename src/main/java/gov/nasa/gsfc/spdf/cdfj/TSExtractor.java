@@ -3,6 +3,8 @@ package gov.nasa.gsfc.spdf.cdfj;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.Calendar;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
 
@@ -12,6 +14,9 @@ import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
  * @author nand
  */
 public class TSExtractor extends Extractor {
+
+    @SuppressWarnings("hiding")
+    static final Logger LOGGER = CDFLogging.newLogger(TSExtractor.class);
 
     static {
 
@@ -39,7 +44,7 @@ public class TSExtractor extends Extractor {
             addFunction("TimeSeriesObject", cl, arglist);
 
         } catch (ClassNotFoundException ex) {
-            ex.printStackTrace();
+            throw new IllegalStateException("Could not find classes", ex);
         }
 
     }
@@ -163,15 +168,15 @@ public class TSExtractor extends Extractor {
     /**
      * Gets the method.
      *
-     * @param var  the var
-     * @param name the name
-     * @param rank the rank
+     * @param variable the variable
+     * @param name     the name
+     * @param rank     the rank
      *
      * @return the method
      * @
      */
-    public static Method getMethod(final Variable var, final String name, final int rank) {
-        return getMethod(var, name, rank, false);
+    public static Method getMethod(final Variable variable, final String name, final int rank) {
+        return getMethod(variable, name, rank, false);
     }
 
     /**
@@ -237,7 +242,7 @@ public class TSExtractor extends Extractor {
      * Gets the sampled time series.
      *
      * @param rdr        the rdr
-     * @param var        the var
+     * @param variable   the variable
      * @param which      the which
      * @param ignoreFill the ignore fill
      * @param timeRange  the time range
@@ -246,17 +251,17 @@ public class TSExtractor extends Extractor {
      * @return the sampled time series
      * @
      */
-    public static double[][] getSampledTimeSeries(final MetaData rdr, final Variable var, final Integer which,
+    public static double[][] getSampledTimeSeries(final MetaData rdr, final Variable variable, final Integer which,
             final Boolean ignoreFill, final double[] timeRange, final int[] stride) {
 
-        if (var.getNumberOfValues() == 0) {
+        if (variable.getNumberOfValues() == 0) {
             return null;
         }
 
         boolean ignore = ignoreFill;
         double[] vdata;
         int[] recordRange = null;
-        TimeVariable tv = TimeVariableFactory.getTimeVariable(rdr, var.getName());
+        TimeVariable tv = TimeVariableFactory.getTimeVariable(rdr, variable.getName());
         double[] times = tv.getTimes();
 
         if (times == null) {
@@ -267,26 +272,26 @@ public class TSExtractor extends Extractor {
         Stride strideObject = new Stride(stride);
 
         if (timeRange == null) {
-            vdata = (double[]) ((which == null) ? getSeries0(rdr.thisCDF, var, strideObject)
-                    : getElement1(rdr.thisCDF, var, which, strideObject));
+            vdata = (double[]) ((which == null) ? getSeries0(rdr.thisCDF, variable, strideObject)
+                    : getElement1(rdr.thisCDF, variable, which, strideObject));
         } else {
-            recordRange = getRecordRange(rdr, var, timeRange);
+            recordRange = getRecordRange(rdr, variable, timeRange);
 
             if (recordRange == null) {
                 return null;
             }
 
             if (which == null) {
-                vdata = (double[]) getRange0(rdr.thisCDF, var, recordRange[0], recordRange[1], strideObject);
+                vdata = (double[]) getRange0(rdr.thisCDF, variable, recordRange[0], recordRange[1], strideObject);
             } else {
-                vdata = (double[]) getRangeForElement1(rdr.thisCDF, var, recordRange[0], recordRange[1], which,
+                vdata = (double[]) getRangeForElement1(rdr.thisCDF, variable, recordRange[0], recordRange[1], which,
                         strideObject);
             }
 
         }
 
         int _stride = strideObject.getStride();
-        double[] fill = (double[]) getFillValue(rdr.thisCDF, var);
+        double[] fill = (double[]) getFillValue(rdr.thisCDF, variable);
 
         if ((!ignore) || (fill[0] != 0)) {
 
@@ -357,7 +362,7 @@ public class TSExtractor extends Extractor {
      * Gets the sampled time series 0.
      *
      * @param rdr        the rdr
-     * @param var        the var
+     * @param variable   the variable
      * @param ignoreFill the ignore fill
      * @param timeRange  the time range
      * @param stride     the stride
@@ -365,16 +370,16 @@ public class TSExtractor extends Extractor {
      * @return the sampled time series 0
      * @
      */
-    public static double[][] getSampledTimeSeries0(final MetaData rdr, final Variable var, final Boolean ignoreFill,
-            final double[] timeRange, final int[] stride) {
-        return getSampledTimeSeries(rdr, var, null, ignoreFill, timeRange, stride);
+    public static double[][] getSampledTimeSeries0(final MetaData rdr, final Variable variable,
+            final Boolean ignoreFill, final double[] timeRange, final int[] stride) {
+        return getSampledTimeSeries(rdr, variable, null, ignoreFill, timeRange, stride);
     }
 
     /**
      * Gets the sampled time series 1.
      *
      * @param rdr        the rdr
-     * @param var        the var
+     * @param variable   the variable
      * @param which      the which
      * @param ignoreFill the ignore fill
      * @param timeRange  the time range
@@ -383,9 +388,9 @@ public class TSExtractor extends Extractor {
      * @return the sampled time series 1
      * @
      */
-    public static double[][] getSampledTimeSeries1(final MetaData rdr, final Variable var, final Integer which,
+    public static double[][] getSampledTimeSeries1(final MetaData rdr, final Variable variable, final Integer which,
             final Boolean ignoreFill, final double[] timeRange, final int[] stride) {
-        return getSampledTimeSeries(rdr, var, which, ignoreFill, timeRange, stride);
+        return getSampledTimeSeries(rdr, variable, which, ignoreFill, timeRange, stride);
     }
 
     /**
@@ -448,7 +453,7 @@ public class TSExtractor extends Extractor {
      * Gets the time series.
      *
      * @param rdr        the rdr
-     * @param var        the var
+     * @param variable   the variable
      * @param which      the which
      * @param ignoreFill the ignore fill
      * @param timeRange  the time range
@@ -456,16 +461,16 @@ public class TSExtractor extends Extractor {
      * @return the time series
      * @
      */
-    public static double[][] getTimeSeries(final MetaData rdr, final Variable var, final Integer which,
+    public static double[][] getTimeSeries(final MetaData rdr, final Variable variable, final Integer which,
             final Boolean ignoreFill, final double[] timeRange) {
 
-        if (var.getNumberOfValues() == 0) {
+        if (variable.getNumberOfValues() == 0) {
             return null;
         }
 
         boolean ignore = ignoreFill;
         double[] vdata;
-        TimeVariable tv = TimeVariableFactory.getTimeVariable(rdr, var.getName());
+        TimeVariable tv = TimeVariableFactory.getTimeVariable(rdr, variable.getName());
         double[] times = tv.getTimes();
 
         if (times == null) {
@@ -473,15 +478,15 @@ public class TSExtractor extends Extractor {
         }
 
         boolean longType = false;
-        int type = var.getType();
+        int type = variable.getType();
         int element = (which == null) ? 0 : which;
         Number pad;
 
         if (DataTypes.typeCategory[type] == DataTypes.LONG) {
             longType = true;
-            pad = ((long[]) getPadValue(rdr.thisCDF, var))[element];
+            pad = ((long[]) getPadValue(rdr.thisCDF, variable))[element];
         } else {
-            pad = ((double[]) getPadValue(rdr.thisCDF, var))[element];
+            pad = ((double[]) getPadValue(rdr.thisCDF, variable))[element];
         }
 
         double[] stimes;
@@ -489,11 +494,11 @@ public class TSExtractor extends Extractor {
         Object[] oa = null;
 
         if (timeRange == null) {
-            o = (which == null) ? Extractor.getSeries0(rdr.thisCDF, var)
-                    : Extractor.getElement1(rdr.thisCDF, var, which);
+            o = (which == null) ? Extractor.getSeries0(rdr.thisCDF, variable)
+                    : Extractor.getElement1(rdr.thisCDF, variable, which);
 
-            if (var.isMissingRecords()) {
-                long[][] locations = var.getLocator()
+            if (variable.isMissingRecords()) {
+                long[][] locations = variable.getLocator()
                         .getLocations();
                 oa = filterPad(o, times, pad, locations, 0);
             } else {
@@ -501,16 +506,16 @@ public class TSExtractor extends Extractor {
             }
 
         } else {
-            int[] recordRange = getRecordRange(rdr, var, timeRange);
+            int[] recordRange = getRecordRange(rdr, variable, timeRange);
 
             if (recordRange == null) {
                 return null;
             }
 
             if (which == null) {
-                o = getRange0(rdr.thisCDF, var, recordRange[0], recordRange[1]);
+                o = getRange0(rdr.thisCDF, variable, recordRange[0], recordRange[1]);
             } else {
-                o = getRangeForElement1(rdr.thisCDF, var, recordRange[0], recordRange[1], which);
+                o = getRangeForElement1(rdr.thisCDF, variable, recordRange[0], recordRange[1], which);
             }
 
             stimes = new double[Array.getLength(o)];
@@ -520,8 +525,8 @@ public class TSExtractor extends Extractor {
                 stimes[i] = times[index++];
             }
 
-            if (var.isMissingRecords()) {
-                long[][] locations = var.getLocator()
+            if (variable.isMissingRecords()) {
+                long[][] locations = variable.getLocator()
                         .getLocations();
                 oa = filterPad(o, stimes, pad, locations, recordRange[0]);
             } else {
@@ -538,7 +543,7 @@ public class TSExtractor extends Extractor {
         }
 
         // fill values need to be filtered
-        Object fill = Extractor.getFillValue(rdr.thisCDF, var);
+        Object fill = Extractor.getFillValue(rdr.thisCDF, variable);
         boolean fillDefined = true;
         Number fillValue = null;
 
@@ -571,23 +576,23 @@ public class TSExtractor extends Extractor {
      * Gets the time series 0.
      *
      * @param rdr        the rdr
-     * @param var        the var
+     * @param variable   the variable
      * @param ignoreFill the ignore fill
      * @param timeRange  the time range
      *
      * @return the time series 0
      * @
      */
-    public static double[][] getTimeSeries0(final MetaData rdr, final Variable var, final Boolean ignoreFill,
+    public static double[][] getTimeSeries0(final MetaData rdr, final Variable variable, final Boolean ignoreFill,
             final double[] timeRange) {
-        return getTimeSeries(rdr, var, null, ignoreFill, timeRange);
+        return getTimeSeries(rdr, variable, null, ignoreFill, timeRange);
     }
 
     /**
      * Gets the time series 1.
      *
      * @param rdr        the rdr
-     * @param var        the var
+     * @param variable   the variable
      * @param which      the which
      * @param ignoreFill the ignore fill
      * @param timeRange  the time range
@@ -595,16 +600,16 @@ public class TSExtractor extends Extractor {
      * @return the time series 1
      * @
      */
-    public static double[][] getTimeSeries1(final MetaData rdr, final Variable var, final Integer which,
+    public static double[][] getTimeSeries1(final MetaData rdr, final Variable variable, final Integer which,
             final Boolean ignoreFill, final double[] timeRange) {
-        return getTimeSeries(rdr, var, which, ignoreFill, timeRange);
+        return getTimeSeries(rdr, variable, which, ignoreFill, timeRange);
     }
 
     /**
      * Gets the time series object 0.
      *
      * @param rdr        the rdr
-     * @param var        the var
+     * @param variable   the variable
      * @param ignoreFill the ignore fill
      * @param timeRange  the time range
      * @param ts         the ts
@@ -612,16 +617,16 @@ public class TSExtractor extends Extractor {
      * @return the time series object 0
      * @
      */
-    public static TimeSeries getTimeSeriesObject0(final MetaData rdr, final Variable var, final Boolean ignoreFill,
+    public static TimeSeries getTimeSeriesObject0(final MetaData rdr, final Variable variable, final Boolean ignoreFill,
             final double[] timeRange, final TimeInstantModel ts) {
-        return new GeneralTimeSeries(rdr, var, null, ignoreFill, timeRange, ts);
+        return new GeneralTimeSeries(rdr, variable, null, ignoreFill, timeRange, ts);
     }
 
     /**
      * Gets the time series object 1.
      *
      * @param rdr        the rdr
-     * @param var        the var
+     * @param variable   the variable
      * @param which      the which
      * @param ignoreFill the ignore fill
      * @param timeRange  the time range
@@ -630,9 +635,9 @@ public class TSExtractor extends Extractor {
      * @return the time series object 1
      * @
      */
-    public static TimeSeries getTimeSeriesObject1(final MetaData rdr, final Variable var, final Integer which,
+    public static TimeSeries getTimeSeriesObject1(final MetaData rdr, final Variable variable, final Integer which,
             final Boolean ignoreFill, final double[] timeRange, final TimeInstantModel ts) {
-        return new GeneralTimeSeries(rdr, var, which, ignoreFill, timeRange, ts);
+        return new GeneralTimeSeries(rdr, variable, which, ignoreFill, timeRange, ts);
     }
 
     /**
@@ -729,55 +734,55 @@ public class TSExtractor extends Extractor {
         return new Object[] { _times, _data };
     }
 
-    static Method getMethod(final Variable var, final String name, final int rank, final boolean checkMissing) {
+    static Method getMethod(final Variable variable, final String name, final int rank, final boolean checkMissing) {
 
-        if (var == null) {
+        if (variable == null) {
             throw new IllegalArgumentException(
                     "Internal error. Null variable encountered in call to TSExtractor.getMethod()");
         }
 
-        int _rank = var.getEffectiveRank();
+        int _rank = variable.getEffectiveRank();
 
         if (_rank != rank) {
             throw new IllegalArgumentException(
                     "Called method is not appropriate for variables of effective rank " + _rank);
         }
 
-        if (checkMissing && (var.isMissingRecords())) {
-            System.out.println("Variable " + var.getName() + " has gaps."
-                    + " Sampled time series code is being tested. Feature is not "
-                    + " currently available if the variable has gaps.");
+        if (checkMissing && (variable.isMissingRecords())) {
+
+            LOGGER.log(Level.WARNING,
+                    "Variable " + variable.getName() + " has gaps."
+                            + " Sampled time series code is being tested. Feature is not "
+                            + " currently available if the variable has gaps.");
             return null;
         }
 
-        Method method = getMethod(var, name);
+        Method method = getMethod(variable, name);
 
         if (method == null) {
-            throw new IllegalArgumentException("get" + name + " not implemented for " + var.getName());
+            throw new IllegalArgumentException("get" + name + " not implemented for " + variable.getName());
         }
 
         return method;
     }
 
-    static int[] getRecordRange(final MetaData rdr, final Variable var, final double[] timeRange) {
-        return getRecordRange(rdr, var, timeRange, null);
+    static int[] getRecordRange(final MetaData rdr, final Variable variable, final double[] timeRange) {
+        return getRecordRange(rdr, variable, timeRange, null);
     }
 
-    static int[] getRecordRange(final MetaData rdr, final VariableMetaData var, final double[] timeRange,
+    static int[] getRecordRange(final MetaData rdr, final VariableMetaData variable, final double[] timeRange,
             final TimeInstantModel ts) {
 
-        try {
-            TimeVariableX tvx = TimeVariableFactory.getTimeVariable(rdr, var.getName());
-            return tvx.getRecordRange(timeRange);
-        } catch (Throwable t) {}
+        TimeVariableX tvx = TimeVariableFactory.getTimeVariable(rdr, variable.getName());
 
-        return null;
+        return tvx.getRecordRange(timeRange);
+
     }
 
     /**
      * Loss of precision may occur if type of var is LONG
      * times obtained are millisecond since 1970 regardless of the
-     * precision of time variable corresponding to variable var.
+     * precision of time variable corresponding to variable variable.
      */
     public static class GeneralTimeSeries implements TimeSeries {
 
@@ -793,15 +798,15 @@ public class TSExtractor extends Extractor {
          * Instantiates a new general time series.
          *
          * @param rdr        the rdr
-         * @param var        the var
+         * @param variable   the variable
          * @param which      the which
          * @param ignoreFill the ignore fill
          * @param timeRange  the time range
          * @param ts         the ts
          * @
          */
-        public GeneralTimeSeries(final MetaData rdr, final Variable var, final Integer which, final Boolean ignoreFill,
-                final double[] timeRange, final TimeInstantModel ts) {
+        public GeneralTimeSeries(final MetaData rdr, final Variable variable, final Integer which,
+                final Boolean ignoreFill, final double[] timeRange, final TimeInstantModel ts) {
             boolean ignore = ignoreFill;
             int[] recordRange = null;
 
@@ -813,16 +818,16 @@ public class TSExtractor extends Extractor {
 
             }
 
-            TimeVariable tv = TimeVariableFactory.getTimeVariable(rdr, var.getName());
+            TimeVariable tv = TimeVariableFactory.getTimeVariable(rdr, variable.getName());
             this.times = tv.getTimes(this.tspec);
 
             if (this.times == null) {
-                throw new IllegalArgumentException("times not available for " + var.getName());
+                throw new IllegalArgumentException("times not available for " + variable.getName());
             }
 
             double[] stimes;
             boolean longType = false;
-            int type = var.getType();
+            int type = variable.getType();
 
             if (DataTypes.typeCategory[type] == DataTypes.LONG) {
                 longType = true;
@@ -831,18 +836,18 @@ public class TSExtractor extends Extractor {
             Object o = null;
 
             if (timeRange == null) {
-                o = (which == null) ? getSeries0(rdr.thisCDF, var) : getElement1(rdr.thisCDF, var, which);
+                o = (which == null) ? getSeries0(rdr.thisCDF, variable) : getElement1(rdr.thisCDF, variable, which);
             } else {
-                recordRange = getRecordRange(rdr, var, timeRange, ts);
+                recordRange = getRecordRange(rdr, variable, timeRange, ts);
 
                 if (recordRange == null) {
                     throw new IllegalStateException("no record range");
                 }
 
                 if (which == null) {
-                    o = getRange0(rdr.thisCDF, var, recordRange[0], recordRange[1]);
+                    o = getRange0(rdr.thisCDF, variable, recordRange[0], recordRange[1]);
                 } else {
-                    o = getRangeForElement1(rdr.thisCDF, var, recordRange[0], recordRange[1], which);
+                    o = getRangeForElement1(rdr.thisCDF, variable, recordRange[0], recordRange[1], which);
                 }
 
             }
@@ -859,7 +864,7 @@ public class TSExtractor extends Extractor {
 
             } else {
                 // fill values need to be filtered
-                double[] fill = (double[]) getFillValue(rdr.thisCDF, var);
+                double[] fill = (double[]) getFillValue(rdr.thisCDF, variable);
                 int first = (timeRange != null) ? recordRange[0] : 0;
 
                 if (fill[0] != 0) { // there is no fill value
@@ -913,7 +918,7 @@ public class TSExtractor extends Extractor {
          * Instantiates a new general time series X.
          *
          * @param rdr         the rdr
-         * @param var         the var
+         * @param variable    the variable
          * @param ignoreFill  the ignore fill
          * @param timeRange   the time range
          * @param ts          the ts
@@ -921,7 +926,7 @@ public class TSExtractor extends Extractor {
          * @param columnMajor the column major
          * @
          */
-        public GeneralTimeSeriesX(final MetaData rdr, final VariableMetaData var, final Boolean ignoreFill,
+        public GeneralTimeSeriesX(final MetaData rdr, final VariableMetaData variable, final Boolean ignoreFill,
                 final double[] timeRange, final TimeInstantModel ts, final boolean oned, final boolean columnMajor) {
 
             if (ts != null) {
@@ -934,7 +939,7 @@ public class TSExtractor extends Extractor {
                 this.tspec = null;
             }
 
-            this.vname = var.getName();
+            this.vname = variable.getName();
             this.tv = TimeVariableFactory.getTimeVariable(rdr, this.vname);
             this.thisCDF = rdr.thisCDF;
             this.timeRange = timeRange;

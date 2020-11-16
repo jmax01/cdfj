@@ -23,7 +23,7 @@ public abstract class BaseVarContainer implements Runnable {
 
     final CDFImpl thisCDF;
 
-    final Variable var;
+    final Variable variable;
 
     final int[] pt;
 
@@ -59,32 +59,32 @@ public abstract class BaseVarContainer implements Runnable {
      * Instantiates a new base var container.
      *
      * @param thisCDF  the this CDF
-     * @param var      the var
+     * @param variable the var
      * @param pt       the pt
      * @param preserve the preserve
      * @param bo       the bo
      * @param cl       the cl
      */
-    protected BaseVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt, final boolean preserve,
+    protected BaseVarContainer(final CDFImpl thisCDF, final Variable variable, final int[] pt, final boolean preserve,
             final ByteOrder bo, final Class<?> cl) {
 
-        this.type = var.getType();
+        this.type = variable.getType();
 
         if (!isCompatible(this.type, preserve, cl)) {
-            throw new IllegalArgumentException("Variable " + var.getName() + " may result in loss of precision");
+            throw new IllegalArgumentException("Variable " + variable.getName() + " may result in loss of precision");
         }
 
         this.thisCDF = thisCDF;
-        this.var = var;
+        this.variable = variable;
         this.order = bo;
         this.clazz = cl;
-        this.itemSize = var.getDataItemSize();
+        this.itemSize = variable.getDataItemSize();
         this.elements = this.itemSize / DataTypes.size[this.type];
-        int[] range = var.getRecordRange();
+        int[] range = variable.getRecordRange();
 
         if (range == null) {
             // if (pt == null) {
-            throw new IllegalArgumentException("Variable " + var.getName() + " has no records.");
+            throw new IllegalArgumentException("Variable " + variable.getName() + " has no records.");
             // }
         }
 
@@ -101,7 +101,7 @@ public abstract class BaseVarContainer implements Runnable {
 
         if (pt != null) {
 
-            if (var.recordVariance()) {
+            if (variable.recordVariance()) {
 
                 if (pt[0] < 0) {
                     throw new IllegalArgumentException("Negative start of Record Range ");
@@ -115,7 +115,7 @@ public abstract class BaseVarContainer implements Runnable {
 
                 }
 
-                if ((!var.missingRecordValueIsPad() && !var.missingRecordValueIsPrevious())) {
+                if ((!variable.missingRecordValueIsPad() && !variable.missingRecordValueIsPrevious())) {
 
                     if ((range[0] > pt[0]) || (range[1] < pt[0])) {
                         throw new IllegalArgumentException("Invalid start of Record Range " + pt[0]
@@ -273,8 +273,8 @@ public abstract class BaseVarContainer implements Runnable {
         return false;
     }
 
-    static boolean validElement(final VariableMetaData var, final int[] idx) {
-        int elements = var.getDimensionElementCounts()
+    static boolean validElement(final VariableMetaData variableMetaData, final int[] idx) {
+        int elements = variableMetaData.getDimensionElementCounts()
                 .get(0);
 
         for (int j : idx) {
@@ -363,10 +363,10 @@ public abstract class BaseVarContainer implements Runnable {
      * @return the object
      */
     public Object asOneDArray(final boolean cmtarget, final Stride stride) {
-        int[] dim = this.var.getEffectiveDimensions();
+        int[] dim = this.variable.getEffectiveDimensions();
 
-        if ((dim.length <= 1) || (!cmtarget && this.var.rowMajority())
-            || (cmtarget && !this.var.rowMajority())) {
+        if ((dim.length <= 1) || (!cmtarget && this.variable.rowMajority())
+            || (cmtarget && !this.variable.rowMajority())) {
 
             if (stride == null) {
                 return as1DArray();
@@ -377,7 +377,7 @@ public abstract class BaseVarContainer implements Runnable {
 
         int[] _dim = dim;
 
-        if (!this.var.rowMajority()) {
+        if (!this.variable.rowMajority()) {
             _dim = new int[dim.length];
 
             for (int i = 0; i < dim.length; i++) {
@@ -563,7 +563,7 @@ public abstract class BaseVarContainer implements Runnable {
      * @return the variable
      */
     public Variable getVariable() {
-        return this.var;
+        return this.variable;
     }
 
     @Override
@@ -621,7 +621,7 @@ public abstract class BaseVarContainer implements Runnable {
             doMissing(this.fillCount, _buf, data, -1);
         }
 
-        CopyOnWriteArrayList<long[]> locations = ((CDFImpl.DataLocator) this.var.getLocator()).locations;
+        CopyOnWriteArrayList<long[]> locations = ((CDFImpl.DataLocator) this.variable.getLocator()).locations;
         int blk = 0;
         int next = begin;
 
@@ -645,7 +645,7 @@ public abstract class BaseVarContainer implements Runnable {
             if (blk == locations.size()) { // past prev available
                 tofill = (end - begin) + 1;
 
-                if ((!this.var.missingRecordValueIsPad() && !this.var.missingRecordValueIsPrevious())) {
+                if ((!this.variable.missingRecordValueIsPad() && !this.variable.missingRecordValueIsPrevious())) {
                     return;
                 }
 
@@ -664,7 +664,7 @@ public abstract class BaseVarContainer implements Runnable {
 
             if (tofill > 0) {
 
-                if (this.var.missingRecordValueIsPrevious()) {
+                if (this.variable.missingRecordValueIsPrevious()) {
                     doMissing(tofill, _buf, data, (blk == 0) ? -1 : prev);
                 } else {
                     doMissing(tofill, _buf, data, -1);
@@ -694,7 +694,7 @@ public abstract class BaseVarContainer implements Runnable {
             int last = (int) loc[1];
 
             int count = ((last - first) + 1);
-            ByteBuffer bv = this.thisCDF.positionBuffer(this.var, loc[2], count);
+            ByteBuffer bv = this.thisCDF.positionBuffer(this.variable, loc[2], count);
 
             if (firstBlock) {
 
@@ -705,11 +705,7 @@ public abstract class BaseVarContainer implements Runnable {
 
                 if (end == begin) { // single point needed
 
-                    try {
-                        doData(bv, this.type, this.elements, 1, _buf, data);
-                    } catch (Throwable ex) {
-                        ex.printStackTrace();
-                    }
+                    doData(bv, this.type, this.elements, 1, _buf, data);
 
                     if (this.buffers.isEmpty()) {
                         this.buffers.add(new ContentDescriptor(_buf, begin, end));
@@ -726,7 +722,7 @@ public abstract class BaseVarContainer implements Runnable {
                     int target = (end >= first) ? first : (end + 1);
                     int n = target - next;
 
-                    if (this.var.missingRecordValueIsPrevious()) {
+                    if (this.variable.missingRecordValueIsPrevious()) {
                         int rec = (int) locations.get(blk - 1)[1];
                         doMissing(n, _buf, data, rec);
                     } else {
@@ -758,15 +754,8 @@ public abstract class BaseVarContainer implements Runnable {
                     _count = rem;
                 }
 
-                try {
-                    doData(bv, this.type, this.elements, _count, _buf, data);
-                } catch (Throwable ex) {
-                    ex.printStackTrace();
-                    return;
-                }
+                doData(bv, this.type, this.elements, _count, _buf, data);
 
-                // System.out.println(bv);
-                // System.out.println(_buf);
                 next += _count;
 
                 if (next > last) {
@@ -783,7 +772,7 @@ public abstract class BaseVarContainer implements Runnable {
 
         if (next <= end) {
 
-            if (this.var.missingRecordValueIsPrevious()) {
+            if (this.variable.missingRecordValueIsPrevious()) {
                 doMissing((end - next) + 1, _buf, data, (next - 1));
             } else {
                 doMissing((end - next) + 1, _buf, data, -1);

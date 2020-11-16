@@ -9,6 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -256,11 +257,8 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
             }
 
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-            System.out.println("getNumberAttribute: " + vbuf);
-            System.out.println("type: " + type);
-            ex.printStackTrace();
-            LOGGER.log(Level.SEVERE, ex, () -> "Failed to get number attributes for type, " + type + " nelement");
-            return null;
+            throw new IllegalStateException(
+                    "Failed to get number attributes for type," + type + " nelement " + nelement, ex);
         }
 
         if (longType) {
@@ -1218,10 +1216,6 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
         ByteBuffer bv = getRecord(offset);
 
         if (bv.getInt(this.offset_RECORD_TYPE) == VVR_RECORD_TYPE) {
-            /*
-             * System.out.println("Encountered uncompressed instead of " +
-             * " compressed at offset " + offset);
-             */
             bv.position(this.offset_RECORDS);
             return bv;
         }
@@ -1250,8 +1244,10 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
             }
 
         } catch (IOException ex) {
-            System.out.println(ex + " at offset " + offset);
-            System.out.println("Trying to get data as uncompressed");
+
+            LOGGER.log(Level.WARNING, ex,
+                    () -> "getValueBuffer failed at offset " + offset + ". Trying to get data as uncompressed");
+
             return getValueBuffer(offset);
         }
 
@@ -1759,13 +1755,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      */
     Variable getCDFVariable(final String vtype, final int number) {
 
-        if (vtype.charAt(0) == 'z') {
-            CDFVariable var = this.cdfZVariablesByNumber.get(number);
-            return var;
-        } else {
-            CDFVariable var = this.cdfRVariablesByNumber.get(number);
-            return var;
-        }
+        return 'z' == vtype.charAt(0) ? this.cdfZVariablesByNumber.get(number) : this.cdfRVariablesByNumber.get(number);
 
     }
 
@@ -2133,7 +2123,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
                 }
 
-                _padValue = new String(ba);
+                _padValue = new String(ba, StandardCharsets.US_ASCII);
                 String[] sa = new String[padValueSize];
 
                 for (int i = 0; i < padValueSize; i++) {
@@ -2571,7 +2561,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 int last = (int) location[1];
                 ByteBuffer bv = getRecord(location[2]);
                 int clen = ((last - first) + 1) * size;
-                // System.out.println("uclen: " + clen);
+
                 boolean compressed = false;
 
                 if (!isCompressed() || (bv.getInt(CDFImpl.this.offset_RECORD_TYPE) == VVR_RECORD_TYPE)) {
@@ -2580,7 +2570,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                     compressed = true;
                     bv.position(CDFImpl.this.offset_CDATA);
                     clen = lowOrderInt(bv, CDFImpl.this.offset_CSIZE);
-                    // System.out.println("clen: " + clen);
+
                 }
 
                 ByteBuffer bbuf = bv.slice();
@@ -3053,7 +3043,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
             if (this.recordGap) {
 
                 if (this.sRecords == 0) {
-                    System.out.println("Variable " + this.name + " is missing "
+                    LOGGER.log(Level.WARNING, "Variable " + this.name + " is missing "
                             + "records. This is not consistent with sRecords = 0");
                 }
 

@@ -4,6 +4,7 @@ import static gov.nasa.gsfc.spdf.cdfj.CDFDataTypes.*;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Attribute Entry Descriptor Record.
@@ -259,7 +260,8 @@ public class AEDR {
 
             int count = 1;
 
-            while ((lastIndex = new String(this.values).indexOf(STRINGDELIMITER, lastIndex)) != -1) {
+            while ((lastIndex = new String(this.values, StandardCharsets.US_ASCII).indexOf(STRINGDELIMITER,
+                    lastIndex)) != -1) {
                 count++;
                 lastIndex += STRINGDELIMITER.length() - 1;
             }
@@ -640,7 +642,7 @@ public class AEDR {
 
         }
 
-        this.values = s.getBytes();
+        this.values = s.getBytes(StandardCharsets.US_ASCII);
     }
 
     /**

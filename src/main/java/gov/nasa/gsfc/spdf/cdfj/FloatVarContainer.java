@@ -22,27 +22,27 @@ public final class FloatVarContainer extends BaseVarContainer implements VDataCo
      * Instantiates a new float var container.
      *
      * @param thisCDF  the this CDF
-     * @param var      the var
+     * @param variable the var
      * @param pt       the pt
      * @param preserve the preserve
      */
-    public FloatVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt, final boolean preserve) {
-        this(thisCDF, var, pt, preserve, ByteOrder.nativeOrder());
+    public FloatVarContainer(final CDFImpl thisCDF, final Variable variable, final int[] pt, final boolean preserve) {
+        this(thisCDF, variable, pt, preserve, ByteOrder.nativeOrder());
     }
 
     /**
      * Instantiates a new float var container.
      *
      * @param thisCDF  the this CDF
-     * @param var      the var
+     * @param variable the var
      * @param pt       the pt
      * @param preserve the preserve
      * @param bo       the bo
      */
-    public FloatVarContainer(final CDFImpl thisCDF, final Variable var, final int[] pt, final boolean preserve,
+    public FloatVarContainer(final CDFImpl thisCDF, final Variable variable, final int[] pt, final boolean preserve,
             final ByteOrder bo) {
-        super(thisCDF, var, pt, preserve, bo, Float.TYPE);
-        Object pad = this.thisCDF.getPadValue(var);
+        super(thisCDF, variable, pt, preserve, bo, Float.TYPE);
+        Object pad = this.thisCDF.getPadValue(variable);
 
         if (DataTypes.typeCategory[this.type] == DataTypes.LONG) {
             long[] lpad = (long[]) pad;
@@ -83,7 +83,7 @@ public final class FloatVarContainer extends BaseVarContainer implements VDataCo
      */
     public Object _asArray() {
 
-        int rank = this.var.getEffectiveRank();
+        int rank = this.variable.getEffectiveRank();
 
         if (rank > 4) {
             throw new IllegalStateException("Ranks > 4 are not supported at this time.ran");
@@ -105,7 +105,7 @@ public final class FloatVarContainer extends BaseVarContainer implements VDataCo
                 _buf.get(_a0);
                 return (this.singlePoint) ? Float.valueOf(_a0[0]) : _a0;
             case 1:
-                int n = ((this.var.getDimensionElementCounts()
+                int n = ((this.variable.getDimensionElementCounts()
                         .get(0)));
                 records = words / n;
                 float[][] _a1 = new float[records][n];
@@ -114,13 +114,13 @@ public final class FloatVarContainer extends BaseVarContainer implements VDataCo
                 }
                 return (this.singlePoint) ? _a1[0] : _a1;
             case 2:
-                int n0 = ((this.var.getDimensionElementCounts()
+                int n0 = ((this.variable.getDimensionElementCounts()
                         .get(0)));
-                int n1 = ((this.var.getDimensionElementCounts()
+                int n1 = ((this.variable.getDimensionElementCounts()
                         .get(1)));
                 records = words / (n0 * n1);
                 float[][][] _a2 = new float[records][n0][n1];
-                if (this.var.rowMajority()) {
+                if (this.variable.rowMajority()) {
 
                     for (int r = 0; r < records; r++) {
 
@@ -147,15 +147,15 @@ public final class FloatVarContainer extends BaseVarContainer implements VDataCo
                 }
                 return (this.singlePoint) ? _a2[0] : _a2;
             case 3:
-                n0 = ((this.var.getDimensionElementCounts()
+                n0 = ((this.variable.getDimensionElementCounts()
                         .get(0)));
-                n1 = ((this.var.getDimensionElementCounts()
+                n1 = ((this.variable.getDimensionElementCounts()
                         .get(1)));
-                int n2 = ((this.var.getDimensionElementCounts()
+                int n2 = ((this.variable.getDimensionElementCounts()
                         .get(2)));
                 records = words / (n0 * n1 * n2);
                 float[][][][] _a3 = new float[records][n0][n1][n2];
-                if (this.var.rowMajority()) {
+                if (this.variable.rowMajority()) {
 
                     for (int r = 0; r < records; r++) {
 
@@ -190,17 +190,17 @@ public final class FloatVarContainer extends BaseVarContainer implements VDataCo
                 }
                 return (this.singlePoint) ? _a3[0] : _a3;
             case 4:
-                n0 = ((this.var.getDimensionElementCounts()
+                n0 = ((this.variable.getDimensionElementCounts()
                         .get(0)));
-                n1 = ((this.var.getDimensionElementCounts()
+                n1 = ((this.variable.getDimensionElementCounts()
                         .get(1)));
-                n2 = ((this.var.getDimensionElementCounts()
+                n2 = ((this.variable.getDimensionElementCounts()
                         .get(2)));
-                int n3 = ((this.var.getDimensionElementCounts()
+                int n3 = ((this.variable.getDimensionElementCounts()
                         .get(3)));
                 records = words / (n0 * n1 * n2 * n3);
                 float[][][][][] _a4 = new float[records][n0][n1][n2][n3];
-                if (this.var.rowMajority()) {
+                if (this.variable.rowMajority()) {
 
                     for (int r = 0; r < records; r++) {
 
@@ -440,14 +440,7 @@ public final class FloatVarContainer extends BaseVarContainer implements VDataCo
     @Override
     void doMissing(final int records, final ByteBuffer _buf, final Object _data, final int rec) {
         float[] data = (float[]) _data;
-        float[] repl = null;
-
-        try {
-            repl = (rec < 0) ? this.fpad : this.var.asFloatArray(new int[] { rec });
-        } catch (RuntimeException th) {
-            th.printStackTrace();
-            System.out.println("Should not see this.");
-        }
+        float[] repl = (rec < 0) ? this.fpad : this.variable.asFloatArray(new int[] { rec });
 
         int position = _buf.position();
         FloatBuffer fbuf = _buf.asFloatBuffer();
