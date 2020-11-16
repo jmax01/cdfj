@@ -11,18 +11,17 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
+import lombok.extern.java.Log;
 
 /**
  * CDFReader extends GenericReader with access methods for time series
  * variables. Time series methods of this class do not require a detailed
  * knowledge of the internal structure of CDF.
  */
+@Log
 public class CDFReader extends GenericReader implements Closeable {
-
-    static final Logger LOGGER = CDFLogging.newLogger(CDFReader.class);
 
     Scalar scalar;
 

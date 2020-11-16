@@ -17,16 +17,18 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+
+import lombok.extern.java.Log;
 
 /**
  * The Class CDFUrl.
  *
  * @author nand
  */
+@Log
 public class CDFUrl {
 
     /** The Constant DST_ROOT_CAX3_CERTIFICATE_ALIAS. */
@@ -37,8 +39,6 @@ public class CDFUrl {
 
     /** The Constant SSL_CONTEXT_PROTOCOL_NAME. */
     public static final String SSL_CONTEXT_PROTOCOL_NAME = "TLSv1.2";
-
-    static final Logger LOGGER = CDFLogging.newLogger(CDFUrl.class);
 
     static final String certificateAsString = "DST Root CA X3\n==============\n-----BEGIN CERTIFICATE-----\n"
             + "MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/MSQwIgYDVQQK\n"

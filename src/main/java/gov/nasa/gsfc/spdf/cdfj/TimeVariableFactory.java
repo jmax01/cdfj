@@ -8,19 +8,19 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import lombok.extern.java.Log;
 
 /**
  * A factory for creating TimeVariable objects.
  *
  * @author nand
  */
+@Log
 public final class TimeVariableFactory {
 
     /** The Constant JANUARY_1_1970. */
     public static final double JANUARY_1_1970;
-
-    static final Logger LOGGER = CDFLogging.newLogger(TimeVariableFactory.class);
 
     static final long LONG_FILL = -9_223_372_036_854_775_807L;
 
@@ -376,10 +376,8 @@ public final class TimeVariableFactory {
     /**
      * The Class CDFTimeVariable.
      */
+    @Log
     public abstract static class CDFTimeVariable implements TimeVariableX {
-
-        @SuppressWarnings("hiding")
-        static final Logger LOGGER = CDFLogging.newLogger(CDFTimeVariable.class);
 
         CDFImpl cdf;
 

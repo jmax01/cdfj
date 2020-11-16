@@ -17,18 +17,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Logger;
 
 import gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError;
+import lombok.extern.java.Log;
 
 /**
  * Base class for creating a version 3.6 CDF.
  * Derived class CDFWriter provides methods for creating a CDF
  * which includes user selected data from existing CDFs.
  */
+@Log
 public class GenericWriter {
-
-    static final Logger LOGGER = CDFLogging.newLogger(GenericWriter.class);
 
     LinkedHashMap<String, ADR> attributes = new LinkedHashMap<>();
 

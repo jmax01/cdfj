@@ -19,16 +19,15 @@ import java.util.stream.Collectors;
 
 import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
 import gov.nasa.gsfc.spdf.cdfj.CDFException.WriterError;
+import lombok.extern.java.Log;
 
 /**
  * Extends GenericWriter with methods to include user selected data from CDFs.
  */
+@Log
 public class CDFWriter extends GenericWriter {
 
     static final Logger anonymousLogger = Logger.getAnonymousLogger();
-
-    @SuppressWarnings("hiding")
-    static final Logger LOGGER = CDFLogging.newLogger(CDFWriter.class);
 
     static final String[] DO_NOT_CHECK_LIST_GLOBAL_AS_ARRAY = { "Logical_file_id", "Generation_date",
             "Software_version" };

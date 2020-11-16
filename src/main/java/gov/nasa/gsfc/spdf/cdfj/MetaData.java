@@ -4,19 +4,18 @@ import java.nio.ByteOrder;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.Vector;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
+import lombok.extern.java.Log;
 
 /**
  * Abstract base class for GenericReader.
  * Provides methods to access CDF properties, global attributes, variable
  * properties and attributes.
  */
+@Log
 public abstract class MetaData {
-
-    private static final Logger LOGGER = CDFLogging.newLogger(MetaData.class);
 
     CDFImpl thisCDF;
 

@@ -17,16 +17,16 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
+
+import lombok.extern.java.Log;
 
 /**
  * CDFFactory creates an instance of CDFImpl from a CDF source.
  * The source CDF can be a file, a byte array, or a URL.
  */
+@Log
 public final class CDFFactory {
-
-    static final Logger LOGGER = CDFLogging.newLogger(CDFFactory.class);
 
     /** The Constant CDF_V3_MAGIC_NUMBER_1. */
     public static final int CDF_V3_MAGIC_NUMBER_1 = 0xCDF3_0001;

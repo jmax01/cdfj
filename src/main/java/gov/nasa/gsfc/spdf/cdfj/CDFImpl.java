@@ -21,12 +21,13 @@ import java.util.Optional;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 import lombok.ToString;
+import lombok.extern.java.Log;
 
+@Log
 abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
     private static final long serialVersionUID = -7106016786475171626L;
@@ -51,8 +52,6 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
     /** The Constant STRINGDELIMITER. */
     public static final String STRINGDELIMITER = "\\N ";
-
-    static final Logger LOGGER = CDFLogging.newLogger(CDFImpl.class);
 
     transient volatile FileChannel fileChannel;
 

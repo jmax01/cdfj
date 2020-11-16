@@ -15,19 +15,18 @@ import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
 import gov.nasa.gsfc.spdf.cdfj.CDFFactory.FileCDFSource;
+import lombok.extern.java.Log;
 
 /**
  * ReaderFactory creates an instance of CDFReader from a CDF source.
  * Uses array backed ByteBuffer for CDFReader.
  * The source CDF can be a file, or a URL.
  */
+@Log
 public final class ReaderFactory {
-
-    static final Logger LOGGER = CDFLogging.newLogger(ReaderFactory.class);
 
     /**
      * creates CDFReader object from a file using array backed ByteBuffer.

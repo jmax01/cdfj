@@ -13,16 +13,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Logger;
+
+import lombok.extern.java.Log;
 
 /**
  * The Class Extractor.
  *
  * @author nand
  */
+@Log
 public class Extractor {
-
-    static final Logger LOGGER = CDFLogging.newLogger(Extractor.class);
 
     static final int MAX_ARRAY = 3;
 

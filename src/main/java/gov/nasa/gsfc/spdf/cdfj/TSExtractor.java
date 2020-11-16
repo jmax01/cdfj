@@ -4,19 +4,17 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.Calendar;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
+import lombok.extern.java.Log;
 
 /**
  * The Class TSExtractor.
  *
  * @author nand
  */
+@Log
 public class TSExtractor extends Extractor {
-
-    @SuppressWarnings("hiding")
-    static final Logger LOGGER = CDFLogging.newLogger(TSExtractor.class);
 
     static {
 
