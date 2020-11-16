@@ -1278,7 +1278,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      * Gets the variable by name.
      *
      * @param name the name
-     * 
+     *
      * @return the variable by name
      */
     public Optional<Variable> getVariableByName(final String name) {
@@ -1685,11 +1685,11 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
                 variableNamesAsList.add(variableName);
 
-                if ( cdfv.isTypeR() ) {
-                    this.cdfRVariablesByNumber.put( cdfv.number, cdfv );
+                if (cdfv.isTypeR()) {
+                    this.cdfRVariablesByNumber.put(cdfv.number, cdfv);
                 } else {
-                    this.cdfZVariablesByNumber.put( cdfv.number, cdfv );
-                }                
+                    this.cdfZVariablesByNumber.put(cdfv.number, cdfv);
+                }
 
                 this.cdfVariablesByName.put(variableName, cdfv);
 
@@ -1761,13 +1761,14 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      */
     Variable getCDFVariable(final String vtype, final int number) {
 
-        if ( vtype.charAt(0)=='z' ) {
-            CDFVariable var= this.cdfZVariablesByNumber.get( number );
+        if (vtype.charAt(0) == 'z') {
+            CDFVariable var = this.cdfZVariablesByNumber.get(number);
             return var;
         } else {
-            CDFVariable var= this.cdfRVariablesByNumber.get( number );
+            CDFVariable var = this.cdfRVariablesByNumber.get(number);
             return var;
         }
+
     }
 
     Object getFillValue(final VariableMetaData variableMetaData) {

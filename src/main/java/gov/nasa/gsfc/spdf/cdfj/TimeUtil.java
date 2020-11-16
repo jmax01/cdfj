@@ -128,8 +128,7 @@ public final class TimeUtil {
 
     static Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
-    private TimeUtil() {
-    }
+    private TimeUtil() {}
 
     /**
      * Gets the offset.
@@ -330,6 +329,7 @@ public final class TimeUtil {
             }
 
             int adjust = 0;
+
             for (int i = (leapSecondIds.length - 1); i >= 0; i--) {
 
                 if (id != leapSecondIds[i]) {
@@ -358,8 +358,7 @@ public final class TimeUtil {
      */
     public static final class Validator {
 
-        private Validator() {
-        }
+        private Validator() {}
 
         /**
          * Corrected if necessary.

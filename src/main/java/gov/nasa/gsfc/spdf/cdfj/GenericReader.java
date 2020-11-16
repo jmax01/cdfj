@@ -929,9 +929,9 @@ public class GenericReader extends MetaData {
      * Checks if the supplied variable name is a List.
      *
      * @param variableName the variable name
-     * 
+     *
      * @return true, if is a list
-     * 
+     *
      * @throws ReaderError the reader error
      */
     public final boolean isList(final String variableName) {

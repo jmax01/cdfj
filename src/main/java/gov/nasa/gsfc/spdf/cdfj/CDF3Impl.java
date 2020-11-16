@@ -151,7 +151,7 @@ final class CDF3Impl extends CDFImpl implements CDF3 {
     }
 
     @Override
-    int readRecordSizeFieldAsInt(ByteBuffer recordSizeFieldByteBuffer) {
+    int readRecordSizeFieldAsInt(final ByteBuffer recordSizeFieldByteBuffer) {
         return (int) recordSizeFieldByteBuffer.getLong(0);
     }
 }

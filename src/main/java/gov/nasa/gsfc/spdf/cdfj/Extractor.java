@@ -80,8 +80,8 @@ public class Extractor {
         // String rank 0 and 1 only
 
         try {
-            Method[] ma = new Method[]{cl.getMethod("getStringSeries0", cdfClass, variableClass),
-                    cl.getMethod("getStringSeries1", cdfClass, variableClass)};
+            Method[] ma = new Method[] { cl.getMethod("getStringSeries0", cdfClass, variableClass),
+                    cl.getMethod("getStringSeries1", cdfClass, variableClass) };
             stringMethodMap.put("Series", ma);
         } catch (NoSuchMethodException ex) {
             ex.printStackTrace();
@@ -385,6 +385,7 @@ public class Extractor {
         }
 
         Object temp = null;
+
         for (boolean firstBlock = true; blk < locations.size(); blk++) {
             long[] loc = locations.get(blk);
             int first = (int) loc[0];
@@ -606,8 +607,7 @@ public class Extractor {
             end = (int) (locations.get(locations.size() - 1)[1]);
         }
 
-        for (int blk = 0; blk < locations.size(); blk++) {
-            long[] loc = locations.get(blk);
+        for (long[] loc : locations) {
             int first = (int) loc[0];
             int last = (int) loc[1];
 
@@ -1367,6 +1367,7 @@ public class Extractor {
 
                 Number num;
                 Method method;
+
                 switch (DataTypes.typeCategory[type]) {
                     case 0:
                         return (double) bv.getFloat(pos);
@@ -2402,6 +2403,7 @@ public class Extractor {
                         double[] lastValue = var.asDoubleArray(new int[] { _last });
 
                         int n = 0;
+
                         for (int i = start; i <= end; i++) {
                             data[n++] = lastValue;
                         }
@@ -4376,6 +4378,7 @@ public class Extractor {
         try {
 
             Method method;
+
             switch (DataTypes.typeCategory[type]) {
                 case 0:
                     float[] tf = new float[number];
@@ -4446,6 +4449,7 @@ public class Extractor {
             Method method;
             int n = 0;
             double[] td = null;
+
             switch (DataTypes.typeCategory[type]) {
                 case 0:
                     float[] tf = new float[number];
@@ -5008,7 +5012,7 @@ public class Extractor {
 
     static CopyOnWriteArrayList<Integer> elementCount(final VariableMetaData var) {
         int[] dimensions = var.getDimensions();
-        CopyOnWriteArrayList<Integer> ecount = new CopyOnWriteArrayList<Integer>();
+        CopyOnWriteArrayList<Integer> ecount = new CopyOnWriteArrayList<>();
 
         for (int i = 0; i < dimensions.length; i++) {
 
@@ -5052,6 +5056,7 @@ public class Extractor {
         if (start > _last) { // after the last record
 
             int n = 0;
+
             if (!longType) {
                 double lastValue = var.asDoubleArray(new int[] { _last })[0];
                 double[] data = (double[]) _data;

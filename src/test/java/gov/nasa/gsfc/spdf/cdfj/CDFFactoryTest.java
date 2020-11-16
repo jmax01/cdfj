@@ -111,7 +111,7 @@ class CDFFactoryTest {
 
         String magicNUmber2AsHex;
 
-        static CDFMagicNumbers from(Path filePath) {
+        static CDFMagicNumbers from(final Path filePath) {
 
             try (FileChannel fc = FileChannel.open(filePath)) {
                 ByteBuffer byteBuffer = ByteBuffer.allocate(8);
@@ -123,7 +123,7 @@ class CDFFactoryTest {
 
         }
 
-        static CDFMagicNumbers from(Path filePath, int mn1, int mn2) {
+        static CDFMagicNumbers from(final Path filePath, final int mn1, final int mn2) {
             return new CDFMagicNumbers(filePath, Integer.toHexString(mn1), Integer.toHexString(mn2));
         }
     }
@@ -270,7 +270,7 @@ class CDFFactoryTest {
 
     }
 
-    static List<ADR> readAdrs(FileChannel fc, GDR gdr) throws IOException {
+    static List<ADR> readAdrs(final FileChannel fc, final GDR gdr) throws IOException {
 
         long nextAdr = gdr.getAdrHead();
 
@@ -286,7 +286,7 @@ class CDFFactoryTest {
         return adrs;
     }
 
-    static ADR readAdr(FileChannel fc, long adrHead) throws IOException {
+    static ADR readAdr(final FileChannel fc, final long adrHead) throws IOException {
 
         fc.position(adrHead);
 
@@ -425,9 +425,9 @@ class CDFFactoryTest {
     static class CDFDescriptorRecordV3 extends AbstractCDFDecriptorRecord<Long, Long> {
 
         @Builder
-        public CDFDescriptorRecordV3(long recordSize, int recordType, Long gdrOffset, int version, int release,
-                int encoding, int flags, int rfuA, int rfuB, int increment, int identifier, int rfuE,
-                String copyright) {
+        public CDFDescriptorRecordV3(final long recordSize, final int recordType, final Long gdrOffset,
+                final int version, final int release, final int encoding, final int flags, final int rfuA,
+                final int rfuB, final int increment, final int identifier, final int rfuE, final String copyright) {
 
             super(recordSize, recordType, gdrOffset, version, release, encoding, flags, rfuA, rfuB, increment,
                     identifier, rfuE, copyright);
@@ -440,9 +440,9 @@ class CDFFactoryTest {
     static class CDFDescriptorRecordV2_6V2_7 extends AbstractCDFDecriptorRecord<Integer, Integer> {
 
         @Builder
-        public CDFDescriptorRecordV2_6V2_7(int recordSize, int recordType, int gdrOffset, int version, int release,
-                int encoding, int flags, int rfuA, int rfuB, int increment, int identifier, int rfuE,
-                String copyright) {
+        public CDFDescriptorRecordV2_6V2_7(final int recordSize, final int recordType, final int gdrOffset,
+                final int version, final int release, final int encoding, final int flags, final int rfuA,
+                final int rfuB, final int increment, final int identifier, final int rfuE, final String copyright) {
 
             super(recordSize, recordType, gdrOffset, version, release, encoding, flags, rfuA, rfuB, increment,
                     identifier, rfuE, copyright);

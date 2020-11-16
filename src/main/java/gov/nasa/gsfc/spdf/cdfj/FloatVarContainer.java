@@ -313,6 +313,7 @@ public final class FloatVarContainer extends BaseVarContainer implements VDataCo
         try {
 
             int processed = 0;
+
             switch (DataTypes.typeCategory[type]) {
                 case 0:
                     int ipos = bv.position();

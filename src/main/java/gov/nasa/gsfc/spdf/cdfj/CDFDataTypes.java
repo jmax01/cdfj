@@ -56,8 +56,7 @@ public final class CDFDataTypes {
     /** 1-byte, unsigned character (ASCII). */
     public static final int CDF_UCHAR_INTERNAL_VALUE = 52;
 
-    private CDFDataTypes() {
-    }
+    private CDFDataTypes() {}
 
     /**
      * Checks if is 8 byte double percision type.

@@ -105,6 +105,5 @@ public final class CDFRecordTypes {
      */
     public static final int UIR_RECORD_TYPE_INTERNAL_VALUE = -1;
 
-    private CDFRecordTypes() {
-    }
+    private CDFRecordTypes() {}
 }

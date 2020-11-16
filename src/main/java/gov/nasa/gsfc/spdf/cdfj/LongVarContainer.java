@@ -308,6 +308,7 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
         try {
 
             int processed = 0;
+
             switch (DataTypes.typeCategory[type]) {
                 case 2:
                     method = DataTypes.method[type];

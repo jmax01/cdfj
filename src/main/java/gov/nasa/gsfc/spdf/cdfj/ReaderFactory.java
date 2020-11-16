@@ -33,8 +33,7 @@ public final class ReaderFactory {
      */
     static final int preamble = 3_000;
 
-    private ReaderFactory() {
-    }
+    private ReaderFactory() {}
 
     /**
      * Gets the reader.

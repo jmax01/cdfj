@@ -431,6 +431,7 @@ public class DataContainer {
         if (!this._bufs.isEmpty()) {
 
             int nbuf = 0;
+
             for (VXR vxr1 : this.vxrs) {
                 buf.put(vxr1.get());
 
@@ -503,6 +504,7 @@ public class DataContainer {
         if (!this._bufs.isEmpty()) {
 
             int nbuf = 0;
+
             for (VXR vxr1 : this.vxrs) {
                 channel.write(vxr1.get());
 

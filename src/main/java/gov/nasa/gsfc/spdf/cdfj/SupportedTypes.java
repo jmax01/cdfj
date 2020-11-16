@@ -29,8 +29,7 @@ public final class SupportedTypes {
         supportedTypes[52] = CDFDataType.CHAR;
     }
 
-    private SupportedTypes() {
-    }
+    private SupportedTypes() {}
 
     /**
      * Returns CDFDataType object for specified CDF type.returns null if the type is

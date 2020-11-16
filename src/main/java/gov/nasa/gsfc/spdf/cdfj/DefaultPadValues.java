@@ -24,8 +24,7 @@ public final class DefaultPadValues {
         padValues[33] = -9_223_372_036_854_775_807L;
     }
 
-    private DefaultPadValues() {
-    }
+    private DefaultPadValues() {}
 
     /**
      * Value.

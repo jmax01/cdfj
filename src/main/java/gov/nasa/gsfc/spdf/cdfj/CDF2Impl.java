@@ -202,7 +202,7 @@ final class CDF2Impl extends CDFImpl implements CDF2 {
     }
 
     @Override
-    int readRecordSizeFieldAsInt(ByteBuffer recordSizeFieldByteBuffer) {
+    int readRecordSizeFieldAsInt(final ByteBuffer recordSizeFieldByteBuffer) {
         return recordSizeFieldByteBuffer.getInt(0);
     }
 }

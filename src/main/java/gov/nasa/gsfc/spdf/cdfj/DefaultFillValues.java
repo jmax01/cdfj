@@ -24,8 +24,7 @@ public final class DefaultFillValues {
         fillValues[33] = -9_223_372_036_854_775_808L;
     }
 
-    private DefaultFillValues() {
-    }
+    private DefaultFillValues() {}
 
     /**
      * Value.

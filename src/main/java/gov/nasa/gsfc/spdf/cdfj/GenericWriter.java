@@ -1145,7 +1145,8 @@ public class GenericWriter {
      *
      * @throws IOException Signals that an I/O exception has occurred.
      */
-    public boolean write(final String fname, final boolean overwrite) throws IOException, java.io.FileNotFoundException {
+    public boolean write(final String fname, final boolean overwrite)
+            throws IOException, java.io.FileNotFoundException {
 
         if (this.leapSecondLastUpdated != -1) {
             this.gdr.setLeapSecondLastUpdated(this.leapSecondLastUpdated);
