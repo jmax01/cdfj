@@ -40,7 +40,7 @@ class ADRTest {
         final String name = "A";
         final byte[] expected = new byte[ADR_NAME_FIELD_LENGTH];
         expected[0] = name.getBytes()[0];
-        final byte[] actual = adr.getNameBytes(name);
+        final byte[] actual = ADR.getNameBytes(name);
 
         assertArrayEquals(expected, actual);
     }
