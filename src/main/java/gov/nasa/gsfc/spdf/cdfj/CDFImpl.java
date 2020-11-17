@@ -255,7 +255,8 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
             }
 
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+        }
+        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             throw new IllegalStateException(
                     "Failed to get number attributes for type," + type + " nelement " + nelement, ex);
         }
@@ -342,7 +343,6 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      */
     public void extractBytes(final int bufOffset, final byte[] ba, final int offset, final int len) {
         this.buf.duplicate()
-                .position(bufOffset)
                 .get(ba, offset, len);
     }
 
@@ -1242,7 +1242,8 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 toRead -= n;
             }
 
-        } catch (IOException ex) {
+        }
+        catch (IOException ex) {
 
             LOGGER.log(Level.WARNING, ex,
                     () -> "getValueBuffer failed at offset " + offset + ". Trying to get data as uncompressed");
@@ -1468,7 +1469,8 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 return getRecord(offset, size);
             }
 
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Failed to read from file channel", e);
             return null;
         }
@@ -1504,7 +1506,8 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
             bb.position(0);
             return bb;
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new UncheckedIOException(
                     String.format("Failed to get record at offset %s, with size %s", offset, size), e);
         }
@@ -2271,7 +2274,8 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                         ByteOrder.nativeOrder());
                 container.run();
                 return container.asOneDArray(targetAttribute.columnMajor);
-            } catch (RuntimeException e) {
+            }
+            catch (RuntimeException e) {
                 throw new UnsupportedOperationException("Variable " + this.name + " cannot return a double[].", e);
             }
 

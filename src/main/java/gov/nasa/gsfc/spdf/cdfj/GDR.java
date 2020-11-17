@@ -386,7 +386,7 @@ public class GDR {
      */
     public ByteBuffer get() {
 
-        return ByteBuffer.allocate(GDR_FIXED_SEGMENT_SIZE)
+        ByteBuffer bb = ByteBuffer.allocate(GDR_FIXED_SEGMENT_SIZE)
                 .putLong(GDR_FIXED_SEGMENT_SIZE)
                 .putInt(GDR_RECORD_TYPE)
                 .putLong(this.rVDRHead)
@@ -401,8 +401,9 @@ public class GDR {
                 .putLong(this.uirHead)
                 .putInt(this.rfuC)
                 .putInt(this.leapSecondLastUpdated)
-                .putInt(this.rfuE)
-                .position(0);
+                .putInt(this.rfuE);
+        bb.position(0);
+        return bb;
 
     }
 
