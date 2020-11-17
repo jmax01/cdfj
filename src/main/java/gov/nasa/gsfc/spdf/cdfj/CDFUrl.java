@@ -21,14 +21,11 @@ import java.security.cert.CertificateFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
-import lombok.extern.java.Log;
-
 /**
  * The Class CDFUrl.
  *
  * @author nand
  */
-@Log
 public class CDFUrl {
 
     /** The Constant DST_ROOT_CAX3_CERTIFICATE_ALIAS. */
@@ -73,7 +70,8 @@ public class CDFUrl {
 
             try {
                 keyStore.load(newInputStream, "changeit".toCharArray());
-            } catch (NoSuchAlgorithmException e) {
+            }
+            catch (NoSuchAlgorithmException e) {
                 throw new IllegalStateException("Failed to load keyStore " + javaHomeCaCertsPath, e);
             }
 
@@ -86,7 +84,8 @@ public class CDFUrl {
 
             try {
                 keyStore.setCertificateEntry(DST_ROOT_CAX3_CERTIFICATE_ALIAS, certificate);
-            } catch (KeyStoreException e) {
+            }
+            catch (KeyStoreException e) {
                 throw new IllegalStateException(
                         "Failed to set certificate with alias " + DST_ROOT_CAX3_CERTIFICATE_ALIAS, e);
             }
@@ -95,14 +94,16 @@ public class CDFUrl {
 
             try {
                 trustManagerFactory = TrustManagerFactory.getInstance(defaultTrustManagerAlgorithm);
-            } catch (NoSuchAlgorithmException e) {
+            }
+            catch (NoSuchAlgorithmException e) {
                 throw new IllegalStateException(
                         "Failed to obtain TrustManagerFactory for algorithm" + defaultTrustManagerAlgorithm, e);
             }
 
             try {
                 trustManagerFactory.init(keyStore);
-            } catch (KeyStoreException e) {
+            }
+            catch (KeyStoreException e) {
                 throw new IllegalStateException("Failed to initialize trustManagerFactory with algorithm "
                         + defaultTrustManagerAlgorithm + " for " + javaHomeCaCertsPath + " keyStore", e);
             }
@@ -113,18 +114,23 @@ public class CDFUrl {
                 sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
 
                 SSLContext.setDefault(sslContext);
-            } catch (NoSuchAlgorithmException e) {
+            }
+            catch (NoSuchAlgorithmException e) {
                 throw new IllegalStateException(
                         "Failed to obtain an sslContext for " + SSL_CONTEXT_PROTOCOL_NAME + " protocol", e);
-            } catch (KeyManagementException e) {
+            }
+            catch (KeyManagementException e) {
                 throw new IllegalStateException("Failed to init sslContext", e);
             }
 
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new UncheckedIOException("Failed to read javaHomeCaCertsPath " + javaHomeCaCertsPath, e);
-        } catch (KeyStoreException e) {
+        }
+        catch (KeyStoreException e) {
             throw new IllegalStateException("Failed to obtain keystore instance of type " + defaultTypeKeyStore, e);
-        } catch (CertificateException e) {
+        }
+        catch (CertificateException e) {
             throw new IllegalStateException("Failed to generate certificate", e);
         }
 
