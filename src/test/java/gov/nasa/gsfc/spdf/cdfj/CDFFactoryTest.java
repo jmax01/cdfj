@@ -10,6 +10,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -41,7 +42,7 @@ class CDFFactoryTest {
 
         String fileName = "target/test-classes/bigcdf_compressed.cdf";
 
-        Path filePath = Path.of(fileName);
+        Path filePath = Paths.get(fileName);
 
         try (FileChannel fc = FileChannel.open(filePath)) {
 
@@ -71,7 +72,7 @@ class CDFFactoryTest {
 
         String fileName = "target/test-classes/mms1_fpi_fast_sitl_20150801132440_v0.0.0.cdf";
 
-        Path filePath = Path.of(fileName);
+        Path filePath = Paths.get(fileName);
 
         try (FileChannel fc = FileChannel.open(filePath)) {
 
@@ -117,7 +118,8 @@ class CDFFactoryTest {
                 ByteBuffer byteBuffer = ByteBuffer.allocate(8);
                 fc.read(byteBuffer);
                 return CDFMagicNumbers.from(filePath, byteBuffer.getInt(0), byteBuffer.getInt(4));
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
 
@@ -138,7 +140,8 @@ class CDFFactoryTest {
                     .forEach(cm -> LOGGER.info("Filename: {} Magic Number 1: {} Magic Number 2: {}", cm.getFilePath()
                             .getFileName(), cm.getMagicNumber1AsHex(), cm.getMagicNUmber2AsHex()));
 
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new UncheckedIOException(e);
 
         }
@@ -150,7 +153,7 @@ class CDFFactoryTest {
         // String fileName = "target/test-classes/tha_l2_scm_20160831_v01.cdf";
         String fileName = ReaderFactoryTest.CDFJ_BUILD_PATH.resolve("c1_waveform_wbd_200202080940_v01_subset.cdf")
                 .toString();
-        Path filePath = Path.of(fileName);
+        Path filePath = Paths.get(fileName);
 
         try (FileChannel fc = FileChannel.open(filePath)) {
 
@@ -317,7 +320,7 @@ class CDFFactoryTest {
                 .rfuE(adrBB.getInt(ADR.ADR_RFUE_FIELD_OFFSET));
 
         byte[] adrName = new byte[256];
-        adrBB.get(ADR.ADR_NUM_FIELD_OFFSET, adrName);
+        adrBB.get(adrName, ADR.ADR_NUM_FIELD_OFFSET, adrName.length);
         ADR adr = adrBuilder.name(new String(adrName, StandardCharsets.US_ASCII))
                 .build();
         return adr;

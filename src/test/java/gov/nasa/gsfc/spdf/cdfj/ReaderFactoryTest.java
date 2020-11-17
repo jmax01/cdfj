@@ -37,7 +37,7 @@ class ReaderFactoryTest {
     static final String PROJECT_BUILD_DIRECTORY_PATH_AS_STRING = System.getProperty("project.build.directory",
             "target");
 
-    static final Path CDFJ_BUILD_PATH = Path.of(PROJECT_BUILD_DIRECTORY_PATH_AS_STRING, "cdfj");
+    static final Path CDFJ_BUILD_PATH = Paths.get(PROJECT_BUILD_DIRECTORY_PATH_AS_STRING, "cdfj");
 
     static final File CDFJ_BUILD_DIRECTORY = createCdfjDir();
 
@@ -46,7 +46,8 @@ class ReaderFactoryTest {
         try {
             return Files.createDirectories(CDFJ_BUILD_PATH)
                     .toFile();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new UncheckedIOException(e);
         }
 
@@ -86,7 +87,8 @@ class ReaderFactoryTest {
 
                             Files.move(tmp, tmp.resolveSibling(filename));
 
-                        } catch (IOException e) {
+                        }
+                        catch (IOException e) {
                             throw new UncheckedIOException(e);
                         }
 
@@ -112,7 +114,8 @@ class ReaderFactoryTest {
 
                     try {
                         return new URL(cdfFileUrlAsString);
-                    } catch (MalformedURLException e) {
+                    }
+                    catch (MalformedURLException e) {
                         throw new UncheckedIOException(e);
                     }
 
@@ -164,7 +167,8 @@ class ReaderFactoryTest {
                         LOGGER.info("Variable Names {}", Arrays.toString(reader.getVariableNames()));
                         LOGGER.info("GlobalAttributeNames Names {}", Arrays.toString(reader.globalAttributeNames()));
                         LOGGER.info("All Attribute Names {}", Arrays.toString(reader.allAttributeNames()));
-                    } catch (ReaderError | IOException e1) {
+                    }
+                    catch (ReaderError | IOException e1) {
 
                         throw new RuntimeException(e1);
                     }
@@ -207,7 +211,8 @@ class ReaderFactoryTest {
                 ByteBuffer byteBuffer = ByteBuffer.allocate(8);
                 fc.read(byteBuffer);
                 return CDFMagicNumbers.from(filePath, byteBuffer.getInt(0), byteBuffer.getInt(4));
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
 
@@ -230,7 +235,8 @@ class ReaderFactoryTest {
 
             try {
                 fileChannel.read(recordSizeFieldByteBuffer, offset);
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 throw new UncheckedIOException("Failed to read recordSize field at offset, " + offset + ".", e);
             }
 
@@ -241,7 +247,8 @@ class ReaderFactoryTest {
 
             try {
                 fileChannel.read(recordByteBuffer, offset);
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 throw new UncheckedIOException("Failed to read " + size + " byte record at, offset, " + offset + ".",
                         e);
             }
