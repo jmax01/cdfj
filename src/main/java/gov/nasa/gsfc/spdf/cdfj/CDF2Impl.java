@@ -1,11 +1,13 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.nio.channels.FileChannel;
-import java.util.Arrays;
+import java.io.*;
+import java.nio.*;
+import java.nio.channels.*;
+import java.util.*;
 
-import gov.nasa.gsfc.spdf.cdfj.CDFFactory.CDFSource;
+import gov.nasa.gsfc.spdf.cdfj.CDFFactory.*;
+import gov.nasa.gsfc.spdf.cdfj.fields.*;
+import gov.nasa.gsfc.spdf.cdfj.records.*;
 
 final class CDF2Impl extends CDFImpl implements CDF2 {
 
@@ -46,35 +48,29 @@ final class CDF2Impl extends CDFImpl implements CDF2 {
             this.OFFSET_NUM = 52;
         }
 
+        ByteBuffer cdfDecriptorRecord = this.readRecord(8);
+
         this.OFFSET_zNumDims = this.VAR_OFFSET_NAME + MAX_STRING_SIZE;
         setOffsets();
         this.thisCDF = this;
-        IntBuffer ibuf = buf.asIntBuffer();
-        getRecord(8);
-        ibuf.position(2);
-        ibuf.get();
-        ibuf.position(3);
-        ibuf.get();
-        this.GDROffset = ibuf.get();
-        this.version = ibuf.get();
+        this.GDROffset = cdfDecriptorRecord.getInt(8);
+        this.version = cdfDecriptorRecord.getInt(12);
 
         if (this.version != CDF_VERSION) {
             throw new IllegalArgumentException("Version " + this.version + " is not accepted by this reader.");
         }
 
         // read release field
-        ibuf.get();
-        this.encoding = ibuf.get();
+
+        this.encoding = cdfDecriptorRecord.getInt(20);
         this.byteOrder = DataTypes.getByteOrder(this.encoding);
         setByteOrder(this.byteOrder);
-        this.flags = ibuf.get();
+        this.flags = cdfDecriptorRecord.getInt(24);
 
-        // rfuA
-        ibuf.get();
-        // rfuB
-        ibuf.get();
+        this.increment = cdfDecriptorRecord.getInt(36);
 
-        this.increment = ibuf.get();
+        ByteBuffer gdrDecriptorRecord = this.readRecord(GDROffset);
+
         // validate and extract GDR info
         int pos = this.GDROffset + 4;
         buf.position(pos);
@@ -112,7 +108,7 @@ final class CDF2Impl extends CDFImpl implements CDF2 {
 
         buf.position(0);
         variables();
-        attributes();
+        this.cdfAttributesByName = attributes();
     }
 
     /**
@@ -135,16 +131,11 @@ final class CDF2Impl extends CDFImpl implements CDF2 {
         this.source = cdfSource;
     }
 
+    @Deprecated
     @Override
     public String getString(final long offset) {
 
-        if (this.fileChannel == null) {
-            return getString(offset, MAX_STRING_SIZE);
-        }
-
-        ByteBuffer _buf = getRecord(offset, MAX_STRING_SIZE);
-
-        return getString(_buf, MAX_STRING_SIZE);
+        return this.readNameField(offset);
     }
 
     @Override
@@ -197,4 +188,27 @@ final class CDF2Impl extends CDFImpl implements CDF2 {
     int readRecordSizeFieldAsInt(final ByteBuffer recordSizeFieldByteBuffer) {
         return recordSizeFieldByteBuffer.getInt(0);
     }
+
+    @Override
+    protected String readNameFieldFromBuffer(final ByteBuffer byteBufferSource, final int offset) {
+        return NameFields.readV2NameField(byteBufferSource, offset);
+    }
+
+    @Override
+    protected String readNameFieldFromFileChannel(final long offset)
+
+            throws IllegalArgumentException, IOException {
+        return NameFields.readV2NameField(this.fileChannel, offset);
+    }
+
+    @Override
+    protected ByteBuffer readRecordFromBuffer(int offset) {
+        return RecordReaders.readV2Record(this.buf, offset);
+    }
+
+    @Override
+    protected ByteBuffer readRecordFromFileChannel(long offset) throws IOException, IllegalArgumentException {
+        return RecordReaders.readV2Record(this.fileChannel, offset);
+    }
+
 }

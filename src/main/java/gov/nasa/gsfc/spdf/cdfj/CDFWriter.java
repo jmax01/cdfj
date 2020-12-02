@@ -63,9 +63,11 @@ public class CDFWriter extends GenericWriter {
 
         try {
             _addCDF(cdf);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError(th);
-        } catch (ReaderError e) {
+        }
+        catch (ReaderError e) {
             throw new CDFException.WriterError(e);
         }
 
@@ -86,7 +88,8 @@ public class CDFWriter extends GenericWriter {
 
         try {
             _addCDF(cdf);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError(th);
         }
 
@@ -109,7 +112,8 @@ public class CDFWriter extends GenericWriter {
 
         try {
             _addCDF(cdf);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError(th);
         }
 
@@ -250,7 +254,8 @@ public class CDFWriter extends GenericWriter {
 
         try {
             _addCDF(genericReader);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError(th);
         }
 
@@ -273,7 +278,8 @@ public class CDFWriter extends GenericWriter {
 
         try {
             _addCDF(genericReader);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError(th);
         }
 
@@ -298,13 +304,15 @@ public class CDFWriter extends GenericWriter {
 
         try {
             cdf = new GenericReader(url);
-        } catch (CDFException.ReaderError th) {
+        }
+        catch (CDFException.ReaderError th) {
             throw new CDFException.WriterError("init CDFWriter failed for " + url, th);
         }
 
         try {
             _addCDF(cdf, variableNames(cdf, col));
-        } catch (CDFException.ReaderError | CDFException.WriterError th) {
+        }
+        catch (CDFException.ReaderError | CDFException.WriterError th) {
             throw new CDFException.WriterError("init CDFWriter failed for " + url, th);
         }
 
@@ -327,13 +335,15 @@ public class CDFWriter extends GenericWriter {
 
         try {
             cdf = new GenericReader(url);
-        } catch (CDFException.ReaderError th) {
+        }
+        catch (CDFException.ReaderError th) {
             throw new CDFException.WriterError("init CDFWriter failed for " + url, th);
         }
 
         try {
             _addCDF(cdf, variableNames(cdf, col));
-        } catch (CDFException.ReaderError | CDFException.WriterError th) {
+        }
+        catch (CDFException.ReaderError | CDFException.WriterError th) {
             throw new CDFException.WriterError("init CDFWriter failed for " + url, th);
         }
 
@@ -525,7 +535,8 @@ public class CDFWriter extends GenericWriter {
                                 firstTime = cdf.getOneDArray(vn, "long", new int[] { 0, 0 }, true, !this.rowMajority);
                             }
 
-                        } catch (CDFException.ReaderError th) {
+                        }
+                        catch (CDFException.ReaderError th) {
                             throw new CDFException.WriterError("addCDF failed", th);
                         }
 
@@ -578,7 +589,8 @@ public class CDFWriter extends GenericWriter {
 
         try {
             cdf = new GenericReader(url);
-        } catch (CDFException.ReaderError th) {
+        }
+        catch (CDFException.ReaderError th) {
             throw new CDFException.WriterError("addCDF failed for " + url, th);
         }
 
@@ -719,7 +731,8 @@ public class CDFWriter extends GenericWriter {
         try {
             defineVariable(vn, ctype, /* cdf.getDimensions(vn) */dims, /* cdf.getVarys(vn) */varys,
                     cdf.recordVariance(vn), compressed, cdf.getPadValue(vn, true), cdf.getNumberOfElements(vn), sro);
-        } catch (CDFException.ReaderError | CDFException.WriterError ex) {
+        }
+        catch (CDFException.ReaderError | CDFException.WriterError ex) {
 
             throw new CDFException.WriterError("Failed to define " + vn, ex);
         }
@@ -761,7 +774,8 @@ public class CDFWriter extends GenericWriter {
             try {
                 Variable variable = cdf.thisCDF.getVariable(vn);
                 dbufs = variable.getDataBuffers(true);
-            } catch (RuntimeException th) {
+            }
+            catch (RuntimeException th) {
                 throw new CDFException.ReaderError("copyVariableData failed for " + vn, th);
             }
 
@@ -774,7 +788,8 @@ public class CDFWriter extends GenericWriter {
 
             try {
                 _container = getContainer(cdf, vn);
-            } catch (RuntimeException th) {
+            }
+            catch (RuntimeException th) {
                 throw new CDFException.ReaderError("copyVariableData for " + vn, th);
             }
 
@@ -871,7 +886,8 @@ public class CDFWriter extends GenericWriter {
                 cdf = new GenericReader(fname);
             }
 
-        } catch (CDFException.ReaderError th) {
+        }
+        catch (CDFException.ReaderError th) {
             throw new CDFException.WriterError("addCDF for filename " + fname, th);
         }
 
@@ -938,7 +954,8 @@ public class CDFWriter extends GenericWriter {
 
             try {
                 tvar = cdf.getTimeVariableName(vname);
-            } catch (RuntimeException th) {
+            }
+            catch (RuntimeException th) {
                 LOGGER.log(Level.SEVERE, "getTimeVariableName failed", th);
                 tvar = null;
             }
@@ -957,7 +974,8 @@ public class CDFWriter extends GenericWriter {
 
         try {
             tvar = cdf.getTimeVariableName(vname);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             LOGGER.fine(th.toString());
             tvar = null;
         }
@@ -1082,7 +1100,8 @@ public class CDFWriter extends GenericWriter {
 
             try {
                 tvar = cdf.getTimeVariableName(vname);
-            } catch (RuntimeException th) {
+            }
+            catch (RuntimeException th) {
                 LOGGER.log(Level.WARNING, th, () -> "Variable name, " + vname + ", is not a Time Variable Name");
                 tvar = null;
             }

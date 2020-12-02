@@ -568,7 +568,8 @@ public final class DoubleVarContainer extends BaseVarContainer implements VDataC
                     throw new IllegalArgumentException("Unrecognized data type " + type);
             }
 
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        }
+        catch (IllegalAccessException | InvocationTargetException e) {
 
             throw new IllegalStateException("Failed to invoke method" + method, e);
         }

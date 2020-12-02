@@ -41,7 +41,8 @@ public class TSExtractor extends Extractor {
                     null, null };
             addFunction("TimeSeriesObject", cl, arglist);
 
-        } catch (ClassNotFoundException ex) {
+        }
+        catch (ClassNotFoundException ex) {
             throw new IllegalStateException("Could not find classes", ex);
         }
 
@@ -960,7 +961,8 @@ public class TSExtractor extends Extractor {
                 }
 
                 return this.tv.getTimes(this.timeRange, this.tspec);
-            } catch (RuntimeException th) {
+            }
+            catch (RuntimeException th) {
                 throw new CDFException.ReaderError(th);
             }
 
@@ -987,7 +989,8 @@ public class TSExtractor extends Extractor {
                 }
 
                 return this.thisCDF.getRangeOneD(this.vname, recordRange[0], recordRange[1], this.columnMajor);
-            } catch (RuntimeException th) {
+            }
+            catch (RuntimeException th) {
                 throw new CDFException.ReaderError(th);
             }
 

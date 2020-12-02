@@ -370,7 +370,8 @@ public class DataContainer {
                         this._bufs.set(nbuf, b);
                         int len = CVVR_PREAMBLE + b.limit();
                         size += len;
-                    } catch (IOException ex) {
+                    }
+                    catch (IOException ex) {
                         throw new UncheckedIOException(ex);
                     }
 

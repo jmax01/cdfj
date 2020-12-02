@@ -20,22 +20,9 @@ class ADRTest {
         return adr;
     }
 
-    // @Test
-    // void testProviders() {
-    // LOGGER.severe(() -> String.format("1 %s 2 %s", 1, 2));
-    // }
-    //
-    // @Test
-    // void testLogger() {
-    // LOGGER.log(Level.WARNING, "Warning");
-    // LOGGER.log(Level.SEVERE, "SEVERE");
-    // LOGGER.log(Level.INFO, "INFO");
-    // }
-
     @Test
     void testGetNameBytes() {
 
-        System.out.println(System.getProperty("java.io.tmpdir"));
         newDefaultAdrInstance();
         final String name = "A";
         final byte[] expected = new byte[ADR_NAME_FIELD_LENGTH];

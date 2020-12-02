@@ -7,6 +7,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <integrationTestSourcesDirectory>src/it/java</integrationTestSourcesDirectory>
 
     <!-- Maven Plugin Properties -->
     <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
@@ -50,10 +51,17 @@
     <maven-surefire-plugin.verison>3.0.0-M5</maven-surefire-plugin.verison>
 
     <!-- Third Party Plugin Properties -->
+    <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
+
     <dependency-check-maven.version>6.0.2</dependency-check-maven.version>
 
     <jacoco-maven-plugin.version>0.8.6</jacoco-maven-plugin.version>
     <jacoco.haltOnFailure>false</jacoco.haltOnFailure><!-- FIXME: remove after cleanup -->
+    <jacoco.coverageRatio>0.90</jacoco.coverageRatio>
+
+    <revapi-maven-plugin.version>0.12.2</revapi-maven-plugin.version>
+    <revapi.skip>true</revapi.skip><!-- FIXME: remove after cleanup -->
+    <revapi-java.version>0.22.1</revapi-java.version>
 
     <spotbugs-maven-plugin.version>4.1.4</spotbugs-maven-plugin.version>
     <spotbugs.effort>Max</spotbugs.effort>
@@ -69,8 +77,10 @@
 
     <!-- Dependency versions -->
     <lombok.version>1.18.16</lombok.version>
+    <jsoup.version>1.13.1</jsoup.version>
     <junit-bom.version>5.7.0</junit-bom.version>
     <log4j2.version>2.13.3</log4j2.version>
+    <spotbugs-annotations.version>4.1.2</spotbugs-annotations.version>
   </properties>
 
   <build>
@@ -133,6 +143,9 @@
         <plugin>
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>${maven-failsafe-plugin.version}</version>
+          <configuration>
+                 
+          </configuration>
         </plugin>
 
         <plugin>
@@ -208,6 +221,11 @@
           </configuration>
         </plugin>
 
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>${build-helper-maven-plugin.version}</version>
+        </plugin>
 
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
@@ -236,12 +254,31 @@
         <plugin>
           <groupId>org.revapi</groupId>
           <artifactId>revapi-maven-plugin</artifactId>
-          <version>0.12.2</version>
+          <version>${revapi-maven-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
 
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-it-sources</id>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${integrationTestSourcesDirectory}</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+
       <plugin>
         <artifactId>maven-enforcer-plugin</artifactId>
       </plugin>
@@ -281,19 +318,19 @@
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.90</minimum>
+                      <minimum>${jacoco.coverageRatio}</minimum>
                     </limit>
 
                     <limit>
                       <counter>LINE</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.90</minimum>
+                      <minimum>${jacoco.coverageRatio}</minimum>
                     </limit>
 
                     <limit>
                       <counter>BRANCH</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.90</minimum>
+                      <minimum>${jacoco.coverageRatio}</minimum>
                     </limit>
                   </limits>
                 </rule>
@@ -359,19 +396,22 @@
               <item>
                 <code>java.method.exception.checkedRemoved</code>
               </item>
+
               <item>
                 <code>java.class.added</code>
               </item>
             </revapi.ignore>
           </analysisConfiguration>
         </configuration>
+
         <dependencies>
           <dependency>
             <groupId>org.revapi</groupId>
             <artifactId>revapi-java</artifactId>
-            <version>0.22.1</version>
+            <version>${revapi-java.version}</version>
           </dependency>
         </dependencies>
+
         <executions>
           <execution>
             <goals>
@@ -394,9 +434,21 @@
       </dependency>
 
       <dependency>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-annotations</artifactId>
+        <version>${spotbugs-annotations.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
         <version>${lombok.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.jsoup</groupId>
+        <artifactId>jsoup</artifactId>
+        <version>${jsoup.version}</version>
       </dependency>
 
       <dependency>
@@ -494,7 +546,6 @@
     <dependency>
       <groupId>com.github.spotbugs</groupId>
       <artifactId>spotbugs-annotations</artifactId>
-      <version>4.1.2</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
@@ -525,7 +576,6 @@
     <dependency>
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
-      <version>1.13.1</version>
       <scope>test</scope>
     </dependency>
 

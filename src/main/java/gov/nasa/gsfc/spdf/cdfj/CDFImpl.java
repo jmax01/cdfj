@@ -1,31 +1,19 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.io.ByteArrayInputStream;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.Serializable;
-import java.io.UncheckedIOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Vector;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Level;
-import java.util.stream.Collectors;
-import java.util.zip.GZIPInputStream;
+import java.io.*;
+import java.lang.reflect.*;
+import java.nio.*;
+import java.nio.channels.*;
+import java.nio.charset.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.logging.*;
+import java.util.stream.*;
+import java.util.zip.*;
 
-import lombok.ToString;
-import lombok.extern.java.Log;
+import gov.nasa.gsfc.spdf.cdfj.records.*;
+import lombok.*;
+import lombok.extern.java.*;
 
 @Log
 abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
@@ -156,13 +144,13 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
     protected String[] variableNames;
 
     /** The variable table. */
-    private Map<String, CDFVariable> cdfVariablesByName;
+    protected Map<String, CDFVariable> cdfVariablesByName;
 
-    private Map<Integer, CDFVariable> cdfZVariablesByNumber;
+    protected Map<Integer, CDFVariable> cdfZVariablesByNumber;
 
-    private Map<Integer, CDFVariable> cdfRVariablesByNumber;
+    protected Map<Integer, CDFVariable> cdfRVariablesByNumber;
 
-    private Map<String, CDFAttribute> cdfAttributesByName;
+    protected Map<String, CDFAttribute> cdfAttributesByName;
 
     /** The this CDF. */
     protected CDFCore thisCDF;
@@ -280,6 +268,99 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
         return new TargetAttribute(p, c);
     }
 
+    /**
+     * Read name field from buffer.
+     *
+     * @param byteBufferSource the byte buffer source
+     * @param longOffest       the long offest
+     * 
+     * @return the string
+     */
+    abstract protected String readNameFieldFromBuffer(ByteBuffer byteBufferSource, int longOffest);
+
+    /**
+     * Read name field from file channel.
+     *
+     * @param offset the offset
+     *
+     * @return the string
+     *
+     * @throws IllegalArgumentException the illegal argument exception
+     * @throws IOException              Signals that an I/O exception has occurred.
+     */
+    abstract protected String readNameFieldFromFileChannel(final long offset)
+            throws IOException, IllegalArgumentException;
+
+    /**
+     * Read name field from buffer.
+     *
+     * @param byteBufferSource the byte buffer source
+     * @param offset
+     *
+     * @return the string
+     */
+    abstract protected ByteBuffer readRecordFromBuffer(int offset);
+
+    /**
+     * Read record from file channel.
+     *
+     * @param offset the offset
+     *
+     * @return the byte buffer
+     *
+     * @throws IOException              Signals that an I/O exception has occurred.
+     * @throws IllegalArgumentException the illegal argument exception
+     */
+    abstract protected ByteBuffer readRecordFromFileChannel(final long offset)
+            throws IOException, IllegalArgumentException;
+
+    public ByteBuffer readRecord(final long offset) {
+
+        if (this.fileChannel == null) {
+            return readRecordFromBuffer((int) offset);
+        }
+
+        try {
+
+            synchronized (this.fileChannel) {
+                return readRecordFromFileChannel(offset);
+            }
+
+        }
+        catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Failed to read from file channel", e);
+            return null;
+        }
+
+    }
+
+    @Override
+    public String readNameField(final long offset) {
+
+        if (this.fileChannel == null) {
+            return readNameFieldFromBuffer(this.buf, (int) offset);
+        }
+
+        synchronized (this.fileChannel) {
+
+            try {
+                return readNameFieldFromFileChannel(offset);
+            }
+            catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("readNameField failed at offset " + offset, e);
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException("readNameField failed at offset" + offset, e);
+            }
+
+        }
+
+    }
+
+    public Map<String, CDFAttribute> cdfAttributesByName() {
+        return this.cdfAttributesByName;
+    }
+
     @Override
     public List<AttributeEntry> attributeEntries(final String attributeName) {
 
@@ -306,7 +387,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
         CDFVariable cdfVariable = this.cdfVariablesByName.get(variableName);
 
         if (cdfVariable == null) {
-            return null;
+            return Collections.emptyList();
         }
 
         return Collections.unmodifiableList(cdfVariable.getAttributes()
@@ -688,14 +769,14 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      *
      * @return the attribute entries or null
      *
-     * @deprecated
+     * @deprecated use {@link #attributeEntries(String, String))}
      */
     @Deprecated
     @Override
     public Vector<AttributeEntry> getAttributeEntries(final String variableName, final String attributeName) {
         List<AttributeEntry> attributeEntries = attributeEntries(variableName, attributeName);
 
-        return (attributeEntries == null) ? null : new Vector<>(attributeEntries);
+        return (attributeEntries == null || attributeEntries.isEmpty()) ? null : new Vector<>(attributeEntries);
 
     }
 
@@ -921,6 +1002,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      * @return the long
      */
     public Object getLong(final String variableName) {
+
         Variable variable = getVariable(variableName);
 
         if (variable == null) {
@@ -1177,16 +1259,13 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      * @param offset the offset
      *
      * @return the string
+     *
+     * @deprecated use {@link #readNameField(long)}
      */
+    @Deprecated
     public String getString(final long offset) {
 
-        if (this.fileChannel == null) {
-            return getString(offset, maxStringSize());
-        }
-
-        ByteBuffer _buf = getRecord(offset, maxStringSize());
-
-        return getString(_buf, maxStringSize());
+        return readNameField(offset);
     }
 
     /**
@@ -1197,7 +1276,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      * @return the value buffer
      */
     public ByteBuffer getValueBuffer(final long offset) {
-        ByteBuffer bv = getRecord(offset);
+        ByteBuffer bv = readRecord(offset);
         bv.position(this.offset_RECORDS);
         return bv;
     }
@@ -1212,7 +1291,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      * @return the value buffer
      */
     public ByteBuffer getValueBuffer(final long offset, final int size, final int number) {
-        ByteBuffer bv = getRecord(offset);
+        ByteBuffer bv = readRecord(offset);
 
         if (bv.getInt(this.offset_RECORD_TYPE) == VVR_RECORD_TYPE) {
             bv.position(this.offset_RECORDS);
@@ -1448,32 +1527,13 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      * @param offset the offset
      *
      * @return the record
+     * 
+     * @deprecated use {@link #readRecord(long)}
      */
+    @Deprecated
     protected ByteBuffer getRecord(final long offset) {
 
-        if (this.fileChannel == null) {
-            ByteBuffer _buf = this.buf.duplicate();
-            _buf.position((int) offset);
-            return _buf.slice();
-        }
-
-        ByteBuffer recordSizeFieldByteBuffer = ByteBuffer.allocate(recordSizeFieldSize());
-
-        try {
-
-            synchronized (this.fileChannel) {
-                this.fileChannel.position(offset);
-                this.fileChannel.read(recordSizeFieldByteBuffer);
-                recordSizeFieldByteBuffer.position(0);
-                int size = readRecordSizeFieldAsInt(recordSizeFieldByteBuffer);
-                return getRecord(offset, size);
-            }
-
-        }
-        catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Failed to read from file channel", e);
-            return null;
-        }
+        return readRecord(offset);
 
     }
 
@@ -1487,29 +1547,13 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      */
     protected ByteBuffer getRecord(final long offset, final int size) {
 
-        ByteBuffer bb = ByteBuffer.allocate(size);
-
         try {
-            int got = 0;
+            return RecordReaders.read(fileChannel, offset, size);
 
-            synchronized (this.fileChannel) {
-                this.fileChannel.position(offset);
-
-                got = this.fileChannel.read(bb);
-            }
-
-            if (got != size) {
-
-                throw new IllegalArgumentException(String.format(
-                        "Failed to get record at offset %s, needed %s bytes, got %s bytes.", offset, size, got));
-            }
-
-            bb.position(0);
-            return bb;
         }
         catch (IOException e) {
             throw new UncheckedIOException(
-                    String.format("Failed to get record at offset %s, with size %s", offset, size), e);
+                    String.format("Failed to read record at offset %s, with size %s", offset, size), e);
         }
 
     }
@@ -1558,7 +1602,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      * @return the string
      */
     protected String getString(final long offset, final int max) {
-        return getString(getRecord(offset), max);
+        return getString(readRecord(offset), max);
     }
 
     /**
@@ -1590,10 +1634,15 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
     protected abstract int lowOrderInt(ByteBuffer byteBuffer, int offset);
 
     /**
+     * Do not use
+     * <p>
      * Sets the buffer.
      *
      * @param b the new buffer
+     * 
+     * @deprecated for removal
      */
+    @Deprecated
     protected void setBuffer(final ByteBuffer b) {
         this.buf = b;
     }
@@ -1630,7 +1679,10 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      * Sets the source.
      *
      * @param source the new source
+     * 
+     * @deprecated for removal
      */
+    @Deprecated
     protected void setSource(final CDFFactory.CDFSource source) {
         this.source = source;
     }
@@ -1666,7 +1718,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 continue;
             }
 
-            ByteBuffer _buf = getRecord(offset);
+            ByteBuffer _buf = readRecord(offset);
 
             while (true) {
                 _buf.position(this.offset_NEXT_VDR);
@@ -1694,7 +1746,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 }
 
                 offset = next;
-                _buf = getRecord(offset);
+                _buf = readRecord(offset);
             }
 
         }
@@ -1710,21 +1762,18 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      */
     Map<String, CDFAttribute> attributes() {
 
-        if (this.cdfAttributesByName != null) {
-            return this.cdfAttributesByName;
-        }
-
-        this.cdfAttributesByName = new HashMap<>();
+        Map<String, CDFAttribute> _cdfAttributesByName = new HashMap<>();
 
         LOGGER.entering("CDFImpl", "attributes");
 
-        long offset = this.ADRHead;
+        long adrHeadOffset = this.ADRHead;
+        LOGGER.log(Level.FINE, "ADR head offset: " + adrHeadOffset);
 
-        if (offset == 0) {
+        if (adrHeadOffset == 0) {
             return null;
         }
 
-        ByteBuffer _buf = getRecord(offset);
+        ByteBuffer _buf = readRecord(adrHeadOffset);
 
         while (true) {
 
@@ -1732,11 +1781,11 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
             long next = longInt(_buf);
 
-            CDFAttribute cdfa = new CDFAttribute(offset);
+            CDFAttribute cdfa = new CDFAttribute(adrHeadOffset);
 
             String attributeName = cdfa.getName();
 
-            if ((this.cdfAttributesByName.put(attributeName, cdfa)) != null) {
+            if ((_cdfAttributesByName.put(attributeName, cdfa)) != null) {
                 LOGGER.log(Level.WARNING, "Duplicate attribute: {0}", attributeName);
             }
 
@@ -1744,12 +1793,12 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                 break;
             }
 
-            offset = next;
-            _buf = getRecord(offset);
+            adrHeadOffset = next;
+            _buf = readRecord(adrHeadOffset);
         }
 
         LOGGER.exiting("CDFImpl", "attributes");
-        return this.cdfAttributesByName;
+        return Collections.unmodifiableMap(_cdfAttributesByName);
     }
 
     /**
@@ -2015,7 +2064,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
         private final String name;
 
-        private final int number;
+        final int number;
 
         private final String vtype;
 
@@ -2055,8 +2104,8 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
          */
         public CDFVariable(final long offset, final String vtype) {
             this.vtype = vtype;
-            this._buf = getRecord(offset);
-            this.name = getString(offset + CDFImpl.this.offset_VAR_NAME);
+            this._buf = readRecord(offset);
+            this.name = readNameField(offset + CDFImpl.this.offset_VAR_NAME);
             this._buf.position(CDFImpl.this.offset_VAR_NUM_ELEMENTS);
             this.numberOfElements = this._buf.getInt();
             this._buf.position(CDFImpl.this.offset_NUM);
@@ -2562,7 +2611,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
             for (long[] location : locations) {
                 int first = (int) location[0];
                 int last = (int) location[1];
-                ByteBuffer bv = getRecord(location[2]);
+                ByteBuffer bv = readRecord(location[2]);
                 int clen = ((last - first) + 1) * size;
 
                 boolean compressed = false;
@@ -3102,7 +3151,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
             this.compressed = compr;
             b.position(CDFImpl.this.offset_FIRST_VXR);
             long offset = longInt(b);
-            ByteBuffer bx = getRecord(offset);
+            ByteBuffer bx = readRecord(offset);
             List<long[]> locs = _getLocations(bx);
             registerNodes(locs);
         }
@@ -3195,7 +3244,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                     break;
                 }
 
-                bx = getRecord(next);
+                bx = readRecord(next);
             }
 
             return locs;
@@ -3205,7 +3254,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
             for (long[] loc : locs) {
 
-                ByteBuffer bb = getRecord(loc[2]);
+                ByteBuffer bb = readRecord(loc[2]);
 
                 if (bb.getInt(CDFImpl.this.offset_RECORD_TYPE) == VXR_RECORD_TYPE) {
 
@@ -3242,11 +3291,11 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
         CDFAttribute(final long offset) {
 
-            this.name = getString(offset + CDFImpl.this.offset_ATTR_NAME);
+            this.name = readNameField(offset + CDFImpl.this.offset_ATTR_NAME);
 
             LOGGER.log(Level.FINER, "new attribute {0} at {1}", new Object[] { this.name, offset });
 
-            ByteBuffer _buf = getRecord(offset);
+            ByteBuffer _buf = readRecord(offset);
 
             _buf.position(CDFImpl.this.offset_SCOPE);
 
@@ -3300,7 +3349,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
             List<AttributeEntry> list = new ArrayList<>();
 
-            ByteBuffer _buf = getRecord(offset);
+            ByteBuffer _buf = readRecord(offset);
 
             while (true) {
 
@@ -3318,7 +3367,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
                     break;
                 }
 
-                _buf = getRecord(next);
+                _buf = readRecord(next);
             }
 
             return Collections.unmodifiableList(list);

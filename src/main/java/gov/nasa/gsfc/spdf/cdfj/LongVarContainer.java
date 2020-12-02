@@ -368,7 +368,8 @@ public final class LongVarContainer extends BaseVarContainer implements VDataCon
                     throw new IllegalArgumentException("Unrecognized data type " + type);
             }
 
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        }
+        catch (IllegalAccessException | InvocationTargetException e) {
 
             throw new IllegalStateException("Attempt to execute method, " + method + " failed", e);
         }

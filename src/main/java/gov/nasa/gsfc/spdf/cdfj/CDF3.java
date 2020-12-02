@@ -1,5 +1,9 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
+import static gov.nasa.gsfc.spdf.cdfj.fields.NameFields.*;
+
+import gov.nasa.gsfc.spdf.cdfj.fields.NameFields;
+
 /**
  * The Interface CDF3.
  *
@@ -7,8 +11,13 @@ package gov.nasa.gsfc.spdf.cdfj;
  */
 public interface CDF3 extends CDFCore {
 
-    /** The max string size. */
-    int MAX_STRING_SIZE = 256;
+    /**
+     * The max name field size.
+     *
+     * @deprecated use {@link NameFields#NAME_FIELD_SIZE_V3_IN_BYTES}
+     */
+    @Deprecated
+    int MAX_STRING_SIZE = NAME_FIELD_SIZE_V3_IN_BYTES;
 
     /** The agr edrhead offset. */
     int AGR_EDRHEAD_OFFSET = 20;
@@ -103,14 +112,9 @@ public interface CDF3 extends CDFCore {
     /** The offset csize. */
     int OFFSET_CSIZE = 16;
 
-    /**
-     * Max string size.
-     *
-     * @return the int
-     */
     @Override
-    default int maxStringSize() {
-        return MAX_STRING_SIZE;
+    default int maxNameFieldSize() {
+        return NAME_FIELD_SIZE_V3_IN_BYTES;
     }
 
     /**

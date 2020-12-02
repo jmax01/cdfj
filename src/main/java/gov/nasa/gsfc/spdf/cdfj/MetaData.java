@@ -1,13 +1,11 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.nio.ByteOrder;
-import java.util.List;
-import java.util.OptionalInt;
-import java.util.Vector;
-import java.util.stream.Collectors;
+import java.nio.*;
+import java.util.*;
+import java.util.stream.*;
 
-import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
-import lombok.extern.java.Log;
+import gov.nasa.gsfc.spdf.cdfj.CDFException.*;
+import lombok.extern.java.*;
 
 /**
  * Abstract base class for GenericReader.
@@ -116,7 +114,8 @@ public abstract class MetaData {
             return this.attributeEntries(attributeName)
                     .stream()
                     .collect(Collectors.toCollection(Vector::new));
-        } catch (RuntimeException ex) {
+        }
+        catch (RuntimeException ex) {
             throw new CDFException.ReaderError("Failed to retrieve attribute entries for " + attributeName, ex);
         }
 
@@ -315,7 +314,8 @@ public abstract class MetaData {
 
         try {
             return this.thisCDF.getGlobalAttribute(atr);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("getGlobalAttribute failed for " + atr, th);
         }
 
@@ -473,7 +473,8 @@ public abstract class MetaData {
                 return tname;
             }
 
-        } catch (ReaderError e) {
+        }
+        catch (ReaderError e) {
             throw new IllegalArgumentException("CDF does not hava a variable named " + variableName, e);
         }
 
@@ -619,7 +620,8 @@ public abstract class MetaData {
         try {
             return this.thisCDF.getVariable(variableName)
                     .isCompatible(cl);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("isCompatible failed for " + variableName + " class " + cl, th);
         }
 

@@ -28,68 +28,6 @@ import lombok.extern.java.Log;
 @Log
 public final class CDFFactory {
 
-    /** The Constant CDF_V3_MAGIC_NUMBER_1. */
-    public static final int CDF_V3_MAGIC_NUMBER_1 = 0xCDF3_0001;
-
-    /** The Constant CDF_V3_MAGIC_NUMBER_1_AS_STRING. */
-    public static final String CDF_V3_MAGIC_NUMBER_1_AS_STRING = Integer.toHexString(CDF_V3_MAGIC_NUMBER_1);
-
-    /** The Constant CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2. */
-    public static final int CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2 = 0x0000_ffff;
-
-    /** The Constant CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2_AS_STRING. */
-    public static final String CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2_AS_STRING = Integer
-            .toHexString(CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2);
-
-    /** The Constant CDF_V3_COMPRESSED_MAGIC_NUMBER_2. */
-    public static final int CDF_V3_COMPRESSED_MAGIC_NUMBER_2 = 0xCCCC_0001;
-
-    /** The Constant CDF_V3_COMPRESSED_MAGIC_NUMBER_2_AS_STRING. */
-    public static final String CDF_V3_COMPRESSED_MAGIC_NUMBER_2_AS_STRING = Integer
-            .toHexString(CDF_V3_COMPRESSED_MAGIC_NUMBER_2);
-
-    /** The Constant CDF_V3_MAGIC_NUMBER_UNCOMPRESSED. */
-    public static final long CDF_V3_MAGIC_NUMBER_UNCOMPRESSED = (((long) CDF_V3_MAGIC_NUMBER_1) << 32)
-            + CDF_V3_UNCOMPRESSED_MAGIC_NUMBER_2;
-
-    /** The Constant CDF_V3_MAGIC_NUMBER_UNCOMPRESSED_AS_STRING. */
-    public static final String CDF_V3_MAGIC_NUMBER_UNCOMPRESSED_AS_STRING = Long
-            .toHexString(CDF_V3_MAGIC_NUMBER_UNCOMPRESSED);
-
-    /** The Constant CDF_V3_MAGIC_NUMBER_COMPRESSED. */
-    public static final long CDF_V3_MAGIC_NUMBER_COMPRESSED = (((long) CDF_V3_MAGIC_NUMBER_1) << 32)
-            + CDF_V3_COMPRESSED_MAGIC_NUMBER_2;
-
-    /** The Constant CDF_V3_MAGIC_NUMBER_COMPRESSED_AS_STRING. */
-    public static final String CDF_V3_MAGIC_NUMBER_COMPRESSED_AS_STRING = Long
-            .toHexString(CDF_V3_MAGIC_NUMBER_COMPRESSED);
-
-    /** The Constant CDF_V2_6_V2_7_MAGIC_NUMBER_1. */
-    public static final int CDF_V2_6_V2_7_MAGIC_NUMBER_1 = 0xCDF26002;
-
-    /** The Constant CDF_V2_6_V2_7_UNCOMPRESSED_MAGIC_NUMBER_2. */
-    public static final int CDF_V2_6_V2_7_UNCOMPRESSED_MAGIC_NUMBER_2 = 0x0000_ffff;
-
-    /** The Constant CDF_V2_6_V2_7_COMPRESSED_MAGIC_NUMBER_2. */
-    public static final int CDF_V2_6_V2_7_COMPRESSED_MAGIC_NUMBER_2 = 0xCCCC_0001;
-
-    /** The Constant CDF_V2_6_V2_7_MAGIC_NUMBER_UNCOMPRESSED. */
-    public static final long CDF_V2_6_V2_7_MAGIC_NUMBER_UNCOMPRESSED = (((long) CDF_V2_6_V2_7_MAGIC_NUMBER_1) << 32)
-            + CDF_V2_6_V2_7_UNCOMPRESSED_MAGIC_NUMBER_2;
-
-    /** The Constant CDF_V2_6_V2_7_MAGIC_NUMBER_COMPRESSED. */
-    public static final long CDF_V2_6_V2_7_MAGIC_NUMBER_COMPRESSED = (((long) CDF_V2_6_V2_7_MAGIC_NUMBER_1) << 32)
-            + CDF_V2_6_V2_7_COMPRESSED_MAGIC_NUMBER_2;
-
-    /** The Constant CDF_v2_5_MAGIC_NUMBER_1. */
-    public static final int CDF_v2_5_MAGIC_NUMBER_1 = 0x0000_ffff;
-
-    /** The Constant CDF_v2_5_MAGIC_NUMBER_2. */
-    public static final int CDF_v2_5_MAGIC_NUMBER_2 = 0x0000_ffff;
-
-    /** The Constant CDF_v2_5_MAGIC_NUMBER. */
-    public static final long CDF_v2_5_MAGIC_NUMBER = (((long) CDF_v2_5_MAGIC_NUMBER_1) << 32) + CDF_v2_5_MAGIC_NUMBER_2;
-
     /** The Constant CDF3_MAGIC. */
     public static final long CDF3_MAGIC = (0xcdf3L << 48) + (0x0001L << 32) + 0x0000_ffff;
 
@@ -189,9 +127,11 @@ public final class CDFFactory {
 
         try (final FileInputStream fis = new FileInputStream(file); final FileChannel ch = fis.getChannel()) {
             buf = ch.map(FileChannel.MapMode.READ_ONLY, 0, ch.size());
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
             throw new IllegalArgumentException(_fname + " could not be found", e);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new UncheckedIOException("Failed to read file:  " + _fname, e);
         }
 
@@ -207,7 +147,8 @@ public final class CDFFactory {
 
         try {
             con = new CDFUrl(url).openConnection();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new UncheckedIOException("failed to open URLConnection: " + url, e);
         }
 
@@ -227,7 +168,8 @@ public final class CDFFactory {
             final String _url = url.toString();
             return getCDF(ba, new UrlCDFSource(_url));
 
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new UncheckedIOException("failed to read from url: " + url, e);
         }
 
@@ -334,7 +276,8 @@ public final class CDFFactory {
                 toRead -= n;
             }
 
-        } catch (IOException ex) {
+        }
+        catch (IOException ex) {
             LOGGER.log(Level.SEVERE, ex, () -> "uncompressed failed");
             return null;
         }

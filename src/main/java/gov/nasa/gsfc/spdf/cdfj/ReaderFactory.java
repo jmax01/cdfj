@@ -1,24 +1,15 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
-import java.io.UncheckedIOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
-import java.nio.channels.FileChannel;
-import java.util.logging.Level;
+import java.io.*;
+import java.net.*;
+import java.nio.*;
+import java.nio.channels.*;
+import java.util.logging.*;
 
-import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
-import gov.nasa.gsfc.spdf.cdfj.CDFFactory.FileCDFSource;
-import lombok.extern.java.Log;
+import gov.nasa.gsfc.spdf.cdfj.CDFException.*;
+import gov.nasa.gsfc.spdf.cdfj.CDFFactory.*;
+import gov.nasa.gsfc.spdf.cdfj.files.dotcdf.*;
+import lombok.extern.java.*;
 
 /**
  * ReaderFactory creates an instance of CDFReader from a CDF source.
@@ -47,12 +38,12 @@ public final class ReaderFactory {
     @SuppressWarnings("resource")
     public static CDFReader getReader(final String fname) throws CDFException.ReaderError {
 
-        return new CDFReader(toCDF(fname));
+        return new CDFReader(fileChannelCDF(fname));
 
     }
 
     @SuppressWarnings("resource")
-    private static CDFImpl toCDF(final String fname) throws ReaderError {
+    private static CDFImpl fileChannelCDF(final String fname) throws ReaderError {
 
         RandomAccessFile raf = null;
 
@@ -61,7 +52,8 @@ public final class ReaderFactory {
         try {
             File file = new File(fname);
             raf = new RandomAccessFile(file, "r");
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
 
             throw new CDFException.ReaderError("Failed to read file" + fname, e);
         }
@@ -84,13 +76,15 @@ public final class ReaderFactory {
 
             return getVersion(buf, fileChannel, new CDFFactory.FileCDFSource(fname));
 
-        } catch (IOException | RuntimeException e) {
+        }
+        catch (IOException | RuntimeException e) {
 
             if (fileChannel != null) {
 
                 try {
                     fileChannel.close();
-                } catch (IOException e1) {
+                }
+                catch (IOException e1) {
                     LOGGER.log(Level.WARNING, e1, () -> "Failed to close file channel" + fname);
                 }
 
@@ -98,13 +92,20 @@ public final class ReaderFactory {
 
             try {
                 raf.close();
-            } catch (IOException ioe) {
+            }
+            catch (IOException ioe) {
                 LOGGER.log(Level.WARNING, ioe, () -> "Failed to close file" + fname);
             }
 
             throw new CDFException.ReaderError("I/O Error reading " + fname, e);
 
         }
+
+    }
+
+    public static CDFReader getReader(ByteBuffer byteBuffer) {
+
+        return new CDFReader(getVersion(byteBuffer, new CDFFactory.ByteBufferCDFSource()));
 
     }
 
@@ -142,9 +143,11 @@ public final class ReaderFactory {
                 rem -= len;
             }
 
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
             throw new CDFException.ReaderError("File, " + fname + " not found", e);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new CDFException.ReaderError("Failed to read file, " + fname, e);
         }
 
@@ -193,12 +196,68 @@ public final class ReaderFactory {
             ((HttpURLConnection) con).disconnect();
             ByteBuffer buf = ByteBuffer.wrap(ba);
             return CDFFactory.getVersion(buf, new CDFFactory.ByteArrayCDFSource());
-        } catch (RuntimeException e) {
+        }
+        catch (RuntimeException e) {
             throw new CDFException.ReaderError("I/O Error reading " + url, e);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new UncheckedIOException("getReader failed", e);
         }
 
+    }
+
+    static CDFImpl getVersion(final ByteBuffer buf, final ByteBufferCDFSource byteBufferCDFSource) {
+        LongBuffer lbuf = buf.asLongBuffer();
+
+        long magic = lbuf.get(0);
+
+        if (magic == CDFFactory.CDF3_MAGIC) {
+            return new CDF3Impl(buf, byteBufferCDFSource);
+        }
+
+        if (magic == CDFFactory.CDF3_COMPRESSED_MAGIC) {
+            ByteBuffer mbuf = CDFFactory.uncompressed(buf, 3);
+            return new CDF3Impl(mbuf, byteBufferCDFSource);
+        }
+
+        if (magic == CDFMagicNumbers.CDF_V2_6_V2_7_MAGIC_NUMBER_UNCOMPRESSED) {
+            int release = buf.getInt(24);
+            return new CDF2Impl(buf, release, byteBufferCDFSource);
+        }
+
+        if (magic == CDFFactory.CDF2_MAGIC_DOT5) {
+            int release = buf.getInt(24);
+            return new CDF2Impl(buf, release, byteBufferCDFSource);
+        }
+
+        // ShortBuffer sbuf = buf.asShortBuffer();
+        //
+        // if (sbuf.get() == (short) 0xcdf2) {
+        //
+        // if (sbuf.get() == (short) 0x6002) {
+        // short x = sbuf.get();
+        //
+        // if (x == 0) {
+        //
+        // if (sbuf.get() == -1) {
+        // return new CDF2Impl(buf, 6);
+        // }
+        //
+        // } else {
+        //
+        // if ((x == (short) 0xcccc) && (sbuf.get() == 1)) {
+        // // is compressed - positioned at CCR
+        // ByteBuffer mbuf = CDFFactory.uncompressed(buf, 2);
+        // return new CDF2Impl(mbuf, 6, ch);
+        // }
+        //
+        // }
+        //
+        // }
+        //
+        // }
+
+        return null;
     }
 
     static CDFImpl getVersion(final ByteBuffer buf, final FileChannel ch, final FileCDFSource fileCDFSource) {

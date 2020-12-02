@@ -1,10 +1,8 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.TimeZone;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.text.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * The Class TimeUtil.
@@ -21,7 +19,13 @@ public final class TimeUtil {
 
     static final int HIGHEST;
 
-    static SimpleDateFormat sdf = new SimpleDateFormat("y'-'M'-'dd'T'HH:mm:ss.SSS");
+    // static SimpleDateFormat sdf = new SimpleDateFormat("y'-'M'-'dd'T'HH:mm:ss.SSS");
+
+    static final ThreadLocal<SimpleDateFormat> SIMPLE_DATE_FORMAT = ThreadLocal.withInitial(() -> {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("y'-'M'-'dd'T'HH:mm:ss.SSS");
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        return simpleDateFormat;
+    });
 
     /** The Constant TT_JANUARY_1_1970. */
     public static final long TT_JANUARY_1_1970 = -946_727_957_816_000_000L;
@@ -30,7 +34,6 @@ public final class TimeUtil {
 
     static final int LAST_LEAP_SECOND_ID;
     static {
-        sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
         boolean[][] transition = new boolean[100][2];
         transition[2][0] = true;
         transition[2][1] = true;

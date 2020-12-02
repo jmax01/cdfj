@@ -39,7 +39,8 @@ public class Extractor {
             cl = Class.forName("gov.nasa.gsfc.spdf.cdfj.Extractor");
             cdfClass = Class.forName("gov.nasa.gsfc.spdf.cdfj.CDFImpl");
             variableClass = Class.forName("gov.nasa.gsfc.spdf.cdfj.Variable");
-        } catch (ClassNotFoundException ex) {
+        }
+        catch (ClassNotFoundException ex) {
 
             throw new IllegalStateException("Failed to find classes", ex);
         }
@@ -89,7 +90,8 @@ public class Extractor {
             Method[] ma = new Method[] { cl.getMethod("getStringSeries0", cdfClass, variableClass),
                     cl.getMethod("getStringSeries1", cdfClass, variableClass) };
             stringMethodMap.put("Series", ma);
-        } catch (NoSuchMethodException ex) {
+        }
+        catch (NoSuchMethodException ex) {
             throw new IllegalStateException("Map init failed", ex);
         }
 
@@ -113,7 +115,8 @@ public class Extractor {
 
             try {
                 ma[j] = cl.getMethod("get" + func + j, args[j]);
-            } catch (NoSuchMethodException ex) {
+            }
+            catch (NoSuchMethodException ex) {
                 throw new IllegalStateException("addFunction failed for " + func + "class " + cl, ex);
             }
 
@@ -1388,7 +1391,8 @@ public class Extractor {
                         throw new IllegalArgumentException(String.format("type %s is not supported", type));
                 }
 
-            } catch (IllegalAccessException | InvocationTargetException e) {
+            }
+            catch (IllegalAccessException | InvocationTargetException e) {
                 throw new IllegalStateException("could not execute method " + method, e);
             }
 
@@ -1455,7 +1459,8 @@ public class Extractor {
 
                         try {
                             num = (Number) method.invoke(bv);
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                             throw new IllegalStateException("Failed to execute method " + method, e);
                         }
 
@@ -1470,7 +1475,8 @@ public class Extractor {
 
                         try {
                             num = (Number) method.invoke(bv);
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                             throw new IllegalStateException("Failed to execute method " + method, e);
                         }
 
@@ -1584,7 +1590,8 @@ public class Extractor {
 
                                 try {
                                     num = (Number) method.invoke(bv);
-                                } catch (IllegalAccessException | IllegalArgumentException
+                                }
+                                catch (IllegalAccessException | IllegalArgumentException
                                         | InvocationTargetException e) {
                                     throw new IllegalStateException("Failed to execute method " + method, e);
                                 }
@@ -1603,7 +1610,8 @@ public class Extractor {
                                 try {
                                     Number num = (Number) method.invoke(bv);
                                     da[j][i] = num.doubleValue();
-                                } catch (IllegalAccessException | IllegalArgumentException
+                                }
+                                catch (IllegalAccessException | IllegalArgumentException
                                         | InvocationTargetException e) {
                                     throw new IllegalStateException("Failed to execute method " + method, e);
                                 }
@@ -1626,7 +1634,8 @@ public class Extractor {
 
                                 try {
                                     num = (Number) method.invoke(bv);
-                                } catch (IllegalAccessException | IllegalArgumentException
+                                }
+                                catch (IllegalAccessException | IllegalArgumentException
                                         | InvocationTargetException e) {
                                     throw new IllegalStateException("Failed to execute method " + method, e);
                                 }
@@ -1647,7 +1656,8 @@ public class Extractor {
 
                                 try {
                                     num = (Number) method.invoke(bv);
-                                } catch (IllegalAccessException | IllegalArgumentException
+                                }
+                                catch (IllegalAccessException | IllegalArgumentException
                                         | InvocationTargetException e) {
                                     throw new IllegalStateException("Failed to execute method " + method, e);
                                 }
@@ -1783,7 +1793,8 @@ public class Extractor {
 
                                     try {
                                         num = (Number) method.invoke(bv);
-                                    } catch (IllegalAccessException | IllegalArgumentException
+                                    }
+                                    catch (IllegalAccessException | IllegalArgumentException
                                             | InvocationTargetException e) {
                                         throw new IllegalStateException("Failed to execute method " + method, e);
                                     }
@@ -1806,7 +1817,8 @@ public class Extractor {
 
                                     try {
                                         num = (Number) method.invoke(bv);
-                                    } catch (IllegalAccessException | IllegalArgumentException
+                                    }
+                                    catch (IllegalAccessException | IllegalArgumentException
                                             | InvocationTargetException e) {
                                         throw new IllegalStateException("Failed to execute method " + method, e);
                                     }
@@ -1834,7 +1846,8 @@ public class Extractor {
 
                                     try {
                                         num = (Number) method.invoke(bv);
-                                    } catch (IllegalAccessException | IllegalArgumentException
+                                    }
+                                    catch (IllegalAccessException | IllegalArgumentException
                                             | InvocationTargetException e) {
                                         throw new IllegalStateException("Failed to execute method " + method, e);
                                     }
@@ -1859,7 +1872,8 @@ public class Extractor {
 
                                     try {
                                         num = (Number) method.invoke(bv);
-                                    } catch (IllegalAccessException | IllegalArgumentException
+                                    }
+                                    catch (IllegalAccessException | IllegalArgumentException
                                             | InvocationTargetException e) {
                                         throw new IllegalStateException("Failed to execute method " + method, e);
                                     }
@@ -2099,7 +2113,8 @@ public class Extractor {
 
                         try {
                             num = (Number) method.invoke(bv);
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                             throw new IllegalStateException("Failed to execute method " + method, e);
                         }
 
@@ -2114,7 +2129,8 @@ public class Extractor {
 
                         try {
                             num = (Number) method.invoke(bv);
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                             throw new IllegalStateException("Failed to execute method " + method, e);
                         }
 
@@ -2295,7 +2311,8 @@ public class Extractor {
 
                         try {
                             num = (Number) method.invoke(bv);
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                             throw new IllegalStateException("Failed to execute method " + method, e);
                         }
 
@@ -2310,7 +2327,8 @@ public class Extractor {
 
                         try {
                             num = (Number) method.invoke(bv);
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                             throw new IllegalStateException("Failed to execute method " + method, e);
                         }
 
@@ -3121,7 +3139,8 @@ public class Extractor {
 
                         try {
                             num = (Number) method.invoke(bv);
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                             throw new IllegalStateException("Failed to execute method " + method, e);
                         }
 
@@ -3136,7 +3155,8 @@ public class Extractor {
 
                         try {
                             num = (Number) method.invoke(bv);
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                             throw new IllegalStateException("Failed to execute method " + method, e);
                         }
 
@@ -3319,7 +3339,8 @@ public class Extractor {
 
                         try {
                             num = (Number) method.invoke(bv);
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                             throw new IllegalStateException("Failed to execute method " + method, e);
                         }
 
@@ -3335,7 +3356,8 @@ public class Extractor {
 
                         try {
                             num = (Number) method.invoke(bv);
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                             throw new IllegalStateException("Failed to execute method " + method, e);
                         }
 
@@ -4024,7 +4046,8 @@ public class Extractor {
 
                                         try {
                                             num = (Number) method.invoke(bv);
-                                        } catch (IllegalAccessException | IllegalArgumentException
+                                        }
+                                        catch (IllegalAccessException | IllegalArgumentException
                                                 | InvocationTargetException e) {
                                             throw new IllegalStateException("Failed to execute method " + method, e);
                                         }
@@ -4051,7 +4074,8 @@ public class Extractor {
 
                                         try {
                                             num = (Number) method.invoke(bv);
-                                        } catch (IllegalAccessException | IllegalArgumentException
+                                        }
+                                        catch (IllegalAccessException | IllegalArgumentException
                                                 | InvocationTargetException e) {
                                             throw new IllegalStateException("Failed to execute method " + method, e);
                                         }
@@ -4083,7 +4107,8 @@ public class Extractor {
 
                                         try {
                                             num = (Number) method.invoke(bv);
-                                        } catch (IllegalAccessException | IllegalArgumentException
+                                        }
+                                        catch (IllegalAccessException | IllegalArgumentException
                                                 | InvocationTargetException e) {
                                             throw new IllegalStateException("Failed to execute method " + method, e);
                                         }
@@ -4111,7 +4136,8 @@ public class Extractor {
 
                                         try {
                                             num = (Number) method.invoke(bv);
-                                        } catch (IllegalAccessException | IllegalArgumentException
+                                        }
+                                        catch (IllegalAccessException | IllegalArgumentException
                                                 | InvocationTargetException e) {
                                             throw new IllegalStateException("Failed to execute method " + method, e);
                                         }
@@ -4321,7 +4347,8 @@ public class Extractor {
 
                         try {
                             num = (Number) method.invoke(bv);
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
                             throw new IllegalStateException("Failed to execute method " + method, e1);
                         }
 
@@ -4342,7 +4369,8 @@ public class Extractor {
 
                         try {
                             num = (Number) method.invoke(bv);
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
                             throw new IllegalStateException("Failed to execute method " + method, e1);
                         }
 
@@ -4426,7 +4454,8 @@ public class Extractor {
                     bvl.get(ldata, offset, number);
             }
 
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+        }
+        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
             throw new IllegalArgumentException("do1D failed", e);
         }
 
@@ -4646,7 +4675,8 @@ public class Extractor {
 
             }
 
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+        }
+        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
             throw new IllegalArgumentException("do1DSwap failed", e);
         }
 
@@ -4666,7 +4696,8 @@ public class Extractor {
 
                 try {
                     num = (Number) method.invoke(bv);
-                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                }
+                catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
                     throw new IllegalStateException("Failed to execute method " + method, e1);
                 }
 
@@ -4706,7 +4737,8 @@ public class Extractor {
 
             try {
                 num = (Number) method.invoke(bv);
-            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            }
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new IllegalStateException("Failed to execute method " + method, e);
             }
 
@@ -4727,7 +4759,8 @@ public class Extractor {
 
             try {
                 num = (Number) method.invoke(bv);
-            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            }
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new IllegalStateException("Failed to execute method " + method, e);
             }
 
@@ -4753,7 +4786,8 @@ public class Extractor {
 
             try {
                 num = (Number) method.invoke(bv);
-            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            }
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new IllegalStateException("Failed to execute method " + method, e);
             }
 
@@ -4780,7 +4814,8 @@ public class Extractor {
 
                 try {
                     num = (Number) method.invoke(bv);
-                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                }
+                catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
                     throw new IllegalStateException("Failed to execute method " + method, e1);
                 }
 
@@ -4806,7 +4841,8 @@ public class Extractor {
 
                 try {
                     num = (Number) method.invoke(bv);
-                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                }
+                catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
                     throw new IllegalStateException("Failed to execute method " + method, e1);
                 }
 
@@ -4836,7 +4872,8 @@ public class Extractor {
 
                 try {
                     num = (Number) method.invoke(bv);
-                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                }
+                catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
                     throw new IllegalStateException("Failed to execute method " + method, e1);
                 }
 
@@ -4860,7 +4897,8 @@ public class Extractor {
 
             try {
                 num = (Number) method.invoke(bv);
-            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            }
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new IllegalStateException("Failed to execute method " + method, e);
             }
 
@@ -4883,7 +4921,8 @@ public class Extractor {
 
             try {
                 num = (Number) method.invoke(bv);
-            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            }
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new IllegalStateException("Failed to execute method " + method, e);
             }
 
@@ -4907,7 +4946,8 @@ public class Extractor {
 
             try {
                 num = (Number) method.invoke(bv);
-            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            }
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new IllegalStateException("Failed to execute method " + method, e);
             }
 
@@ -4935,7 +4975,8 @@ public class Extractor {
 
             try {
                 num = (Number) method.invoke(bv);
-            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            }
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new IllegalStateException("Failed to execute method " + method, e);
             }
 
@@ -4963,7 +5004,8 @@ public class Extractor {
 
                 try {
                     num = (Number) method.invoke(bv);
-                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                }
+                catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
                     throw new IllegalStateException("Failed to execute method " + method, e1);
                 }
 
@@ -4995,7 +5037,8 @@ public class Extractor {
 
                 try {
                     num = (Number) method.invoke(bv);
-                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+                }
+                catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
                     throw new IllegalStateException("Failed to execute method " + method, e1);
                 }
 

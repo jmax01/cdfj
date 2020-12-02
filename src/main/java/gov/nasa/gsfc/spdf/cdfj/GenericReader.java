@@ -1,18 +1,15 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
+import java.io.*;
+import java.lang.reflect.*;
+import java.net.*;
+import java.nio.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.logging.*;
 
-import gov.nasa.gsfc.spdf.cdfj.CDFException.ReaderError;
+import gov.nasa.gsfc.spdf.cdfj.CDFException.*;
+import gov.nasa.gsfc.spdf.cdfj.CDFImpl.*;
 
 /**
  * GenericReader extends MetaData class with methods to access variable
@@ -60,7 +57,8 @@ public class GenericReader extends MetaData {
 
         try {
             this.thisCDF = CDFFactory.getCDF(cdfFile);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("init GenericReader failed for " + cdfFile, th);
         }
 
@@ -79,7 +77,8 @@ public class GenericReader extends MetaData {
 
         try {
             this.thisCDF = CDFFactory.getCDF(url);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("init GenericReader failed for " + url, th);
         }
 
@@ -122,6 +121,10 @@ public class GenericReader extends MetaData {
         return supportedClassesByName;
     }
 
+    public Map<String, CDFAttribute> cdfAttributesByName() {
+        return this.thisCDF.cdfAttributesByName();
+    }
+
     /**
      * Returns all available values for the given scalar variable.
      * For variable of type long, loss of precision may occur.
@@ -159,7 +162,8 @@ public class GenericReader extends MetaData {
             }
 
             return da;
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("asDouble0 failed for " + variableName, th);
         }
 
@@ -272,7 +276,8 @@ public class GenericReader extends MetaData {
             }
 
             return method.invoke(null, this.thisCDF, variable);
-        } catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
+        }
+        catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
             throw new CDFException.ReaderError("Failed to get variable " + variableName, e);
         }
 
@@ -299,7 +304,8 @@ public class GenericReader extends MetaData {
                         .getContainer()
                         .getBuffer();
 
-            } catch (RuntimeException e) {
+            }
+            catch (RuntimeException e) {
                 throw new CDFException.ReaderError("Failed to get buffer for threadname " + threadName, e);
             }
 
@@ -356,7 +362,8 @@ public class GenericReader extends MetaData {
 
         try {
             type = getContainerClass(targetType);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("getBuffer failed for " + variableName, th);
         }
 
@@ -369,7 +376,8 @@ public class GenericReader extends MetaData {
 
         try {
             container = getContainer(variableName, type, recordRange, preserve, ByteOrder.nativeOrder());
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("getBuffer failed for " + variableName, th);
         }
 
@@ -398,7 +406,8 @@ public class GenericReader extends MetaData {
         try {
             Class<?> type = getContainerClass(targetType);
             container = getContainer(variableName, type, recordRange, preserve, ByteOrder.nativeOrder());
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("getBuffer failed for " + variableName, th);
         }
 
@@ -425,7 +434,8 @@ public class GenericReader extends MetaData {
         try {
             Class<?> type = getContainerClass(targetType);
             container = getContainer(variableName, type, recordRange, false, ByteOrder.nativeOrder());
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("getBufferCapacity failed for " + variableName, th);
         }
 
@@ -475,7 +485,8 @@ public class GenericReader extends MetaData {
             }
 
             return (double[]) method.invoke(null, this.thisCDF, variable, component);
-        } catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
+        }
+        catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
             throw new CDFException.ReaderError("Failed to get variable " + variableName, e);
         }
 
@@ -510,7 +521,8 @@ public class GenericReader extends MetaData {
             }
 
             return (double[][]) method.invoke(null, this.thisCDF, variable, components);
-        } catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
+        }
+        catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
             throw new CDFException.ReaderError("Failed to get variable " + variableName, e);
         }
 
@@ -544,7 +556,8 @@ public class GenericReader extends MetaData {
 
         try {
             return this.thisCDF.getLong(variableName);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("getLong failed for " + variableName, th);
         }
 
@@ -582,7 +595,8 @@ public class GenericReader extends MetaData {
 
         try {
             return this.thisCDF.getOneD(variableName, columnMajor);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("getOneD failed for " + variableName, th);
         }
 
@@ -610,7 +624,8 @@ public class GenericReader extends MetaData {
                         .getContainer()
                         .asOneDArray(columnMajor);
 
-            } catch (RuntimeException th) {
+            }
+            catch (RuntimeException th) {
                 throw new CDFException.ReaderError("getOneDArray failed for " + threadName, th);
             }
 
@@ -645,7 +660,8 @@ public class GenericReader extends MetaData {
         try {
             Class<?> type = getContainerClass(targetType);
             container = getContainer(variableName, type, recordRange, preserve, ByteOrder.nativeOrder());
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("getOneDArray failed for " + variableName, th);
         }
 
@@ -692,7 +708,8 @@ public class GenericReader extends MetaData {
             }
 
             return method.invoke(null, this.thisCDF, variable, first, last);
-        } catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
+        }
+        catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
             throw new CDFException.ReaderError("Failed to get variable " + variableName, e);
         }
 
@@ -731,7 +748,8 @@ public class GenericReader extends MetaData {
             }
 
             return (double[]) method.invoke(null, this.thisCDF, variable, first, last, component);
-        } catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
+        }
+        catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
             throw new CDFException.ReaderError("Failed to get variable " + variableName, e);
         }
 
@@ -770,7 +788,8 @@ public class GenericReader extends MetaData {
             }
 
             return (double[][]) method.invoke(null, this.thisCDF, variable, first, last, components);
-        } catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
+        }
+        catch (RuntimeException | IllegalAccessException | InvocationTargetException e) {
             throw new CDFException.ReaderError("Failed to get variable " + variableName, e);
         }
 
@@ -807,7 +826,8 @@ public class GenericReader extends MetaData {
 
         try {
             return (double[]) this.thisCDF.getRangeOneD(variableName, first, last, columnMajor);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("getRangeOneD failed for " + variableName, th);
         }
 
@@ -841,7 +861,8 @@ public class GenericReader extends MetaData {
             BaseVarContainer container = getRangeContainer(variableName, new int[] { first, last }, type, preserve);
             int[] _stride = (stride > 0) ? new int[] { stride } : new int[] { -1, -stride };
             return container.asSampledArray(new Stride(_stride));
-        } catch (ReaderError e) {
+        }
+        catch (ReaderError e) {
             throw new CDFException.ReaderError("getSampled failed", e);
         }
 
@@ -876,7 +897,8 @@ public class GenericReader extends MetaData {
             BaseVarContainer container = getRangeContainer(variableName, range, type, preserve);
             int[] _stride = (stride > 0) ? new int[] { stride } : new int[] { -1, -stride };
             return container.asOneDArray(columnMajor, new Stride(_stride));
-        } catch (ReaderError e) {
+        }
+        catch (ReaderError e) {
             throw new CDFException.ReaderError(e);
         }
 
@@ -965,7 +987,8 @@ public class GenericReader extends MetaData {
 
         try {
             return startContainerThread(variableName, targetType, recordRange, preserve, ByteOrder.nativeOrder());
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.ReaderError("startContainerThread failed for " + variableName, th);
         }
 

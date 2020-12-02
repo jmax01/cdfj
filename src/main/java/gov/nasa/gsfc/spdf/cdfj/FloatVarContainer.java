@@ -430,7 +430,8 @@ public final class FloatVarContainer extends BaseVarContainer implements VDataCo
                     throw new IllegalArgumentException("Unrecognized data type " + type);
             }
 
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        }
+        catch (IllegalAccessException | InvocationTargetException e) {
 
             throw new IllegalStateException("Attempt to execute method, " + method + " failed", e);
         }

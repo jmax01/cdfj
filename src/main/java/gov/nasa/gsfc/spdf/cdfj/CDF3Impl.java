@@ -1,11 +1,13 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.nio.channels.FileChannel;
-import java.util.Arrays;
+import java.io.*;
+import java.nio.*;
+import java.nio.channels.*;
+import java.util.*;
 
-import gov.nasa.gsfc.spdf.cdfj.CDFFactory.CDFSource;
+import gov.nasa.gsfc.spdf.cdfj.CDFFactory.*;
+import gov.nasa.gsfc.spdf.cdfj.fields.*;
+import gov.nasa.gsfc.spdf.cdfj.records.*;
 
 final class CDF3Impl extends CDFImpl implements CDF3 {
 
@@ -34,7 +36,6 @@ final class CDF3Impl extends CDFImpl implements CDF3 {
         setOffsets();
         this.thisCDF = this;
         IntBuffer ibuf = buf.asIntBuffer();
-        getRecord(8);
         ibuf.position(2); // skip magic numbers
         ibuf.get(); // Record Size
         ibuf.get(); // Record Size
@@ -89,7 +90,7 @@ final class CDF3Impl extends CDFImpl implements CDF3 {
         buf.position(0);
         // if (ch == null) {
         variables();
-        attributes();
+        this.cdfAttributesByName = attributes();
         // }
     }
 
@@ -153,4 +154,27 @@ final class CDF3Impl extends CDFImpl implements CDF3 {
     int readRecordSizeFieldAsInt(final ByteBuffer recordSizeFieldByteBuffer) {
         return (int) recordSizeFieldByteBuffer.getLong(0);
     }
+
+    @Override
+    protected String readNameFieldFromBuffer(final ByteBuffer byteBufferSource, final int offset) {
+        return NameFields.readV3NameField(byteBufferSource, offset);
+    }
+
+    @Override
+    protected String readNameFieldFromFileChannel(final long offset)
+
+            throws IllegalArgumentException, IOException {
+        return NameFields.readV3NameField(this.fileChannel, offset);
+    }
+
+    @Override
+    protected ByteBuffer readRecordFromBuffer(int offset) {
+        return RecordReaders.readV3Record(this.buf, offset);
+    }
+
+    @Override
+    protected ByteBuffer readRecordFromFileChannel(long offset) throws IOException, IllegalArgumentException {
+        return RecordReaders.readV3Record(this.fileChannel, offset);
+    }
+
 }

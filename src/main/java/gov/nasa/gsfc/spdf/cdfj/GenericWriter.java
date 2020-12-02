@@ -83,7 +83,8 @@ public class GenericWriter {
 
         try {
             container.addData(data, null, false, false);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("addData failed for " + name, th);
         }
 
@@ -112,7 +113,8 @@ public class GenericWriter {
 
         try {
             container.addData(data, null, false, relax);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("addData failed for " + name, th);
         }
 
@@ -144,7 +146,8 @@ public class GenericWriter {
 
         try {
             container.addData(data, recordRange, false, false);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("addData failed for " + name, th);
         }
 
@@ -238,7 +241,8 @@ public class GenericWriter {
 
         try {
             container.addData(data, recordRange, false, relax);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("addData failed for " + name, th);
         }
 
@@ -268,7 +272,8 @@ public class GenericWriter {
 
         try {
             gae = new GlobalAttributeEntry(adr, type, value);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("addData failed for " + name, th);
         }
 
@@ -330,7 +335,8 @@ public class GenericWriter {
 
             try {
                 addData(name, AArray.getPoint(value));
-            } catch (RuntimeException th) {
+            }
+            catch (RuntimeException th) {
                 throw new CDFException.WriterError("addNRVVariable failed for " + name, th);
             }
 
@@ -391,7 +397,8 @@ public class GenericWriter {
 
         try {
             container.addData(data, null, true, false);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("addOneD failed for " + name, th);
         }
 
@@ -414,7 +421,8 @@ public class GenericWriter {
 
         try {
             container.addData(data, null, true, relax);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("addOneD failed for " + name, th);
         }
 
@@ -438,7 +446,8 @@ public class GenericWriter {
 
         try {
             container.addData(data, recordRange, true, false);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("addOneD failed for " + name, th);
         }
 
@@ -515,7 +524,8 @@ public class GenericWriter {
 
         try {
             container.addData(data, recordRange, true, relax);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("addOneD failed for " + name, th);
         }
 
@@ -571,7 +581,8 @@ public class GenericWriter {
 
         try {
             vae = new VariableAttributeEntry(adr, type, value);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("addVariableAttributeEntry failed for " + variableName, th);
         }
 
@@ -958,7 +969,8 @@ public class GenericWriter {
 
         try {
             vdr = new VDR(name, dataType.getValue(), dim, varys, recordVariance, compressed, _pad, size, option);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("addVariableAttributeEntry failed for " + name, th);
         }
 
@@ -1312,7 +1324,8 @@ public class GenericWriter {
         try {
             container.addData(data.getBuffer(), new int[] { data.getFirstRecord(), data.getLastRecord() }, false,
                     false);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("addBuffer failed for " + name, th);
         }
 
@@ -1431,7 +1444,8 @@ public class GenericWriter {
 
         try {
             aa = new ArrayAttribute(data);
-        } catch (RuntimeException th) {
+        }
+        catch (RuntimeException th) {
             throw new CDFException.WriterError("getContainer failed for " + name, th);
         }
 
@@ -1453,7 +1467,8 @@ public class GenericWriter {
 
         try {
             md = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException nsa) {
+        }
+        catch (NoSuchAlgorithmException nsa) {
             throw new IllegalStateException("MD5 messageDigest is missing", nsa);
         }
 
@@ -1480,7 +1495,8 @@ public class GenericWriter {
 
         try {
             md = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException nsa) {
+        }
+        catch (NoSuchAlgorithmException nsa) {
             throw new IllegalStateException("MD5 messageDigest is missing", nsa);
         }
 

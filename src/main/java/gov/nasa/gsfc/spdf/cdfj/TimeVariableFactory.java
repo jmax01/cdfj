@@ -1,15 +1,13 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.LongBuffer;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.logging.Level;
+import java.nio.*;
+import java.time.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.logging.*;
 
-import lombok.extern.java.Log;
+import gov.nasa.gsfc.spdf.cdfj.fields.*;
+import lombok.extern.java.*;
 
 /**
  * A factory for creating TimeVariable objects.
@@ -20,44 +18,31 @@ import lombok.extern.java.Log;
 public final class TimeVariableFactory {
 
     /** The Constant JANUARY_1_1970. */
-    public static final double JANUARY_1_1970;
+    public static final double JANUARY_1_1970 = DateTimeFields.MILLIS_FROM_CDF_EPOCH_TO_JAVA_EPOCH;
+
+    static final OffsetDateTime JANUARY_1_100_NOON_UTC = OffsetDateTime.of(2000, 1, 1, 12, 0, 0, 0, ZoneOffset.UTC);
+
+    static final Instant JANUARY_1_100_NOON_UTC_AS_INSTANT = JANUARY_1_100_NOON_UTC.toInstant();
+
+    static final long JANUARY_1_100_NOON_UTC_JAVA_EPOCH_MILLIS = JANUARY_1_100_NOON_UTC_AS_INSTANT.toEpochMilli();
+
+    static final long MILLISECONDS_IN_A_DAY = TimeUnit.DAYS.toMillis(1);
+
+    static final double MILLISECONDS_IN_A_DAY_AS_DOUBLE = MILLISECONDS_IN_A_DAY;
 
     static final long LONG_FILL = -9_223_372_036_854_775_807L;
 
     static final double DOUBLE_FILL = -1.0e31;
-    static {
-        int offset = 0;
 
-        for (int year = 0; year < 1_970; year++) {
-            int days = 365;
-
-            if (((year % 4) == 0)) {
-                days++;
-
-                if (((year % 100) == 0)) {
-                    days--;
-
-                    if (((year % 400) == 0)) {
-                        days++;
-                    }
-
-                }
-
-            }
-
-            offset += days;
-        }
-
-        JANUARY_1_1970 = offset * 8.64e7;
-    }
+    static final int MIN_DIFF_UTC_AND_J2000_IN_MILLIS = 32184;
 
     static final TimeInstantModel defaultTimeInstantModel = new DefaultTimeInstantModelImpl();
 
     /** The Constant JANUARY_1_1970_LONG. */
-    public static final long JANUARY_1_1970_LONG = (long) JANUARY_1_1970;
+    public static final long JANUARY_1_1970_LONG = DateTimeFields.MILLIS_FROM_CDF_EPOCH_TO_JAVA_EPOCH;
 
     /** The Constant TT2000_DATE. */
-    public static final long TT2000_DATE = (JANUARY_1_1970_LONG + Date.UTC(100, 0, 1, 12, 0, 0)) - 42_184;
+    public static final long TT2000_DATE = (JANUARY_1_1970_LONG + JANUARY_1_100_NOON_UTC_JAVA_EPOCH_MILLIS) - 42_184;
 
     private TimeVariableFactory() {}
 
@@ -418,7 +403,8 @@ public final class TimeVariableFactory {
                 }
 
                 return d;
-            } catch (RuntimeException e) {
+            }
+            catch (RuntimeException e) {
                 LOGGER.log(Level.WARNING, e, () -> "getFirstMilliSecond");
                 return Double.NaN;
             }
@@ -564,7 +550,8 @@ public final class TimeVariableFactory {
 
             try {
                 return getTimes(0, this.recordCount - 1, null);
-            } catch (RuntimeException e) {
+            }
+            catch (RuntimeException e) {
                 LOGGER.log(Level.SEVERE, "getTimes failed, returning null", e);
                 return null;
             }
@@ -582,7 +569,8 @@ public final class TimeVariableFactory {
 
             try {
                 return getTimes(timeRange, null);
-            } catch (RuntimeException e) {
+            }
+            catch (RuntimeException e) {
                 LOGGER.log(Level.SEVERE,
                         "getTimes failed for timeRange," + Arrays.toString(timeRange) + ", returning null", e);
                 return null;
@@ -611,7 +599,8 @@ public final class TimeVariableFactory {
 
             try {
                 return getTimes(recordRange, defaultTimeInstantModel);
-            } catch (RuntimeException e) {
+            }
+            catch (RuntimeException e) {
                 LOGGER.log(Level.SEVERE,
                         "getTimes failed for recordRange," + Arrays.toString(recordRange) + ", returning null", e);
                 return null;

@@ -224,10 +224,12 @@ public interface CDFCore extends CDFMeta {
     Variable getVariable(String variableName);
 
     /**
-     * Max string size.
+     * Max name field size.
      *
      * @return the int
      */
-    int maxStringSize();
+    int maxNameFieldSize();
+
+    String readNameField(long offset);
 
 }

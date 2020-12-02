@@ -130,7 +130,8 @@ public final class DataTypes {
             size[32] = 8;
             typeCategory[51] = STRING;
             typeCategory[52] = STRING;
-        } catch (NoSuchMethodException | SecurityException ex) {
+        }
+        catch (NoSuchMethodException | SecurityException ex) {
 
             throw new IllegalStateException("Failed to populate arrays", ex);
         }
@@ -155,7 +156,8 @@ public final class DataTypes {
             Method meth = tc.getMethod("getString", ByteBuffer.class, Integer.class);
             method[51] = meth;
             method[52] = meth;
-        } catch (NoSuchMethodException | SecurityException ex) {
+        }
+        catch (NoSuchMethodException | SecurityException ex) {
             throw new IllegalStateException("Failed to obtain getString methods", ex);
         }
 
