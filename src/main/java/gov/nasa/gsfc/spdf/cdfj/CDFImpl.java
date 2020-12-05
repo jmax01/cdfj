@@ -18,6 +18,8 @@ import lombok.extern.java.*;
 @Log
 abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
+    static final String[] VARIABLE_TYPE_CODES = { "z", "r" };
+
     private static final long serialVersionUID = -7106016786475171626L;
 
     /** CDF constants. */
@@ -1706,8 +1708,6 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
         int[] offsets = { (int) this.zVDRHead, (int) this.rVDRHead };
 
-        String[] vtypes = { "z", "r" };
-
         Collection<String> variableNamesAsList = new CopyOnWriteArrayList<>();
 
         for (int vtype = 0; vtype < 2; vtype++) {
@@ -1727,7 +1727,7 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
 
                 long next = longInt(_buf);
 
-                CDFVariable cdfv = new CDFVariable(offset, vtypes[vtype]);
+                CDFVariable cdfv = new CDFVariable(offset, VARIABLE_TYPE_CODES[vtype]);
 
                 String variableName = cdfv.getName();
 
@@ -3127,9 +3127,6 @@ abstract class CDFImpl implements CDFCore, java.io.Serializable, Closeable {
      */
     public class DataLocator implements VariableDataLocator, java.io.Serializable {
 
-        /**
-         *
-         */
         private static final long serialVersionUID = 713466264682521709L;
 
         private final int numberOfValues;

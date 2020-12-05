@@ -1,20 +1,11 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.lang.reflect.*;
+import java.nio.*;
+import java.util.*;
+import java.util.concurrent.*;
 
-import lombok.extern.java.Log;
+import lombok.extern.java.*;
 
 /**
  * The Class Extractor.
@@ -1941,7 +1932,7 @@ public class Extractor {
 
         List<long[]> locations = ((CDFImpl.DataLocator) variable.getLocator()).getLocationsAsList();
 
-        if (locations == null) {
+        if (locations.isEmpty()) {
             fillWithPad(longType, _data, start, end, _pad);
             return _data;
         }
@@ -2404,7 +2395,7 @@ public class Extractor {
         int[] blks = null;
         List<long[]> locations = ((CDFImpl.DataLocator) variable.getLocator()).getLocationsAsList();
 
-        if (locations != null) {
+        if (!locations.isEmpty()) {
             blks = getBlockRange(locations, variable.recordVariance(), start, end);
         }
 
@@ -2412,7 +2403,7 @@ public class Extractor {
 
         if (blks == null) { // no overlap
 
-            if (locations != null) { // there is some data
+            if (!locations.isEmpty()) { // there is some data
                 int _last = variable.getRecordRange()[1];
 
                 if (substitute) {
@@ -2433,7 +2424,7 @@ public class Extractor {
 
             }
 
-            if ((locations != null)
+            if ((!locations.isEmpty())
                 && (!variable.missingRecordValueIsPad() && !variable.missingRecordValueIsPrevious())) {
                 return null;
             }

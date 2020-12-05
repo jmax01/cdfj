@@ -1,5 +1,7 @@
 package gov.nasa.gsfc.spdf.cdfj;
 
+import static gov.nasa.gsfc.spdf.cdfj.fields.DateTimeFields.*;
+
 import java.nio.*;
 import java.time.*;
 import java.util.*;
@@ -34,15 +36,17 @@ public final class TimeVariableFactory {
 
     static final double DOUBLE_FILL = -1.0e31;
 
-    static final int MIN_DIFF_UTC_AND_J2000_IN_MILLIS = 32184;
-
     static final TimeInstantModel defaultTimeInstantModel = new DefaultTimeInstantModelImpl();
 
     /** The Constant JANUARY_1_1970_LONG. */
     public static final long JANUARY_1_1970_LONG = DateTimeFields.MILLIS_FROM_CDF_EPOCH_TO_JAVA_EPOCH;
 
+    public static final long DIFF_TIA_UTC_JANUARY_1_1972 = LeapSecondTable.JANUARY_1_1972_LEAP_SECOND
+            .leapSecondsAsMillis() + DIFF_TIA_AND_J2000_MILLISECONDS;
+
     /** The Constant TT2000_DATE. */
-    public static final long TT2000_DATE = (JANUARY_1_1970_LONG + JANUARY_1_100_NOON_UTC_JAVA_EPOCH_MILLIS) - 42_184;
+    public static final long TT2000_DATE = (JANUARY_1_1970_LONG + JANUARY_1_100_NOON_UTC_JAVA_EPOCH_MILLIS)
+            - DIFF_TIA_UTC_JANUARY_1_1972;
 
     private TimeVariableFactory() {}
 

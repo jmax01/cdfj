@@ -26,7 +26,7 @@ public final class CDFRecordTypes {
      * <p>
      * Information about an rVariable (see Section 2.6).
      */
-    public static final int rVDR_RECORD_TYPE_INTERNAL_VALUE = 3;
+    public static final int R_VDR_RECORD_TYPE_INTERNAL_VALUE = 3;
 
     /**
      * Attribute Descriptor Record.

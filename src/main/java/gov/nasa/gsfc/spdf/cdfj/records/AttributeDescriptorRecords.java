@@ -456,16 +456,38 @@ public class AttributeDescriptorRecords {
          */
         String getName();
 
+        /**
+         * Compare to.
+         *
+         * @param that the that
+         * 
+         * @return the int
+         */
         @Override
         default int compareTo(ADR that) {
 
             return BY_NUM_BY_NAME_BY_SCOPE.compare(this, that);
         }
 
+        /**
+         * Gets the g entries.
+         *
+         * @return the g entries
+         */
         NavigableSet<AEDR> getGEntries();
 
+        /**
+         * Gets the r entries.
+         *
+         * @return the r entries
+         */
         NavigableSet<AEDR> getREntries();
 
+        /**
+         * Gets the z entries.
+         *
+         * @return the z entries
+         */
         NavigableSet<AEDR> getZEntries();
     }
 
@@ -476,11 +498,21 @@ public class AttributeDescriptorRecords {
 
         static Comparator<ADRV2> BY_ADR_NEXT = Comparator.comparing(ADRV2::getAdrNext);
 
+        /**
+         * Gets the next record offset.
+         *
+         * @return the next record offset
+         */
         @Override
         default Integer getNextRecordOffset() {
             return getAdrNext();
         }
 
+        /**
+         * Gets the next record offset comparator.
+         *
+         * @return the next record offset comparator
+         */
         @Override
         default Comparator<ADRV2> getNextRecordOffsetComparator() {
             return BY_ADR_NEXT;
@@ -563,11 +595,21 @@ public class AttributeDescriptorRecords {
 
         static Comparator<ADRV3> BY_ADR_NEXT = Comparator.comparing(ADRV3::getAdrNext);
 
+        /**
+         * Gets the next record offset.
+         *
+         * @return the next record offset
+         */
         @Override
         default Long getNextRecordOffset() {
             return getAdrNext();
         }
 
+        /**
+         * Gets the next record offset comparator.
+         *
+         * @return the next record offset comparator
+         */
         @Override
         default Comparator<ADRV3> getNextRecordOffsetComparator() {
             return BY_ADR_NEXT;

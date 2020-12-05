@@ -14,6 +14,14 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class RecordReaders {
 
+    /**
+     * Read V 3 record.
+     *
+     * @param source the source
+     * @param offset the offset
+     * @return the byte buffer
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     public static ByteBuffer readV3Record(final FileChannel source, final long offset) throws IOException {
 
         int recordSize = RecordSizeFields.readV3RecordSizeField(source, offset);
@@ -22,6 +30,13 @@ public class RecordReaders {
 
     }
 
+    /**
+     * Read V 3 record.
+     *
+     * @param source the source
+     * @param offset the offset
+     * @return the byte buffer
+     */
     public static ByteBuffer readV3Record(final ByteBuffer source, final int offset) {
 
         int recordSize = (int) RecordSizeFields.readV3RecordSizeField(source, offset);
@@ -30,6 +45,14 @@ public class RecordReaders {
 
     }
 
+    /**
+     * Read V 2 record.
+     *
+     * @param source the source
+     * @param offset the offset
+     * @return the byte buffer
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     public static ByteBuffer readV2Record(final FileChannel source, final long offset) throws IOException {
 
         int recordSize = RecordSizeFields.readV2RecordSizeField(source, offset);
@@ -38,6 +61,13 @@ public class RecordReaders {
 
     }
 
+    /**
+     * Read V 2 record.
+     *
+     * @param source the source
+     * @param offset the offset
+     * @return the byte buffer
+     */
     public static ByteBuffer readV2Record(final ByteBuffer source, final int offset) {
 
         int recordSize = RecordSizeFields.readV2RecordSizeField(source, offset);
@@ -74,14 +104,12 @@ public class RecordReaders {
 
     /**
      * Reads from the supplied {@link FileChannel} into a {@link ByteBuffer} of the supplied size from the supplied
-     * offset in the {@link FileChannel}
+     * offset in the {@link FileChannel}.
      *
-     * @param fileChannel the file channel
+     * @param source the source
      * @param offset      the offset to start reading
      * @param size        number of bytes to read
-     *
      * @return the byte buffer with the data
-     *
      */
     public static ByteBuffer read(final ByteBuffer source, final long offset, final int size) {
 
@@ -95,14 +123,12 @@ public class RecordReaders {
 
     /**
      * Reads from the supplied {@link FileChannel} into a {@link ByteBuffer} of the supplied size from the supplied
-     * offset in the {@link FileChannel}
+     * offset in the {@link FileChannel}.
      *
      * @param fileChannel the file channel
      * @param offset      the offset to start reading
      * @param size        number of bytes to read
-     *
      * @return the byte buffer with the data
-     *
      * @throws IllegalArgumentException If size copied is less than the supplied size
      * @throws IOException              Signals If the read fails an {@link UncheckedIOException} is thrown
      */

@@ -39,6 +39,11 @@ public class DateTimeFields {
     public static final long MILLIS_FROM_CDF_TIME_TT2000_TO_JAVA_EPOCH = JAN_1_0000
             .until(OFFSET_DATE_TIME_JAVA_EPOCH_UTC, ChronoUnit.MILLIS);
 
+    public static final double DIFF_TIA_AND_J2000_SECONDS_AS_DOUBLE = 32.1840;
+
+    public static final long DIFF_TIA_AND_J2000_MILLISECONDS = doubleToMilliseconds(
+            DIFF_TIA_AND_J2000_SECONDS_AS_DOUBLE);
+
     /**
      * Double to microseconds.
      *
@@ -47,7 +52,30 @@ public class DateTimeFields {
      * @return the long
      */
     public static long doubleToMicroseconds(double leapSecondsAsDouble) {
-        return (long) (leapSecondsAsDouble * 1_000_000.0D);
+
+        return doubleToFactionalSeconds(leapSecondsAsDouble, 1_000_000);
+
+    }
+
+    /**
+     * Double to milliseconds.
+     *
+     * @param leapSecondsAsDouble the leap seconds as double
+     * 
+     * @return the long
+     */
+    public static long doubleToMilliseconds(double leapSecondsAsDouble) {
+
+        return doubleToFactionalSeconds(leapSecondsAsDouble, 1_000);
+
+    }
+
+    static long doubleToFactionalSeconds(double leapSecondsAsDouble, int numberInASecond) {
+
+        return BigDecimal.valueOf(leapSecondsAsDouble)
+                .multiply(BigDecimal.valueOf(numberInASecond))
+                .longValue();
+
     }
 
     /**

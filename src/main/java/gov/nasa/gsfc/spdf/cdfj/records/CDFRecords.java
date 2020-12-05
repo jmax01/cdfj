@@ -4,6 +4,9 @@ import java.util.Comparator;
 
 import lombok.experimental.UtilityClass;
 
+/**
+ * The Class CDFRecords.
+ */
 @UtilityClass
 public class CDFRecords {
 

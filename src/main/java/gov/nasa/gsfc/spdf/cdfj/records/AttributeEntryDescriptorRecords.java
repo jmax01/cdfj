@@ -3,20 +3,16 @@ package gov.nasa.gsfc.spdf.cdfj.records;
 import static gov.nasa.gsfc.spdf.cdfj.records.AttributeDescriptorRecords.*;
 import static gov.nasa.gsfc.spdf.cdfj.records.RecordReaders.*;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.util.Comparator;
-import java.util.function.Consumer;
+import java.io.*;
+import java.nio.*;
+import java.nio.channels.*;
+import java.util.*;
+import java.util.function.*;
 
-import gov.nasa.gsfc.spdf.cdfj.fields.CDFDataTypes;
-import gov.nasa.gsfc.spdf.cdfj.records.CDFRecords.CDFRecord;
-import gov.nasa.gsfc.spdf.cdfj.records.CDFRecords.CDFV2LinkedRecord;
-import gov.nasa.gsfc.spdf.cdfj.records.CDFRecords.CDFV3LinkedRecord;
-import lombok.Value;
-import lombok.experimental.NonFinal;
-import lombok.experimental.SuperBuilder;
-import lombok.experimental.UtilityClass;
+import gov.nasa.gsfc.spdf.cdfj.fields.*;
+import gov.nasa.gsfc.spdf.cdfj.records.CDFRecords.*;
+import lombok.*;
+import lombok.experimental.*;
 
 /**
  * The Class AttributeEntryDescriptorRecords.
@@ -30,7 +26,11 @@ public class AttributeEntryDescriptorRecords {
      * Reads G and R adrV2 records.
      *
      * @param dotCDFFileChannel the dot CDF file channel
-     * @param adrv3             the adrv 2
+     * @param agredOffset       the agred offset
+     * @param nGrEntries        the n gr entries
+     * @param scope             the scope
+     * @param addGlobal         the add global
+     * @param addREntry         the add R entry
      * 
      * @return the list
      * 
@@ -157,7 +157,11 @@ public class AttributeEntryDescriptorRecords {
      * Read adr V 2 s.
      *
      * @param dotCDFFileChannel the dot CDF file channel
-     * @param adrv3             the adrv 2
+     * @param agredOffset       the agred offset
+     * @param nGrEntries        the n gr entries
+     * @param scope             the scope
+     * @param addGlobal         the add global
+     * @param addREntry         the add R entry
      * 
      * @return the list
      * 
@@ -190,6 +194,17 @@ public class AttributeEntryDescriptorRecords {
 
     }
 
+    /**
+     * Read Z aedr V 3 s.
+     *
+     * @param dotCDFFileChannel the dot CDF file channel
+     * @param azEDRhead         the az ED rhead
+     * @param maxZEntry         the max Z entry
+     * @param scope             the scope
+     * @param addZEntry         the add Z entry
+     * 
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     public static void readZAedrV3s(FileChannel dotCDFFileChannel, long azEDRhead, int maxZEntry, int scope,
             Consumer<? super AEDRV3> addZEntry) throws IOException {
 
@@ -398,6 +413,13 @@ public class AttributeEntryDescriptorRecords {
          */
         Object getValue();
 
+        /**
+         * Compare to.
+         *
+         * @param that the that
+         * 
+         * @return the int
+         */
         @Override
         default int compareTo(AEDR that) {
 

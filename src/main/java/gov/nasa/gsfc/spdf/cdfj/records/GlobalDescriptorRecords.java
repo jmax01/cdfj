@@ -17,6 +17,9 @@ import gov.nasa.gsfc.spdf.cdfj.records.GlobalDescriptorRecords.GDRV3Impl.*;
 import lombok.*;
 import lombok.experimental.*;
 
+/**
+ * The Class GlobalDescriptorRecords.
+ */
 @UtilityClass
 public class GlobalDescriptorRecords {
 
@@ -27,6 +30,7 @@ public class GlobalDescriptorRecords {
      */
     public static final int GDR_RECORD_TYPE = CDFRecordTypes.GDR_RECORD_TYPE_INTERNAL_VALUE;
 
+    /** The Constant GDR_NO_R_VARIABLE_RECORDS_VALUE. */
     public static final int GDR_NO_R_VARIABLE_RECORDS_VALUE = -1;
 
     /**
@@ -46,6 +50,14 @@ public class GlobalDescriptorRecords {
     /** The Constant GDR_R_VDR_HEAD_V2_2_EMPTY_DEFAULT. */
     public static final int GDR_R_VDR_HEAD_V2_2_EMPTY_DEFAULT = 0x0000000000000000;
 
+    /**
+     * Read gdr V 2.
+     *
+     * @param dotCDFFileChannel the dot CDF file channel
+     * @param cdrv2 the cdrv 2
+     * @return the gdrv2
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     public static GDRV2 readGdrV2(FileChannel dotCDFFileChannel, CDRV2 cdrv2) throws IOException {
 
         ByteBuffer gdr = readV2Record(dotCDFFileChannel, cdrv2.getGdrOffset());
@@ -53,6 +65,12 @@ public class GlobalDescriptorRecords {
         return gdrv2(gdr);
     }
 
+    /**
+     * Gdrv 2.
+     *
+     * @param source the source
+     * @return the gdrv2
+     */
     public static final GDRV2 gdrv2(ByteBuffer source) {
 
         GDRV2ImplBuilder<?, ?> builder = GDRV2Impl.builder()
@@ -107,6 +125,12 @@ public class GlobalDescriptorRecords {
         return gdrv3(gdr);
     }
 
+    /**
+     * Gdrv 3.
+     *
+     * @param source the source
+     * @return the gdrv3
+     */
     public static final GDRV3 gdrv3(ByteBuffer source) {
 
         GDRV3ImplBuilder<?, ?> builder = GDRV3Impl.builder()
@@ -143,12 +167,17 @@ public class GlobalDescriptorRecords {
         return builder.build();
     }
 
+    /**
+     * The Interface GDR.
+     */
     public interface GDR extends CDFRecord {
 
         /**
          * The value 2, which identifies this as the GDR.
          * <p>
          * Signed 4-byte integer, big-endian byte ordering.
+         *
+         * @return the record type
          */
         @Override
         default int getRecordType() {
@@ -173,6 +202,8 @@ public class GlobalDescriptorRecords {
          * rVDRs are described in Section 2.6.
          * <p>
          * Signed 8-byte integer, big-endian byte ordering.
+         *
+         * @return the RVDR head
          */
         Number getRVDRHead();
 
@@ -195,6 +226,8 @@ public class GlobalDescriptorRecords {
          * zVDRs are described in Section 2.6.
          * <p>
          * Signed 8-byte integer, big-endian byte ordering.
+         *
+         * @return the ZVDR head
          */
         Number getZVDRHead();
 
@@ -216,6 +249,8 @@ public class GlobalDescriptorRecords {
          * ADRs are described in Section 2.4.
          * <p>
          * Signed 8-byte integer, big-endian byte ordering.
+         *
+         * @return the adr head
          */
         Number getAdrHead();
 
@@ -229,6 +264,8 @@ public class GlobalDescriptorRecords {
          * to CDF V2.1, this field is undefined.
          * <p>
          * Signed 8-byte integer, big-endian byte ordering.
+         *
+         * @return the eof
          */
         Number getEof();
 
@@ -238,6 +275,8 @@ public class GlobalDescriptorRecords {
          * This will correspond to the number of rVDRs in the dotCDF file.
          * <p>
          * Signed 4-byte integer, big-endian byte ordering.
+         *
+         * @return the nr vars
          */
         int getNrVars();
 
@@ -248,6 +287,8 @@ public class GlobalDescriptorRecords {
          * ADRs in the dotCDF file.
          * <p>
          * Signed 4-byte integer, big-endian byte ordering.
+         *
+         * @return the num attr
          */
         int getNumAttr();
 
@@ -259,6 +300,8 @@ public class GlobalDescriptorRecords {
          * If no rVariable records exist, this value will be negative one (-1).
          * <p>
          * Signed 4-byte integer, big-endian byte ordering.
+         *
+         * @return the r max rec
          */
         int getRMaxRec();
 
@@ -314,6 +357,8 @@ public class GlobalDescriptorRecords {
          * Always set to zero (0).
          * <p>
          * Signed 4-byte integer, big-endian byte ordering.
+         *
+         * @return the rfu C
          */
         default int getRfuC() {
             return GDR_RFU_C_DEFAULT;
@@ -381,6 +426,9 @@ public class GlobalDescriptorRecords {
 
     }
 
+    /**
+     * The Interface GDRV2.
+     */
     public interface GDRV2 extends GDR, CDFV2Record {
 
         /**
@@ -401,6 +449,8 @@ public class GlobalDescriptorRecords {
          * rVDRs are described in Section 2.6.
          * <p>
          * Signed 8-byte integer, big-endian byte ordering.
+         *
+         * @return the RVDR head
          */
         @Override
         Integer getRVDRHead();
@@ -448,6 +498,8 @@ public class GlobalDescriptorRecords {
          * ADRs are described in Section 2.4.
          * <p>
          * Signed 4-byte integer, big-endian byte ordering.
+         *
+         * @return the adr head
          */
         @Override
         Integer getAdrHead();
@@ -469,6 +521,9 @@ public class GlobalDescriptorRecords {
 
     }
 
+    /**
+     * The Interface GDRV3.
+     */
     public interface GDRV3 extends GDR, CDFV3Record {
 
         /**
@@ -489,6 +544,8 @@ public class GlobalDescriptorRecords {
          * rVDRs are described in Section 2.6.
          * <p>
          * Signed 8-byte integer, big-endian byte ordering.
+         *
+         * @return the RVDR head
          */
         @Override
         Long getRVDRHead();
@@ -536,6 +593,8 @@ public class GlobalDescriptorRecords {
          * ADRs are described in Section 2.4.
          * <p>
          * Signed 8-byte integer, big-endian byte ordering.
+         *
+         * @return the adr head
          */
         @Override
         Long getAdrHead();
@@ -751,15 +810,35 @@ public class GlobalDescriptorRecords {
         List<Integer> rDimSizes;
     }
 
+    /**
+     * The Class GDRV2Impl.
+     */
     @Value
     @NonFinal
+    
+    /**
+     * The Class GDRV2ImplBuilder.
+     *
+     * @param <C> the generic type
+     * @param <B> the generic type
+     */
     @SuperBuilder(toBuilder = true)
     public static class GDRV2Impl extends AbstractGDR<Integer, Integer> implements GDRV2 {
 
     }
 
+    /**
+     * The Class GDRV3Impl.
+     */
     @Value
     @NonFinal
+    
+    /**
+     * The Class GDRV3ImplBuilder.
+     *
+     * @param <C> the generic type
+     * @param <B> the generic type
+     */
     @SuperBuilder(toBuilder = true)
     public static class GDRV3Impl extends AbstractGDR<Long, Long> implements GDRV3 {
 

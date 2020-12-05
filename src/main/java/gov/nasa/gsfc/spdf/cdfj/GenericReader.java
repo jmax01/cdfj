@@ -1236,7 +1236,10 @@ public class GenericReader extends MetaData {
 
     String threadName(final String variableName, final String type, final int[] recordRange, final boolean preserve,
             final java.nio.ByteOrder bo) {
-        StringBuilder sb = new StringBuilder(variableName + '_' + type + '_');
+
+        StringBuilder sb = new StringBuilder(variableName).append('_')
+                .append(type)
+                .append('_');
 
         if (recordRange == null) {
             sb.append("null_");

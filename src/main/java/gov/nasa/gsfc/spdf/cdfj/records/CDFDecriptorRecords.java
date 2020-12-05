@@ -20,6 +20,7 @@ import lombok.experimental.*;
 @UtilityClass
 public class CDFDecriptorRecords {
 
+    /** The Constant CDR_RECORD_OFFSET. */
     public static final int CDR_RECORD_OFFSET = 8;
 
     /**
@@ -88,9 +89,16 @@ public class CDFDecriptorRecords {
      */
     public static final int IS_MD5_CHECKSUM_FLAG_SET = 0x00000008;
 
-    /** Reserved for another checksum method bit 2 must be set and bit 3 clear */
+    /**  Reserved for another checksum method bit 2 must be set and bit 3 clear. */
     public static final int IS_NON_MD5_CHECKSUM_FLAG_SET = 0x000000010;
 
+    /**
+     * Read cdr V 2.
+     *
+     * @param dotCDFFileChannel the dot CDF file channel
+     * @return the cdrv2
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     public static CDRV2 readCdrV2(FileChannel dotCDFFileChannel) throws IOException {
 
         ByteBuffer recordAsBuffer = readV2Record(dotCDFFileChannel, CDR_RECORD_OFFSET);
@@ -99,6 +107,12 @@ public class CDFDecriptorRecords {
 
     }
 
+    /**
+     * Cdrv 2.
+     *
+     * @param source the source
+     * @return the cdrv2
+     */
     public static final CDRV2 cdrv2(ByteBuffer source) {
 
         CDRV2ImplBuilder<?, ?> builder = CDRV2Impl.builder()
@@ -133,6 +147,13 @@ public class CDFDecriptorRecords {
 
     }
 
+    /**
+     * Read cdr V 3.
+     *
+     * @param dotCDFFileChannel the dot CDF file channel
+     * @return the cdrv3
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     public static CDRV3 readCdrV3(FileChannel dotCDFFileChannel) throws IOException {
 
         ByteBuffer recordAsBuffer = readV3Record(dotCDFFileChannel, CDR_RECORD_OFFSET);
@@ -141,6 +162,12 @@ public class CDFDecriptorRecords {
 
     }
 
+    /**
+     * Cdrv 3.
+     *
+     * @param source the source
+     * @return the cdrv3
+     */
     public static final CDRV3 cdrv3(ByteBuffer source) {
 
         CDRV3ImplBuilder<?, ?> builder = CDRV3Impl.builder()
@@ -175,9 +202,6 @@ public class CDFDecriptorRecords {
 
     /**
      * The Interface CDR.
-     *
-     * @param <RECORD_SIZE_FIELD_TYPE> the generic type
-     * @param <OFFSET_FIELD_TYPE>      the generic type
      */
     public interface CDR extends CDFRecord {
 
@@ -251,7 +275,7 @@ public class CDFDecriptorRecords {
         int getFlags();
 
         /**
-         * The majority of variable values within a variable record are row
+         * The majority of variable values within a variable record are row.
          *
          * @return true, if is row majority
          */
@@ -260,7 +284,7 @@ public class CDFDecriptorRecords {
         }
 
         /**
-         * The majority of variable values within a variable record are column
+         * The majority of variable values within a variable record are column.
          *
          * @return true, if is column majority
          */
@@ -413,19 +437,40 @@ public class CDFDecriptorRecords {
             return PURE_PYTHON_IDENTIFIER_VALUE == getIdentifier();
         }
 
+        /**
+         * Gets the complete version string.
+         *
+         * @return the complete version string
+         */
         default String getCompleteVersionString() {
             return "V" + this.getVersion() + "." + getRelease() + "." + getIncrement();
         }
     }
 
+    /**
+     * The Interface CDRV2.
+     */
     public interface CDRV2 extends CDR, CDFV2Record {
 
+        /**
+         * Gets the gdr offset.
+         *
+         * @return the gdr offset
+         */
         @Override
         Integer getGdrOffset();
     }
 
+    /**
+     * The Interface CDRV3.
+     */
     public interface CDRV3 extends CDR, CDFV3Record {
 
+        /**
+         * Gets the gdr offset.
+         *
+         * @return the gdr offset
+         */
         @Override
         Long getGdrOffset();
     }
@@ -464,13 +509,33 @@ public class CDFDecriptorRecords {
         final String copyright;
     }
 
+    /**
+     * The Class CDRV2Impl.
+     */
     @Value
+    
+    /**
+     * The Class CDRV2ImplBuilder.
+     *
+     * @param <C> the generic type
+     * @param <B> the generic type
+     */
     @SuperBuilder(toBuilder = true)
     public static class CDRV2Impl extends AbstractCDR<Integer, Integer> implements CDRV2 {
 
     }
 
+    /**
+     * The Class CDRV3Impl.
+     */
     @Value
+    
+    /**
+     * The Class CDRV3ImplBuilder.
+     *
+     * @param <C> the generic type
+     * @param <B> the generic type
+     */
     @SuperBuilder(toBuilder = true)
     public static class CDRV3Impl extends AbstractCDR<Long, Long> implements CDRV3 {
 

@@ -40,6 +40,13 @@ public interface LeapSecondTable {
 
     static final LeapSecondTable DEFAULT_LEAP_SECOND_TABLE = from(DEFAULT_LEAP_SECOND_TABLE_SYS_RESOURCE_URI);
 
+    static final LeapSecondTable.Row JANUARY_1_1972_LEAP_SECOND = DEFAULT_LEAP_SECOND_TABLE.rows()
+            .stream()
+            .filter(r -> LocalDate.of(1972, 1, 1)
+                    .equals(r.leapSecondDate()))
+            .findFirst()
+            .get();
+
     /**
      * Creates a {@link LeapSecondTable} from a URI.
      *
@@ -89,10 +96,10 @@ public interface LeapSecondTable {
 
     @Value
     @Accessors(fluent = true)
-    @SuperBuilder(toBuilder = true)
+    @Builder(toBuilder = true)
     static class LeapSecondTableImpl implements LeapSecondTable {
 
-        static final Collector<LeapSecondTable.Row, LeapSecondTableImplBuilder<?, ?>, LeapSecondTable> COLLECTOR = Collector
+        static final Collector<LeapSecondTable.Row, LeapSecondTableImplBuilder, LeapSecondTable> COLLECTOR = Collector
                 .of(LeapSecondTableImpl::builder, LeapSecondTableImplBuilder::row, (lhs, rhs) -> {
                     rhs.build()
                             .rows()
@@ -104,8 +111,7 @@ public interface LeapSecondTable {
         @Singular
         NavigableSet<LeapSecondTable.Row> rows;
 
-        // FIXME: Temp Workaround for javadoc
-        public static abstract class LeapSecondTableImplBuilder<C extends LeapSecondTableImpl, B extends LeapSecondTableImplBuilder<C, B>> {
+        public static class LeapSecondTableImplBuilder {
 
         }
     }
@@ -151,19 +157,19 @@ public interface LeapSecondTable {
             String dayAsString = matcher.group("day");
 
             String leapSecondAsString = matcher.group("leapSeconds");
-            double leapSecondsAsDouble = Double.valueOf(leapSecondAsString);
+            double leapSecondsAsDouble = Double.parseDouble(leapSecondAsString);
             long leapSecondsAsMicroseconds = DateTimeFields.doubleToMicroseconds(leapSecondsAsDouble);
 
             String drift1AsString = matcher.group("drift1");
-            double drift1AsDouble = Double.valueOf(drift1AsString);
+            double drift1AsDouble = Double.parseDouble(drift1AsString);
             long drift1AsMicroseconds = DateTimeFields.doubleToMicroseconds(drift1AsDouble);
 
             String drift2AsString = matcher.group("drift2");
-            double drift2AsDouble = Double.valueOf(drift2AsString);
+            double drift2AsDouble = Double.parseDouble(drift2AsString);
             long drift2AsMicroseconds = DateTimeFields.doubleToMicroseconds(drift2AsDouble);
 
-            LocalDate leapSecondDate = LocalDate.of(Integer.valueOf(yearAsString), Integer.valueOf(monthAsString),
-                    Integer.valueOf(dayAsString));
+            LocalDate leapSecondDate = LocalDate.of(Integer.parseInt(yearAsString), Integer.parseInt(monthAsString),
+                    Integer.parseInt(dayAsString));
 
             return RowImpl.builder()
                     .leapSecondDate(leapSecondDate)
