@@ -1,12 +1,12 @@
 package gov.nasa.gsfc.spdf.cdfj.fields;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
+import java.io.*;
+import java.nio.*;
+import java.nio.channels.*;
+import java.nio.charset.*;
 
-import gov.nasa.gsfc.spdf.cdfj.records.RecordReaders;
-import lombok.experimental.UtilityClass;
+import gov.nasa.gsfc.spdf.cdfj.records.*;
+import lombok.experimental.*;
 
 @UtilityClass
 public final class FieldReaders {
@@ -44,10 +44,11 @@ public final class FieldReaders {
 
         byte[] ba = new byte[maxStringSize];
 
+        source.get(ba);
+
         int i = 0;
 
         for (; i < ba.length; i++) {
-            ba[i] = source.get(i);
 
             if (ba[i] == 0) {
                 break;

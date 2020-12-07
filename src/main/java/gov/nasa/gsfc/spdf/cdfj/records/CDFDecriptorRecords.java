@@ -89,14 +89,16 @@ public class CDFDecriptorRecords {
      */
     public static final int IS_MD5_CHECKSUM_FLAG_SET = 0x00000008;
 
-    /**  Reserved for another checksum method bit 2 must be set and bit 3 clear. */
+    /** Reserved for another checksum method bit 2 must be set and bit 3 clear. */
     public static final int IS_NON_MD5_CHECKSUM_FLAG_SET = 0x000000010;
 
     /**
      * Read cdr V 2.
      *
      * @param dotCDFFileChannel the dot CDF file channel
+     * 
      * @return the cdrv2
+     * 
      * @throws IOException Signals that an I/O exception has occurred.
      */
     public static CDRV2 readCdrV2(FileChannel dotCDFFileChannel) throws IOException {
@@ -111,12 +113,15 @@ public class CDFDecriptorRecords {
      * Cdrv 2.
      *
      * @param source the source
+     * 
      * @return the cdrv2
      */
     public static final CDRV2 cdrv2(ByteBuffer source) {
 
+        int recordSize = source.getInt();
+
         CDRV2ImplBuilder<?, ?> builder = CDRV2Impl.builder()
-                .recordSize(source.getInt());
+                .recordSize(recordSize);
 
         int recordType = source.getInt();
 
@@ -138,7 +143,7 @@ public class CDFDecriptorRecords {
                 .identifier(source.getInt())
                 .rfuE(source.getInt());
 
-        int copyrightFieldSize = release < 5 ? COPYRIGHT_V2_4_FIELD_SIZE : COPYRIGHT_V2_5_UP_FIELD_SIZE;
+        int copyrightFieldSize = recordSize == 304 ? COPYRIGHT_V2_5_UP_FIELD_SIZE : COPYRIGHT_V2_4_FIELD_SIZE;
 
         String copyright = FieldReaders.readNullTerminatedString(source, source.position(), copyrightFieldSize);
 
@@ -151,7 +156,9 @@ public class CDFDecriptorRecords {
      * Read cdr V 3.
      *
      * @param dotCDFFileChannel the dot CDF file channel
+     * 
      * @return the cdrv3
+     * 
      * @throws IOException Signals that an I/O exception has occurred.
      */
     public static CDRV3 readCdrV3(FileChannel dotCDFFileChannel) throws IOException {
@@ -166,6 +173,7 @@ public class CDFDecriptorRecords {
      * Cdrv 3.
      *
      * @param source the source
+     * 
      * @return the cdrv3
      */
     public static final CDRV3 cdrv3(ByteBuffer source) {
@@ -513,7 +521,7 @@ public class CDFDecriptorRecords {
      * The Class CDRV2Impl.
      */
     @Value
-    
+
     /**
      * The Class CDRV2ImplBuilder.
      *
@@ -529,7 +537,7 @@ public class CDFDecriptorRecords {
      * The Class CDRV3Impl.
      */
     @Value
-    
+
     /**
      * The Class CDRV3ImplBuilder.
      *

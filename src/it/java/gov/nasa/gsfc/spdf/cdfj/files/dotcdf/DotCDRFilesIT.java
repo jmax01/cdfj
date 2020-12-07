@@ -34,8 +34,11 @@ class DotCDRFilesIT {
 
         Files.list(NasaCdfTestFiles.NASA_TEST_CDF_FILES_DIRECTORY_PATH)
 
+                // .filter(p -> p.toString()
+                // .contains("a1_k0_mpa_20050804_v02.cdf"))
                 .forEach(dotCDFpath -> {
 
+                    System.out.println(dotCDFpath);
                     DotCDFFile dotCDFFile = DotCDRFiles.readFile(dotCDFpath);
                     names.add(dotCDFFile.getCdfMagicNumbers()
                             .getMagicNumbersAsHexString() + " " + dotCDFpath.getFileName());
@@ -55,10 +58,15 @@ class DotCDRFilesIT {
                             .map(byte[].class::cast)
                             .map(valAsBytes -> new String(valAsBytes, StandardCharsets.US_ASCII))
                             .forEach(System.out::println);
-                });
 
-        names.stream()
-                .forEach(System.out::println);
+                    dotCDFFile.getRVdrs()
+                            .stream()
+                            .forEach(System.out::println);
+
+                    dotCDFFile.getZVdrs()
+                            .stream()
+                            .forEach(System.out::println);
+                });
 
     }
 

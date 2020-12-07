@@ -1,10 +1,10 @@
 package gov.nasa.gsfc.spdf.cdfj.fields;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.io.*;
+import java.nio.*;
+import java.nio.channels.*;
 
-import lombok.experimental.UtilityClass;
+import lombok.experimental.*;
 
 @UtilityClass
 public final class NameFields {
@@ -78,7 +78,7 @@ public final class NameFields {
     /**
      * Read v3 name field from the supplied {@link ByteBuffer}
      *
-     * @param source the source buffer. Method will not mutate the buffer
+     * @param source the source buffer.
      * 
      * @return the string
      * 

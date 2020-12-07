@@ -124,7 +124,7 @@ public class AttributeDescriptorRecords {
                 .maxZEntry(maxZEntry)
                 .rfuE(rfuE);
 
-        String name = NameFields.readV3NameField(source, source.position());
+        String name = NameFields.readV2NameField(source);
 
         return builder.name(name)
                 .build();

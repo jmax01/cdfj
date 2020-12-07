@@ -1,10 +1,21 @@
 package gov.nasa.gsfc.spdf.cdfj.records;
 
+import static gov.nasa.gsfc.spdf.cdfj.records.RecordReaders.*;
+
+import java.io.*;
+import java.nio.*;
+import java.nio.channels.*;
 import java.util.*;
+import java.util.function.*;
 import java.util.stream.*;
 
 import gov.nasa.gsfc.spdf.cdfj.*;
+import gov.nasa.gsfc.spdf.cdfj.fields.*;
+import gov.nasa.gsfc.spdf.cdfj.fields.CDFDataTypes;
 import gov.nasa.gsfc.spdf.cdfj.records.CDFRecords.*;
+import gov.nasa.gsfc.spdf.cdfj.records.GlobalDescriptorRecords.*;
+import gov.nasa.gsfc.spdf.cdfj.records.VariableDecriptorRecords.VDRV2Impl.*;
+import gov.nasa.gsfc.spdf.cdfj.records.VariableDecriptorRecords.VDRV3Impl.*;
 import lombok.*;
 import lombok.experimental.*;
 
@@ -48,65 +59,297 @@ public class VariableDecriptorRecords {
     /** The Constant DIM_VARIANCE_IS_TRUE. */
     public static final int DIM_VARIANCE_IS_TRUE = -1;
 
-    // /**
-    // * VDRv 3.
-    // *
-    // * @param source the source
-    // * @param dotCDFFileChannel the dot CDF file channel
-    // *
-    // * @return the VDRv3
-    // *
-    // * @throws IOException Signals that an I/O exception has occurred.
-    // */
-    // public static final VDRV3 VDRv3(ByteBuffer source, FileChannel dotCDFFileChannel,GDR gdr) throws IOException {
-    //
-    // VDRV3ImplBuilder<?, ?> builder = VDRV3Impl.builder()
-    // .recordSize(source.getLong());
-    //
-    // int recordType = source.getInt();
-    ////
-    //// if (VDR_RECORD_TYPE != recordType) {
-    //// throw new IllegalArgumentException("The supplied bytebuffer does not contain a VDR record. Record Type "
-    //// + "was, " + recordType + ", should be " + VDR_RECORD_TYPE);
-    //// }
-    //
-    // long VDRNext = source.getLong();
-    // long agrEdrhead = source.getLong();
-    // int scope = source.getInt();
-    // int num = source.getInt();
-    //
-    // int nGrEntries = source.getInt();
-    // int maxGrEntry = source.getInt();
-    // int rfua = source.getInt();
-    // long azEdrHead = source.getLong();
-    // int nzEntries = source.getInt();
-    // int maxZEntry = source.getInt();
-    // int rfuE = source.getInt();
-    //
-    // readGrAedrV3s(dotCDFFileChannel, agrEdrhead, nGrEntries, scope, builder::gEntry, builder::rEntry);
-    //
-    // readZAedrV3s(dotCDFFileChannel, azEdrHead, nzEntries, scope, builder::zEntry);
-    //
-    // builder.VDRNext(VDRNext)
-    // .agrEdrhead(agrEdrhead)
-    // .scope(scope)
-    // .num(num)
-    // .nGrEntries(nGrEntries)
-    // .maxGrEntry(maxGrEntry)
-    // .rfuA(rfua)
-    // .azEdrHead(azEdrHead)
-    // .nzEntries(nzEntries)
-    // .maxZEntry(maxZEntry)
-    // .rfuE(rfuE);
-    //
-    // String name = NameFields.readV3NameField(source, source.position());
-    //
-    // return builder.name(name)
-    // .build();
-    //
-    // }
-    //
-    //
+    public static NavigableSet<VDRV2> readRVdrV2s(FileChannel dotCDFFileChannel, GDRV2 gdrv2) throws IOException {
+
+        int vdrOffset = gdrv2.getRVDRHead();
+
+        if (0 == vdrOffset) {
+            return Collections.emptyNavigableSet();
+        }
+
+        NavigableSet<VDRV2> vdrs = new TreeSet<>();
+
+        while (vdrOffset != 0) {
+            ByteBuffer zvdrBuffer = readV2Record(dotCDFFileChannel, vdrOffset);
+            VDRV2 vdr = vdrv2(zvdrBuffer, dotCDFFileChannel, gdrv2::getRNumDims);
+            vdrs.add(vdr);
+            vdrOffset = vdr.getVdrNext();
+        }
+
+        return vdrs;
+    }
+
+    public static NavigableSet<VDRV2> readZVdrV2s(FileChannel dotCDFFileChannel, GDRV2 gdrv2) throws IOException {
+
+        int vdrOffset = gdrv2.getZVDRHead();
+
+        if (0 == vdrOffset) {
+            return Collections.emptyNavigableSet();
+        }
+
+        NavigableSet<VDRV2> vdrs = new TreeSet<>();
+
+        while (vdrOffset != 0) {
+            ByteBuffer zvdrBuffer = readV2Record(dotCDFFileChannel, vdrOffset);
+            VDRV2 vdr = vdrv2(zvdrBuffer, dotCDFFileChannel, gdrv2::getRNumDims);
+            vdrs.add(vdr);
+            vdrOffset = vdr.getVdrNext();
+        }
+
+        return vdrs;
+    }
+
+    public static NavigableSet<VDRV3> readRVdrV3s(FileChannel dotCDFFileChannel, GDRV3 gdrv3) throws IOException {
+
+        Long vdrOffset = gdrv3.getRVDRHead();
+
+        if (0 == vdrOffset) {
+            return Collections.emptyNavigableSet();
+        }
+
+        NavigableSet<VDRV3> vdrs = new TreeSet<>();
+
+        while (vdrOffset != 0) {
+            ByteBuffer zvdrBuffer = readV3Record(dotCDFFileChannel, vdrOffset);
+            VDRV3 vdr = vdrv3(zvdrBuffer, dotCDFFileChannel, gdrv3::getRNumDims);
+            vdrs.add(vdr);
+            vdrOffset = vdr.getVdrNext();
+        }
+
+        return vdrs;
+    }
+
+    /**
+     * Read Z vdr V 3 s.
+     *
+     * @param dotCDFFileChannel the dot CDF file channel
+     * @param gdrv3             the gdrv 3
+     * 
+     * @return the navigable set
+     * 
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
+    public static NavigableSet<VDRV3> readZVdrV3s(FileChannel dotCDFFileChannel, GDRV3 gdrv3) throws IOException {
+
+        Long vdrOffset = gdrv3.getZVDRHead();
+
+        if (0 == vdrOffset) {
+            return Collections.emptyNavigableSet();
+        }
+
+        NavigableSet<VDRV3> vdrs = new TreeSet<>();
+
+        while (vdrOffset != 0) {
+            ByteBuffer zvdrBuffer = readV3Record(dotCDFFileChannel, vdrOffset);
+            VDRV3 vdr = vdrv3(zvdrBuffer, dotCDFFileChannel, gdrv3::getRNumDims);
+            vdrs.add(vdr);
+            vdrOffset = vdr.getVdrNext();
+        }
+
+        return vdrs;
+    }
+
+    /**
+     * VDRv 2.
+     *
+     * @param source            the source
+     * @param dotCDFFileChannel the dot CDF file channel
+     *
+     * @return the VDRv2
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
+    public static final VDRV2 vdrv2(ByteBuffer source, FileChannel dotCDFFileChannel, IntSupplier rNumDims) {
+
+        VDRV2ImplBuilder<?, ?> builder = VDRV2Impl.builder()
+                .recordSize(source.getInt());
+
+        int recordType = source.getInt();
+
+        switch (recordType) {
+            case R_VDR_RECORD_TYPE:
+            case Z_VDR_RECORD_TYPE:
+
+                break;
+            default:
+                throw new IllegalArgumentException("The supplied bytebuffer does not contain a VDR record. Record Type "
+                        + "was, " + recordType + ", should be " + R_VDR_RECORD_TYPE + " or " + Z_VDR_RECORD_TYPE);
+        }
+
+        builder.recordType(recordType);
+        int vdrNext = source.getInt();
+        int dataType = source.getInt();
+        int maxRec = source.getInt();
+        int vxrHead = source.getInt();
+        int vxrTail = source.getInt();
+        int flags = source.getInt();
+        int sRecords = source.getInt();
+        int rfuB = source.getInt();
+        int rfuC = source.getInt();
+        int rfuF = source.getInt();
+        int numElems = source.getInt();
+        int num = source.getInt();
+        int cprOrSprOffset = source.getInt();
+
+        int blockingFactor = source.getInt();
+        String name = NameFields.readV2NameField(source);
+
+        builder.vdrNext(vdrNext)
+                .dataType(dataType)
+                .maxRec(maxRec)
+                .vxrHead(vxrHead)
+                .vxrTail(vxrTail)
+                .flags(flags)
+                .sRecords(sRecords)
+                .rfuB(rfuB)
+                .rfuC(rfuC)
+                .rfuF(rfuF)
+                .numElems(numElems)
+                .num(num)
+                .cprOrSprOffset(cprOrSprOffset)
+                .blockingFactor(blockingFactor)
+                .name(name);
+
+        if (Z_VDR_RECORD_TYPE == recordType) {
+            int zNumDims = source.getInt();
+            builder.zNumDims(zNumDims);
+            int[] zDimSizes = new int[zNumDims];
+            source.asIntBuffer()
+                    .get(zDimSizes);
+            builder.zDimSizes(zDimSizes);
+            int[] dimVarys = new int[zNumDims];
+            source.position(source.position() + (zNumDims * Integer.BYTES))
+                    .asIntBuffer()
+                    .get(dimVarys);
+            builder.dimVarys(dimVarys);
+        }
+
+        if (R_VDR_RECORD_TYPE == recordType) {
+
+            int numDims = rNumDims.getAsInt();
+            int[] dimVarys = new int[numDims];
+            source.asIntBuffer()
+                    .get(dimVarys);
+            builder.dimVarys(dimVarys)
+                    .rNumDims(numDims);
+            source.position(source.position() + (numDims * Integer.BYTES));
+
+        }
+
+        if ((flags & HAS_PAD_VALUE) != 0) {
+            int padValueSize = numElems * CDFDataTypes.sizeInBytes(dataType);
+
+            byte[] padValueAsBytes = new byte[padValueSize];
+            source.get(padValueAsBytes);
+
+            builder.padValue(padValueAsBytes);
+        } else {
+            builder.padValue(new byte[0]);
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * VDRv 3.
+     *
+     * @param source            the source
+     * @param dotCDFFileChannel the dot CDF file channel
+     *
+     * @return the VDRv3
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
+    public static final VDRV3 vdrv3(ByteBuffer source, FileChannel dotCDFFileChannel, IntSupplier rNumDims) {
+
+        VDRV3ImplBuilder<?, ?> builder = VDRV3Impl.builder()
+                .recordSize(source.getLong());
+
+        int recordType = source.getInt();
+
+        switch (recordType) {
+            case R_VDR_RECORD_TYPE:
+            case Z_VDR_RECORD_TYPE:
+
+                break;
+            default:
+                throw new IllegalArgumentException("The supplied bytebuffer does not contain a VDR record. Record Type "
+                        + "was, " + recordType + ", should be " + R_VDR_RECORD_TYPE + " or " + Z_VDR_RECORD_TYPE);
+        }
+
+        builder.recordType(recordType);
+
+        long vdrNext = source.getLong();
+        int dataType = source.getInt();
+        int maxRec = source.getInt();
+        long vxrHead = source.getLong();
+        long vxrTail = source.getLong();
+        int flags = source.getInt();
+        int sRecords = source.getInt();
+        int rfuB = source.getInt();
+        int rfuC = source.getInt();
+        int rfuF = source.getInt();
+        int numElems = source.getInt();
+        int num = source.getInt();
+        long cprOrSprOffset = source.getLong();
+        int blockingFactor = source.getInt();
+
+        String name = NameFields.readV3NameField(source);
+
+        builder.vdrNext(vdrNext)
+                .dataType(dataType)
+                .maxRec(maxRec)
+                .vxrHead(vxrHead)
+                .vxrTail(vxrTail)
+                .flags(flags)
+                .sRecords(sRecords)
+                .rfuB(rfuB)
+                .rfuC(rfuC)
+                .rfuF(rfuF)
+                .numElems(numElems)
+                .num(num)
+                .cprOrSprOffset(cprOrSprOffset)
+                .blockingFactor(blockingFactor)
+                .name(name);
+
+        if (Z_VDR_RECORD_TYPE == recordType) {
+            int zNumDims = source.getInt();
+            builder.zNumDims(zNumDims);
+            int[] zDimSizes = new int[zNumDims];
+            source.asIntBuffer()
+                    .get(zDimSizes);
+            builder.zDimSizes(zDimSizes);
+            int[] dimVarys = new int[zNumDims];
+
+            source.position(source.position() + (zNumDims * Integer.BYTES))
+                    .asIntBuffer()
+                    .get(dimVarys);
+            builder.dimVarys(dimVarys);
+        }
+
+        if (R_VDR_RECORD_TYPE == recordType) {
+
+            int numDims = rNumDims.getAsInt();
+            int[] dimVarys = new int[numDims];
+            source.asIntBuffer()
+                    .get(dimVarys);
+            builder.dimVarys(dimVarys);
+            source.position(source.position() + (numDims * Integer.BYTES));
+        }
+
+        if ((flags & HAS_PAD_VALUE) != 0) {
+            int padValueSize = numElems * CDFDataTypes.sizeInBytes(dataType);
+
+            byte[] padValueAsBytes = new byte[padValueSize];
+            source.get(padValueAsBytes);
+
+            builder.padValue(padValueAsBytes);
+        } else {
+            builder.padValue(new byte[0]);
+        }
+
+        return builder.build();
+    }
 
     /**
      * The Interface VDR.
@@ -395,21 +638,7 @@ public class VariableDecriptorRecords {
          *
          * @return the size of dimensions if this is a zVariable
          */
-        int getZDimSizes();
-
-        /**
-         * Zero or more contiguous dimension sizes for this zVariable depending on the value of the
-         * zNumDims field.
-         * <p>
-         * This field will not be present if this is an rVDR (rVariable).
-         *
-         * @return the size of dimensions if this is a zVariable
-         */
-        default OptionalInt zDimSizes() {
-
-            return isZVariable() ? OptionalInt.of(getZDimSizes()) : OptionalInt.empty();
-
-        }
+        int[] getZDimSizes();
 
         /**
          * Zero or more contiguous dimension variances.
@@ -781,7 +1010,7 @@ public class VariableDecriptorRecords {
          *
          * @return the size of dimensions if this is a zVariable
          */
-        int zDimSizes;
+        int[] zDimSizes;
 
         /**
          * Zero or more contiguous dimension variances.
