@@ -32,7 +32,6 @@ public class AttributeEntryDescriptorRecords {
      * @param addGlobal         the add global
      * @param addREntry         the add R entry
      * 
-     * @return the list
      * 
      * @throws IOException Signals that an I/O exception has occurred.
      */
@@ -162,8 +161,6 @@ public class AttributeEntryDescriptorRecords {
      * @param scope             the scope
      * @param addGlobal         the add global
      * @param addREntry         the add R entry
-     * 
-     * @return the list
      * 
      * @throws IOException Signals that an I/O exception has occurred.
      */

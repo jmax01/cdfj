@@ -28,7 +28,7 @@ class LeapSecondTableTest {
                 .filter(r -> r.leapSecondDate()
                         .equals(LocalDate.of(2017, 1, 1)))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(NoSuchElementException::new);
 
         assertEquals(LocalDate.of(2017, 1, 1), ls201711.leapSecondDate());
         assertEquals(37_000_000, ls201711.leapSecondsAsMicros());

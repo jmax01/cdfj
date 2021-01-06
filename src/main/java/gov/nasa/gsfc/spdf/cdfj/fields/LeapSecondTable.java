@@ -50,15 +50,13 @@ public interface LeapSecondTable {
     /**
      * Creates a {@link LeapSecondTable} from a URI.
      *
-     * @param cdfLeapSecondsFilePath the cdf leap seconds file path
+     * @param cdfLeapSecondsFileUri the cdf leap seconds file uri
      * 
      * @return the leap second table
-     * 
-     * @throws IOException Signals that an I/O exception has occurred.
      */
     static LeapSecondTable from(URI cdfLeapSecondsFileUri) {
 
-        return from(Path.of(cdfLeapSecondsFileUri));
+        return from(Paths.get(cdfLeapSecondsFileUri));
 
     }
 
@@ -68,8 +66,6 @@ public interface LeapSecondTable {
      * @param cdfLeapSecondsFilePath the cdf leap seconds file path
      * 
      * @return the leap second table
-     * 
-     * @throws IOException Signals that an I/O exception has occurred.
      */
     static LeapSecondTable from(Path cdfLeapSecondsFilePath) {
 

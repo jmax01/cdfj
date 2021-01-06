@@ -9,14 +9,14 @@ public interface CDFCore extends CDFMeta {
     /**
      * Record size field java type.
      *
-     * @return the class<? extends number>
+     * @return the class
      */
     Class<? extends Number> recordSizeFieldJavaType();
 
     /**
      * Offset field java type.
      *
-     * @return the class<? extends number>
+     * @return the class
      */
     Class<? extends Number> offsetFieldJavaType();
 

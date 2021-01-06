@@ -1,12 +1,11 @@
 package gov.nasa.gsfc.spdf.cdfj.records;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.io.*;
+import java.nio.*;
+import java.nio.channels.*;
 
-import gov.nasa.gsfc.spdf.cdfj.fields.RecordSizeFields;
-import lombok.experimental.UtilityClass;
+import gov.nasa.gsfc.spdf.cdfj.fields.*;
+import lombok.experimental.*;
 
 /**
  * The Class RecordReaders.
@@ -19,7 +18,9 @@ public class RecordReaders {
      *
      * @param source the source
      * @param offset the offset
+     * 
      * @return the byte buffer
+     * 
      * @throws IOException Signals that an I/O exception has occurred.
      */
     public static ByteBuffer readV3Record(final FileChannel source, final long offset) throws IOException {
@@ -35,6 +36,7 @@ public class RecordReaders {
      *
      * @param source the source
      * @param offset the offset
+     * 
      * @return the byte buffer
      */
     public static ByteBuffer readV3Record(final ByteBuffer source, final int offset) {
@@ -50,7 +52,9 @@ public class RecordReaders {
      *
      * @param source the source
      * @param offset the offset
+     * 
      * @return the byte buffer
+     * 
      * @throws IOException Signals that an I/O exception has occurred.
      */
     public static ByteBuffer readV2Record(final FileChannel source, final long offset) throws IOException {
@@ -66,6 +70,7 @@ public class RecordReaders {
      *
      * @param source the source
      * @param offset the offset
+     * 
      * @return the byte buffer
      */
     public static ByteBuffer readV2Record(final ByteBuffer source, final int offset) {
@@ -107,14 +112,19 @@ public class RecordReaders {
      * offset in the {@link FileChannel}.
      *
      * @param source the source
-     * @param offset      the offset to start reading
-     * @param size        number of bytes to read
+     * @param offset the offset to start reading
+     * @param size   number of bytes to read
+     * 
      * @return the byte buffer with the data
      */
     public static ByteBuffer read(final ByteBuffer source, final long offset, final int size) {
 
         byte[] asByteArray = new byte[size];
-        source.get((int) offset, asByteArray, 0, size);
+
+        for (int i = (int) offset, j = (int) offset; i < (int) offset + size; i++, j++) {
+            asByteArray[i] = source.get(j);
+        }
+
         ByteBuffer bb = ByteBuffer.wrap(asByteArray);
         bb.position(0);
         return bb;
@@ -128,7 +138,9 @@ public class RecordReaders {
      * @param fileChannel the file channel
      * @param offset      the offset to start reading
      * @param size        number of bytes to read
+     * 
      * @return the byte buffer with the data
+     * 
      * @throws IllegalArgumentException If size copied is less than the supplied size
      * @throws IOException              Signals If the read fails an {@link UncheckedIOException} is thrown
      */

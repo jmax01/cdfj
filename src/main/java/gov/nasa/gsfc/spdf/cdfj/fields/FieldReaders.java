@@ -24,10 +24,9 @@ public final class FieldReaders {
 
         ByteBuffer duplicate = source.duplicate();
 
-        ByteBuffer slice = duplicate.position(offset)
-                .slice();
+        duplicate.position(offset);
 
-        return readNullTerminatedString(slice, maxStringSize);
+        return readNullTerminatedString(duplicate.slice(), maxStringSize);
     }
 
     /**

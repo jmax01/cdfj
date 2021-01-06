@@ -218,8 +218,8 @@ public class VariableDecriptorRecords {
                     .get(zDimSizes);
             builder.zDimSizes(zDimSizes);
             int[] dimVarys = new int[zNumDims];
-            source.position(source.position() + (zNumDims * Integer.BYTES))
-                    .asIntBuffer()
+            source.position(source.position() + (zNumDims * Integer.BYTES));
+            source.asIntBuffer()
                     .get(dimVarys);
             builder.dimVarys(dimVarys);
         }
@@ -321,8 +321,8 @@ public class VariableDecriptorRecords {
             builder.zDimSizes(zDimSizes);
             int[] dimVarys = new int[zNumDims];
 
-            source.position(source.position() + (zNumDims * Integer.BYTES))
-                    .asIntBuffer()
+            source.position(source.position() + (zNumDims * Integer.BYTES));
+            source.asIntBuffer()
                     .get(dimVarys);
             builder.dimVarys(dimVarys);
         }
@@ -696,14 +696,14 @@ public class VariableDecriptorRecords {
         }
 
         /**
-         * the number of dimensions if this is an rVariable, from {@link GDR#getRDimSizes()}.
+         * the number of dimensions if this is an rVariable, from GDR.getRDimSizes().
          *
          * @return the number of dimensions if this is an rVariable
          */
         int getRNumDims();
 
         /**
-         * the number of dimensions if this is an rVariable, from {@link GDR#getRDimSizes()}.
+         * the number of dimensions if this is an rVariable, from GDR.getRDimSizes().
          *
          * @return the number of dimensions if this is an rVariable
          */

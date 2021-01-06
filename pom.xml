@@ -70,7 +70,7 @@
     <spotbugs.outputDirectory>${project.build.directory}/spotbugs</spotbugs.outputDirectory>
     <spotbugs.xmlOutputDirectory>${spotbugs.outputDirectory}</spotbugs.xmlOutputDirectory>
     <spotbugs.findsecbugs-plugin.version>1.10.1</spotbugs.findsecbugs-plugin.version>
-    <spotbugs.fb-contrib.version>7.4.7</spotbugs.fb-contrib.version>
+    <spotbugs.sb-contrib.version>7.4.7</spotbugs.sb-contrib.version>
     <spotbugs.failOnError>false</spotbugs.failOnError><!-- FIXME: remove after cleanup -->
 
     <versions-maven-plugin.version>2.8.1</versions-maven-plugin.version>
@@ -213,9 +213,9 @@
               </plugin>
 
               <plugin>
-                <groupId>com.mebigfatguy.fb-contrib</groupId>
-                <artifactId>fb-contrib</artifactId>
-                <version>${spotbugs.fb-contrib.version}</version>
+                <groupId>com.mebigfatguy.sb-contrib</groupId>
+                <artifactId>sb-contrib</artifactId>
+                <version>${spotbugs.sb-contrib.version}</version>
               </plugin>
             </plugins>
           </configuration>
